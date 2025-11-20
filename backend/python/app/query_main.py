@@ -246,6 +246,8 @@ app.add_middleware(
 @app.get("/health")
 async def health_check() -> JSONResponse:
     """Health check endpoint that also verifies connector service health"""
+    # Always return healthy for process monitor - connector check is non-blocking
+    connector_status = "unknown"
     try:
         endpoints = await app.container.config_service().get_config(
             config_node_constants.ENDPOINTS.value
@@ -253,43 +255,33 @@ async def health_check() -> JSONResponse:
         connector_endpoint = endpoints.get("connectors").get("endpoint", DefaultEndpoints.CONNECTOR_ENDPOINT.value)
         connector_url = f"{connector_endpoint}/health"
         async with httpx.AsyncClient() as client:
-            connector_response = await client.get(connector_url, timeout=5.0)
+            connector_response = await client.get(connector_url, timeout=2.0)
 
-            if connector_response.status_code != HttpStatusCode.SUCCESS.value:
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "status": "fail",
-                        "error": f"Connector service unhealthy: {connector_response.text}",
-                        "timestamp": get_epoch_timestamp_in_ms(),
-                    },
-                )
-
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "healthy",
-                    "timestamp": get_epoch_timestamp_in_ms(),
-                },
-            )
+            if connector_response.status_code == HttpStatusCode.SUCCESS.value:
+                connector_status = "healthy"
+            else:
+                connector_status = f"unhealthy (status: {connector_response.status_code})"
+                logger = app.container.logger()
+                logger.warning(f"Connector service health check returned status {connector_response.status_code}")
     except httpx.RequestError as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "fail",
-                "error": f"Failed to connect to connector service: {str(e)}",
-                "timestamp": get_epoch_timestamp_in_ms(),
-            },
-        )
+        connector_status = f"unreachable: {str(e)}"
+        logger = app.container.logger()
+        logger.warning(f"Connector service health check failed: {str(e)}")
     except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={
-                "status": "fail",
-                "error": str(e),
-                "timestamp": get_epoch_timestamp_in_ms(),
-            },
-        )
+        connector_status = f"error: {str(e)}"
+        logger = app.container.logger()
+        logger.warning(f"Connector service health check error: {str(e)}")
+
+    # Always return 200 - process monitor only cares if Query service is running
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "healthy",
+            "query_service": "healthy",
+            "connector_service": connector_status,
+            "timestamp": get_epoch_timestamp_in_ms(),
+        },
+    )
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:

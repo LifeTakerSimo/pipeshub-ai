@@ -1433,17 +1433,35 @@ export const addMessageStream =
             );
           }
         } catch (dbError: any) {
+          // Check if it's a MongoDB document size limit error
+          const isSizeLimitError = 
+            dbError.message?.includes('document is too large') ||
+            dbError.message?.includes('BSON document too large') ||
+            dbError.message?.includes('maximum allowed size') ||
+            dbError.code === 10334 || // MongoDB error code for document too large
+            dbError.name === 'BSONError';
+
+          const errorMessage = isSizeLimitError
+            ? 'Response is too large to save. The response has been truncated, but the conversation document may still be too large. Please try a shorter query.'
+            : dbError.message || 'Failed to save AI response';
+
           logger.error('Failed to save AI response to conversation', {
             requestId,
             conversationId: existingConversation?._id,
+            agentKey: existingConversation?.agentKey,
             error: dbError.message,
+            errorName: dbError.name,
+            errorCode: dbError.code,
+            isSizeLimitError,
+            conversationSize: existingConversation ? Buffer.byteLength(JSON.stringify(existingConversation.toObject()), 'utf8') : null,
           });
 
-          // Send error event
+          // Send error event with more context
           res.write(
             `event: error\ndata: ${JSON.stringify({
               error: 'Failed to save AI response',
-              details: dbError.message,
+              details: errorMessage,
+              errorType: isSizeLimitError ? 'SIZE_LIMIT' : 'DATABASE_ERROR',
             })}\n\n`,
           );
         }
@@ -5223,9 +5241,39 @@ export const addMessageStreamToAgentConversation =
                 }) || [],
               );
 
+              // Handle large responses - MongoDB has a 16MB document size limit
+              // We'll truncate the answer if it's too large, leaving buffer for other document fields
+              const MAX_ANSWER_SIZE_BYTES = 14 * 1024 * 1024; // 14MB to leave buffer for other fields
+              let processedAnswer = completeData.answer;
+              let wasTruncated = false;
+
+              if (Buffer.byteLength(processedAnswer, 'utf8') > MAX_ANSWER_SIZE_BYTES) {
+                // Truncate to fit within limit
+                const truncatedBytes = Buffer.from(processedAnswer, 'utf8').slice(0, MAX_ANSWER_SIZE_BYTES);
+                processedAnswer = truncatedBytes.toString('utf8');
+                // Try to truncate at a word boundary if possible
+                const lastSpaceIndex = processedAnswer.lastIndexOf(' ');
+                if (lastSpaceIndex > MAX_ANSWER_SIZE_BYTES * 0.9) {
+                  processedAnswer = processedAnswer.substring(0, lastSpaceIndex);
+                }
+                processedAnswer += '\n\n*[Response truncated due to size limitations]*';
+                wasTruncated = true;
+                logger.warn('AI response truncated due to size limit', {
+                  requestId,
+                  originalSize: Buffer.byteLength(completeData.answer, 'utf8'),
+                  truncatedSize: Buffer.byteLength(processedAnswer, 'utf8'),
+                });
+              }
+
+              // Create modified completeData with potentially truncated answer
+              const processedCompleteData = {
+                ...completeData,
+                answer: processedAnswer,
+              };
+
               // Build AI response message using existing utility
               const aiResponseMessage = buildAIResponseMessage(
-                { statusCode: 200, data: completeData },
+                { statusCode: 200, data: processedCompleteData },
                 savedCitations,
               ) as IMessageDocument;
 
@@ -5233,6 +5281,17 @@ export const addMessageStreamToAgentConversation =
               existingConversation.messages.push(aiResponseMessage);
               existingConversation.lastActivityAt = Date.now();
               existingConversation.status = CONVERSATION_STATUS.COMPLETE as any   ;
+
+              // Check document size before saving to provide better error message
+              const docSize = Buffer.byteLength(JSON.stringify(existingConversation.toObject()), 'utf8');
+              if (docSize > 15 * 1024 * 1024) { // 15MB warning threshold
+                logger.warn('Conversation document approaching size limit', {
+                  requestId,
+                  conversationId: existingConversation._id,
+                  documentSizeBytes: docSize,
+                  documentSizeMB: (docSize / (1024 * 1024)).toFixed(2),
+                });
+              }
 
               // Save the updated conversation with AI response
               const updatedConversation = session
@@ -5354,17 +5413,35 @@ export const addMessageStreamToAgentConversation =
             );
           }
         } catch (dbError: any) {
+          // Check if it's a MongoDB document size limit error
+          const isSizeLimitError = 
+            dbError.message?.includes('document is too large') ||
+            dbError.message?.includes('BSON document too large') ||
+            dbError.message?.includes('maximum allowed size') ||
+            dbError.code === 10334 || // MongoDB error code for document too large
+            dbError.name === 'BSONError';
+
+          const errorMessage = isSizeLimitError
+            ? 'Response is too large to save. The response has been truncated, but the conversation document may still be too large. Please try a shorter query.'
+            : dbError.message || 'Failed to save AI response';
+
           logger.error('Failed to save AI response to conversation', {
             requestId,
             conversationId: existingConversation?._id,
+            agentKey: existingConversation?.agentKey,
             error: dbError.message,
+            errorName: dbError.name,
+            errorCode: dbError.code,
+            isSizeLimitError,
+            conversationSize: existingConversation ? Buffer.byteLength(JSON.stringify(existingConversation.toObject()), 'utf8') : null,
           });
 
-          // Send error event
+          // Send error event with more context
           res.write(
             `event: error\ndata: ${JSON.stringify({
               error: 'Failed to save AI response',
-              details: dbError.message,
+              details: errorMessage,
+              errorType: isSizeLimitError ? 'SIZE_LIMIT' : 'DATABASE_ERROR',
             })}\n\n`,
           );
         }
