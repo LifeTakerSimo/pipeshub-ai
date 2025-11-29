@@ -171,12 +171,13 @@ class OneDriveConnector(BaseConnector):
             has_admin_consent=has_admin_consent,
         )
          # Initialize MS Graph client
-        credential = ClientSecretCredential(
+        # Store credential as instance variable to prevent it from being garbage collected
+        self.credential = ClientSecretCredential(
             tenant_id=credentials.tenant_id,
             client_id=credentials.client_id,
             client_secret=credentials.client_secret,
         )
-        self.client = GraphServiceClient(credential, scopes=["https://graph.microsoft.com/.default"])
+        self.client = GraphServiceClient(self.credential, scopes=["https://graph.microsoft.com/.default"])
         self.msgraph_client = MSGraphClient(self.connector_name, self.client, self.logger)
         return True
 
@@ -516,10 +517,6 @@ class OneDriveConnector(BaseConnector):
 
             elif record_update.is_updated:
                 # Handle updates based on what changed
-                if record_update.content_changed:
-                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
-                    await self.data_entities_processor.on_record_content_update(record_update.record)
-
                 if record_update.metadata_changed:
                     self.logger.info(f"Metadata changed for record: {record_update.record.record_name}")
                     await self.data_entities_processor.on_record_metadata_update(record_update.record)
@@ -530,6 +527,10 @@ class OneDriveConnector(BaseConnector):
                         record_update.record,
                         record_update.new_permissions
                     )
+
+                if record_update.content_changed:
+                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
+                    await self.data_entities_processor.on_record_content_update(record_update.record)
 
         except Exception as e:
             self.logger.error(f"❌ Error handling record updates: {e}", exc_info=True)
@@ -984,6 +985,11 @@ class OneDriveConnector(BaseConnector):
             # self.processed_items.clear()
             # self.permission_cache.clear()
 
+            # Close the credential to properly close the HTTP transport
+            if hasattr(self, 'credential') and self.credential:
+                await self.credential.close()
+                self.credential = None
+
             # Close any open connections
             if hasattr(self, 'client') and self.client:
                 # GraphServiceClient doesn't have explicit close, but we can clear the reference
@@ -993,6 +999,11 @@ class OneDriveConnector(BaseConnector):
 
         except Exception as e:
             self.logger.error(f"❌ Error during cleanup: {e}")
+
+    async def reindex_records(self, record_results: List[Record]) -> None:
+        """Reindex records - not implemented for OneDrive yet."""
+        self.logger.warning("Reindex not implemented for OneDrive connector")
+        pass
 
     async def get_signed_url(self, record: Record) -> str:
         """

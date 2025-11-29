@@ -7,6 +7,7 @@ import hashlib
 import json
 import unicodedata
 import uuid
+from collections import defaultdict
 from io import BytesIO
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -17,12 +18,14 @@ from fastapi import Request  # type: ignore
 
 from app.config.configuration_service import ConfigurationService
 from app.config.constants.arangodb import (
+    RECORD_TYPE_COLLECTION_MAPPING,
     CollectionNames,
     Connectors,
     DepartmentNames,
     GraphNames,
     LegacyGraphNames,
     OriginTypes,
+    ProgressStatus,
     RecordTypes,
 )
 from app.config.constants.http_status_code import HttpStatusCode
@@ -32,16 +35,21 @@ from app.models.entities import (
     AppRole,
     AppUser,
     AppUserGroup,
+    CommentRecord,
     FileRecord,
+    MailRecord,
     Record,
     RecordGroup,
+    TicketRecord,
     User,
+    WebpageRecord,
 )
 from app.schema.arango.documents import (
     agent_schema,
     agent_template_schema,
     app_role_schema,
     app_schema,
+    comment_record_schema,
     department_schema,
     file_record_schema,
     mail_record_schema,
@@ -74,6 +82,7 @@ NODE_COLLECTIONS = [
     (CollectionNames.LINKS.value, None),
     (CollectionNames.MAILS.value, mail_record_schema),
     (CollectionNames.WEBPAGES.value, webpage_record_schema),
+    (CollectionNames.COMMENTS.value, comment_record_schema),
     (CollectionNames.PEOPLE.value, None),
     (CollectionNames.USERS.value, user_schema),
     (CollectionNames.GROUPS.value, None),
@@ -109,7 +118,6 @@ EDGE_COLLECTIONS = [
     (CollectionNames.ORG_DEPARTMENT_RELATION.value, basic_edge_schema),
     (CollectionNames.BELONGS_TO.value, belongs_to_schema),
     (CollectionNames.INHERIT_PERMISSIONS.value, inherit_permissions_schema),
-    (CollectionNames.PERMISSIONS.value, permissions_schema),
     (CollectionNames.ORG_APP_RELATION.value, basic_edge_schema),
     (CollectionNames.USER_APP_RELATION.value, user_app_relation_schema),
     (CollectionNames.BELONGS_TO_CATEGORY.value, basic_edge_schema),
@@ -117,7 +125,6 @@ EDGE_COLLECTIONS = [
     (CollectionNames.BELONGS_TO_TOPIC.value, basic_edge_schema),
     (CollectionNames.BELONGS_TO_RECORD_GROUP.value, basic_edge_schema),
     (CollectionNames.INTER_CATEGORY_RELATIONS.value, basic_edge_schema),
-    (CollectionNames.PERMISSIONS_TO_KB.value, permissions_schema),
     (CollectionNames.PERMISSION.value, permissions_schema),
 ]
 
@@ -159,7 +166,7 @@ class BaseArangoService:
                 "edge_collections": [
                     CollectionNames.IS_OF_TYPE.value,
                     CollectionNames.RECORD_RELATIONS.value,
-                    CollectionNames.PERMISSIONS.value,
+                    CollectionNames.PERMISSION.value,
                     CollectionNames.USER_DRIVE_RELATION.value,
                     CollectionNames.BELONGS_TO.value,
                     CollectionNames.ANYONE.value
@@ -174,7 +181,7 @@ class BaseArangoService:
                 "edge_collections": [
                     CollectionNames.IS_OF_TYPE.value,
                     CollectionNames.RECORD_RELATIONS.value,
-                    CollectionNames.PERMISSIONS.value,
+                    CollectionNames.PERMISSION.value,
                     CollectionNames.BELONGS_TO.value,
                 ],
                 "document_collections": [
@@ -188,7 +195,7 @@ class BaseArangoService:
                 "edge_collections": [
                     CollectionNames.IS_OF_TYPE.value,
                     CollectionNames.RECORD_RELATIONS.value,
-                    CollectionNames.PERMISSIONS.value,
+                    CollectionNames.PERMISSION.value,
                     CollectionNames.BELONGS_TO.value,
                 ],
                 "document_collections": [
@@ -203,7 +210,7 @@ class BaseArangoService:
                     CollectionNames.IS_OF_TYPE.value,
                     CollectionNames.RECORD_RELATIONS.value,
                     CollectionNames.BELONGS_TO.value,
-                    CollectionNames.PERMISSIONS_TO_KB.value,
+                    CollectionNames.PERMISSION.value,
                 ],
                 "document_collections": [
                     CollectionNames.RECORDS.value,
@@ -461,7 +468,7 @@ class BaseArangoService:
             self.logger.error(f"Failed to get organizations: {str(e)}")
             raise
 
-    async def get_document(self, document_key: str, collection: str) -> Optional[Dict]:
+    async def get_document(self, document_key: str, collection: str, transaction: Optional[TransactionDatabase] = None) -> Optional[Dict]:
         """Get a document by its key"""
         try:
             query = """
@@ -469,7 +476,8 @@ class BaseArangoService:
                 FILTER doc._key == @document_key
                 RETURN doc
             """
-            cursor = self.db.aql.execute(
+            db = transaction if transaction else self.db
+            cursor = db.aql.execute(
                 query,
                 bind_vars={"document_key": document_key, "@collection": collection},
             )
@@ -524,7 +532,10 @@ class BaseArangoService:
                         COMPLETED: LENGTH(records[* FILTER CURRENT.indexingStatus == "COMPLETED"]),
                         FAILED: LENGTH(records[* FILTER CURRENT.indexingStatus == "FAILED"]),
                         FILE_TYPE_NOT_SUPPORTED: LENGTH(records[* FILTER CURRENT.indexingStatus == "FILE_TYPE_NOT_SUPPORTED"]),
-                        AUTO_INDEX_OFF: LENGTH(records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"])
+                        AUTO_INDEX_OFF: LENGTH(records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"]),
+                        ENABLE_MULTIMODAL_MODELS: LENGTH(records[* FILTER CURRENT.indexingStatus == "ENABLE_MULTIMODAL_MODELS"]),
+                        EMPTY: LENGTH(records[* FILTER CURRENT.indexingStatus == "EMPTY"]),
+                        QUEUED: LENGTH(records[* FILTER CURRENT.indexingStatus == "QUEUED"]),
                     }
                 }
 
@@ -542,7 +553,11 @@ class BaseArangoService:
                                 COMPLETED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "COMPLETED"]),
                                 FAILED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "FAILED"]),
                                 FILE_TYPE_NOT_SUPPORTED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "FILE_TYPE_NOT_SUPPORTED"]),
-                                AUTO_INDEX_OFF: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"])
+                                AUTO_INDEX_OFF: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"]),
+                                ENABLE_MULTIMODAL_MODELS: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "ENABLE_MULTIMODAL_MODELS"]),
+                                EMPTY: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "EMPTY"]),
+                                QUEUED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "QUEUED"]),
+                                PAUSED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "PAUSED"]),
                             }
                         }
                 )
@@ -588,7 +603,11 @@ class BaseArangoService:
                         COMPLETED: LENGTH(records[* FILTER CURRENT.indexingStatus == "COMPLETED"]),
                         FAILED: LENGTH(records[* FILTER CURRENT.indexingStatus == "FAILED"]),
                         FILE_TYPE_NOT_SUPPORTED: LENGTH(records[* FILTER CURRENT.indexingStatus == "FILE_TYPE_NOT_SUPPORTED"]),
-                        AUTO_INDEX_OFF: LENGTH(records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"])
+                        AUTO_INDEX_OFF: LENGTH(records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"]),
+                        ENABLE_MULTIMODAL_MODELS: LENGTH(records[* FILTER CURRENT.indexingStatus == "ENABLE_MULTIMODAL_MODELS"]),
+                        EMPTY: LENGTH(records[* FILTER CURRENT.indexingStatus == "EMPTY"]),
+                        QUEUED: LENGTH(records[* FILTER CURRENT.indexingStatus == "QUEUED"]),
+                        PAUSED: LENGTH(records[* FILTER CURRENT.indexingStatus == "PAUSED"]),
                     }
                 }
 
@@ -606,7 +625,11 @@ class BaseArangoService:
                                 COMPLETED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "COMPLETED"]),
                                 FAILED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "FAILED"]),
                                 FILE_TYPE_NOT_SUPPORTED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "FILE_TYPE_NOT_SUPPORTED"]),
-                                AUTO_INDEX_OFF: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"])
+                                AUTO_INDEX_OFF: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "AUTO_INDEX_OFF"]),
+                                ENABLE_MULTIMODAL_MODELS: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "ENABLE_MULTIMODAL_MODELS"]),
+                                EMPTY: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "EMPTY"]),
+                                QUEUED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "QUEUED"]),
+                                PAUSED: LENGTH(type_records[* FILTER CURRENT.indexingStatus == "PAUSED"]),
                             }
                         }
                 )
@@ -655,7 +678,11 @@ class BaseArangoService:
                                 "COMPLETED": 0,
                                 "FAILED": 0,
                                 "FILE_TYPE_NOT_SUPPORTED": 0,
-                                "AUTO_INDEX_OFF": 0
+                                "AUTO_INDEX_OFF": 0,
+                                "ENABLE_MULTIMODAL_MODELS": 0,
+                                "EMPTY": 0,
+                                "QUEUED": 0,
+                                "PAUSED": 0,
                             }
                         },
                         "by_record_type": []
@@ -696,15 +723,6 @@ class BaseArangoService:
                 FOR k IN 1..1 OUTBOUND recordDoc._id @@belongs_to
                 RETURN k
             )
-            LET directAccess = (
-                FOR records, edge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS.value}
-                FILTER records._key == @recordId
-                RETURN {{
-                    type: 'DIRECT',
-                    source: userDoc,
-                    role: edge.role
-                }}
-            )
             LET directAccessPermissionEdge = (
                 FOR records, edge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                 FILTER records._key == @recordId
@@ -714,20 +732,8 @@ class BaseArangoService:
                     role: edge.role
                 }}
             )
-            LET groupAccess = (
-                FOR group, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
-                FILTER belongsEdge.entityType == 'USER'
-                FOR records, permEdge IN 1..1 ANY group._id {CollectionNames.PERMISSIONS.value}
-                FILTER records._key == @recordId
-                RETURN {{
-                    type: 'GROUP',
-                    source: group,
-                    role: permEdge.role
-                }}
-            )
             LET groupAccessPermissionEdge = (
                 FOR group, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                FILTER belongsEdge.type == 'USER'
                 FILTER IS_SAME_COLLECTION("groups", group) OR IS_SAME_COLLECTION("roles", group)
                 FOR records, permEdge IN 1..1 ANY group._id {CollectionNames.PERMISSION.value}
                 FILTER records._key == @recordId
@@ -740,7 +746,6 @@ class BaseArangoService:
             LET recordGroupAccess = (
                 // Hop 1: User -> Group
                 FOR group, userToGroupEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                FILTER userToGroupEdge.type == 'USER'
                 FILTER IS_SAME_COLLECTION("groups", group) OR IS_SAME_COLLECTION("roles", group)
 
                 // Hop 2: Group -> RecordGroup
@@ -754,13 +759,12 @@ class BaseArangoService:
                 RETURN {{
                     type: 'RECORD_GROUP',
                     source: recordGroup,
-                    role: recordGroupToRecordEdge.role
+                    role: groupToRecordGroupEdge.role
                 }}
             )
             LET inheritedRecordGroupAccess = (
                 // Hop 1: User -> Group (permission)
                 FOR group, userToGroupEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                    FILTER userToGroupEdge.type == 'USER'
                     FILTER IS_SAME_COLLECTION("groups", group) OR IS_SAME_COLLECTION("roles", group)
 
                 // Hop 2: Group -> Parent RecordGroup (permission)
@@ -777,13 +781,12 @@ class BaseArangoService:
                 RETURN {{
                     type: 'NESTED_RECORD_GROUP',
                     source: childRecordGroup,
-                    role: childRgToRecordEdge.role
+                    role: groupToRgEdge.role
                 }}
             )
             LET directUserToRecordGroupAccess = (
                 // Direct user -> record_group permission (with nested record groups support)
                 FOR recordGroup, userToRgEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                    FILTER userToRgEdge.type == 'USER'
                     FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
 
                     // Record group -> nested record groups (0 to 5 levels) -> record
@@ -797,24 +800,12 @@ class BaseArangoService:
                         RETURN {{
                             type: 'DIRECT_USER_RECORD_GROUP',
                             source: recordGroup,
-                            role: finalEdge.role,
+                            role: userToRgEdge.role,
                             depth: LENGTH(path.edges)
                         }}
             )
-            LET orgAccess = (
-                FOR org, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
-                FILTER belongsEdge.entityType == 'ORGANIZATION'
-                FOR records, permEdge IN 1..1 ANY org._id {CollectionNames.PERMISSIONS.value}
-                FILTER records._key == @recordId
-                RETURN {{
-                    type: 'ORGANIZATION',
-                    source: org,
-                    role: permEdge.role
-                }}
-            )
             LET orgAccessPermissionEdge = (
                 FOR org, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
-                FILTER belongsEdge.entityType == 'ORGANIZATION'
                 FOR records, permEdge IN 1..1 ANY org._id {CollectionNames.PERMISSION.value}
                 FILTER records._key == @recordId
                 RETURN {{
@@ -823,8 +814,29 @@ class BaseArangoService:
                     role: permEdge.role
                 }}
             )
+            LET orgRecordGroupAccess = (
+                FOR org, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
+                    FILTER belongsEdge.entityType == 'ORGANIZATION'
+
+                    FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id {CollectionNames.PERMISSION.value}
+                        FILTER orgToRgEdge.type == 'ORG'
+                        FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                        FOR record, edge, path IN 0..2 INBOUND recordGroup._id {CollectionNames.INHERIT_PERMISSIONS.value}
+                            FILTER record._key == @recordId
+                            FILTER IS_SAME_COLLECTION("records", record)
+
+                            LET finalEdge = LENGTH(path.edges) > 0 ? path.edges[LENGTH(path.edges) - 1] : edge
+
+                            RETURN {{
+                                type: 'ORG_RECORD_GROUP',
+                                source: recordGroup,
+                                role: orgToRgEdge.role,
+                                depth: LENGTH(path.edges)
+                            }}
+            )
             LET kbAccess = kb ? (
-                FOR permEdge IN @@permissions_to_kb
+                FOR permEdge IN @@permission
                     FILTER permEdge._from == userDoc._id AND permEdge._to == kb._id
                     LIMIT 1
                     LET parentFolder = FIRST(
@@ -851,15 +863,13 @@ class BaseArangoService:
                 }}
             )
             LET allAccess = UNION_DISTINCT(
-                directAccess,
                 directAccessPermissionEdge,
-                groupAccess,
                 recordGroupAccess,
                 groupAccessPermissionEdge,
                 inheritedRecordGroupAccess,
                 directUserToRecordGroupAccess,
-                orgAccess,
                 orgAccessPermissionEdge,
+                orgRecordGroupAccess,
                 kbAccess,
                 anyoneAccess
             )
@@ -875,7 +885,7 @@ class BaseArangoService:
                 "files": CollectionNames.FILES.value,
                 "@anyone": CollectionNames.ANYONE.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@record_relations": CollectionNames.RECORD_RELATIONS.value,
             }
 
@@ -1103,7 +1113,7 @@ class BaseArangoService:
             # Build permission filter for connector records
             def build_permission_filter(include_filter_vars: bool = True) -> str:
                 if permissions and include_filter_vars:
-                    return " AND permissionEdge.role IN @permissions"
+                    return " AND permissionEdge.role IN @permission"
                 return ""
 
             # ===== MAIN QUERY (with pagination and filters and file/mail records) =====
@@ -1134,7 +1144,7 @@ class BaseArangoService:
             // KB Records Section - Get records DIRECTLY from belongs_to edges (not through folders)
             LET kbRecords = {
                 f'''(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN @kb_permissions
@@ -1161,26 +1171,6 @@ class BaseArangoService:
             }
 
             // Connector Records Section - Direct connector permissions
-            LET connectorRecords = {
-                f'''(
-                    FOR permissionEdge IN @@permissions
-                        FILTER permissionEdge._to == user_from
-                        FILTER permissionEdge.type == "USER"
-                        {permission_filter}
-                        LET record = DOCUMENT(permissionEdge._from)
-                        FILTER record != null
-                        FILTER record.recordType != @drive_record_type
-                        FILTER record.isDeleted != true
-                        FILTER record.orgId == org_id OR record.orgId == null
-                        FILTER record.origin == "CONNECTOR"
-                        {folder_filter}
-                        {record_filter}
-                        RETURN {{
-                            record: record,
-                            permission: {{ role: permissionEdge.role, type: permissionEdge.type }}
-                        }}
-                )''' if include_connector_records else '[]'
-            }
 
             LET connectorRecordsNewPermission = {
                 f'''(
@@ -1249,6 +1239,44 @@ class BaseArangoService:
                                 record: record,
                                 permission: {{ role: permEdge.role, type: permEdge.type }}
                             }}
+                )''' if include_connector_records else '[]'
+            }
+
+            LET orgRecordGroupAccess = {
+                f'''(
+                    // User -> Organization -> Record Group -> Record (with nested record groups support)
+                    FOR org, belongsEdge IN 1..1 ANY user_from @@belongs_to
+                        FILTER belongsEdge.entityType == "ORGANIZATION"
+
+                        // Org -> record_group permission
+                        FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id @@permission
+                            FILTER orgToRgEdge.type == "ORG"
+                            FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                            // Record group -> nested record groups (0 to 2 levels) -> record
+                            FOR record, edge, path IN 0..2 INBOUND recordGroup._id @@inherit_permissions
+                                // Only process if final vertex is a record (not another record group)
+                                FILTER IS_SAME_COLLECTION("records", record)
+
+                                FILTER record != null
+                                FILTER record.recordType != @drive_record_type
+                                FILTER record.isDeleted != true
+                                FILTER record.orgId == org_id OR record.orgId == null
+                                FILTER record.origin == "CONNECTOR"
+
+                                {folder_filter}
+                                {record_filter}
+
+                                // Get the role from the last edge in the path (the one connecting to the record)
+                                LET finalEdge = LENGTH(path.edges) > 0 ? path.edges[LENGTH(path.edges) - 1] : edge
+
+                                RETURN {{
+                                    record: record,
+                                    permission: {{
+                                        role: finalEdge.role,
+                                        type: finalEdge.type
+                                    }}
+                                }}
                 )''' if include_connector_records else '[]'
             }
 
@@ -1362,11 +1390,11 @@ class BaseArangoService:
                 connectorRecordsNewPermission,
                 groupConnectorRecordsNewPermission,
                 orgAccessPermission,
+                orgRecordGroupAccess,
                 recordGroupConnectorRecords,
                 inheritedRecordGroupConnectorRecords,
                 directUserToRecordGroupRecords
             )
-
             LET allConnectorRecordsDistinct = (
                 FOR item IN allConnectorRecordsNewPermission
                     COLLECT recordKey = item.record._key
@@ -1374,9 +1402,10 @@ class BaseArangoService:
                     RETURN FIRST(groups[*].item)
             )
 
-            LET mergeRecords = APPEND(kbRecords, connectorRecords)
+            //LET mergeRecords = APPEND(kbRecords, connectorRecords)
             //LET mergeRecordsNewPermission = APPEND(mergeRecords, connectorRecordsNewPermission)
-            LET allRecords = APPEND(mergeRecords, allConnectorRecordsDistinct)
+            //LET allRecords = APPEND(mergeRecords, allConnectorRecordsDistinct)
+            LET allRecords = APPEND(kbRecords, allConnectorRecordsDistinct)
 
             LET sortedRecords = (
                 FOR item IN allRecords
@@ -1463,7 +1492,7 @@ class BaseArangoService:
 
             LET kbCount = {
                 f'''LENGTH(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN @kb_permissions
@@ -1480,25 +1509,6 @@ class BaseArangoService:
                             {record_filter}
                             RETURN 1
                 )''' if include_kb_records else '0'
-            }
-
-            LET connectorCount = {
-                f'''LENGTH(
-                    FOR permissionEdge IN @@permissions
-                        FILTER permissionEdge._to == user_from
-                        FILTER permissionEdge.type == "USER"
-                        {permission_filter}
-                        LET record = DOCUMENT(permissionEdge._from)
-                        FILTER record != null
-                        FILTER record.recordType != @drive_record_type
-                        FILTER record.isDeleted != true
-                        FILTER record.orgId == org_id OR record.orgId == null
-                        FILTER record.origin == "CONNECTOR"
-
-                        {folder_filter}
-                        {record_filter}
-                        RETURN 1
-                )''' if include_connector_records else '0'
             }
 
             LET connectorKeysNewPermission = {
@@ -1558,6 +1568,35 @@ class BaseArangoService:
                             {folder_filter}
                             {record_filter}
                             RETURN record._key
+                )''' if include_connector_records else '[]'
+            }
+
+            LET orgRecordGroupKeys = {
+                f'''(
+                    // User -> Organization -> Record Group -> Record (with nested record groups support)
+                    FOR org, belongsEdge IN 1..1 ANY user_from @@belongs_to
+                        FILTER belongsEdge.entityType == "ORGANIZATION"
+
+                        // Org -> record_group permission
+                        FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id @@permission
+                            FILTER orgToRgEdge.type == "ORG"
+                            FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                            // Record group -> nested record groups (0 to 2 levels) -> record
+                            FOR record, edge, path IN 0..2 INBOUND recordGroup._id @@inherit_permissions
+                                // Only process if final vertex is a record (not another record group)
+                                FILTER IS_SAME_COLLECTION("records", record)
+
+                                FILTER record != null
+                                FILTER record.recordType != @drive_record_type
+                                FILTER record.isDeleted != true
+                                FILTER record.orgId == org_id OR record.orgId == null
+                                FILTER record.origin == "CONNECTOR"
+
+                                {folder_filter}
+                                {record_filter}
+
+                                RETURN record._key
                 )''' if include_connector_records else '[]'
             }
 
@@ -1646,10 +1685,18 @@ class BaseArangoService:
             }
 
             // Combine all keys and count unique ones
-            LET allNewPermissionKeys = UNION_DISTINCT(connectorKeysNewPermission, groupConnectorKeysNewPermission, orgAccessKeys, recordGroupConnectorRecordsCount, inheritedRecordGroupConnectorRecordsCount, directUserToRecordGroupKeys)
+            LET allNewPermissionKeys = UNION_DISTINCT(
+                connectorKeysNewPermission,
+                groupConnectorKeysNewPermission,
+                orgAccessKeys, orgRecordGroupKeys,
+                recordGroupConnectorRecordsCount,
+                inheritedRecordGroupConnectorRecordsCount,
+                directUserToRecordGroupKeys
+            )
             LET uniqueNewPermissionCount = LENGTH(UNIQUE(allNewPermissionKeys))
 
-            RETURN kbCount + connectorCount + uniqueNewPermissionCount
+            // RETURN kbCount + connectorCount + uniqueNewPermissionCount
+            RETURN kbCount + uniqueNewPermissionCount
             """
 
             # ===== FILTERS QUERY (Fixed) =====
@@ -1659,7 +1706,7 @@ class BaseArangoService:
 
             LET allKbRecords = {
                 '''(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN ["OWNER", "READER", "FILEORGANIZER", "WRITER", "COMMENTER", "ORGANIZER"]
@@ -1680,25 +1727,6 @@ class BaseArangoService:
                 )''' if include_kb_records else '[]'
             }
 
-            LET allConnectorRecords = {
-                f'''(
-                    FOR permissionEdge IN @@permissions
-                        FILTER permissionEdge._to == user_from
-                        FILTER permissionEdge.type == "USER"
-                        LET record = DOCUMENT(permissionEdge._from)
-                        FILTER record != null
-                        FILTER record.recordType != @drive_record_type
-                        FILTER record.isDeleted != true
-                        FILTER record.orgId == org_id OR record.orgId == null
-                        FILTER record.origin == "CONNECTOR"
-
-                        {folder_filter}
-                        RETURN {{
-                            record: record,
-                            permission: {{ role: permissionEdge.role }}
-                        }}
-                )''' if include_connector_records else '[]'
-            }
 
             LET allConnectorRecordsNewPermission = {
                 f'''(
@@ -1775,6 +1803,43 @@ class BaseArangoService:
                                 record: record,
                                 permission: { role: permEdge.role, type: permEdge.type }
                             }
+                )''' if include_connector_records else '[]'
+            }
+
+            LET orgRecordGroupRecordsFilter = {
+                f'''(
+                    // User -> Organization -> Record Group -> Record (with nested record groups support)
+                    FOR org, belongsEdge IN 1..1 ANY user_from @@belongs_to
+                        FILTER belongsEdge.entityType == "ORGANIZATION"
+
+                        // Org -> record_group permission
+                        FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id @@permission
+                            FILTER orgToRgEdge.type == "ORG"
+                            FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                            // Record group -> nested record groups (0 to 2 levels) -> record
+                            FOR record, edge, path IN 0..2 INBOUND recordGroup._id @@inherit_permissions
+                                // Only process if final vertex is a record (not another record group)
+                                FILTER IS_SAME_COLLECTION("records", record)
+
+                                FILTER record != null
+                                FILTER record.recordType != @drive_record_type
+                                FILTER record.isDeleted != true
+                                FILTER record.orgId == org_id OR record.orgId == null
+                                FILTER record.origin == "CONNECTOR"
+
+                                {folder_filter}
+
+                                // Get the role from the last edge in the path
+                                LET finalEdge = LENGTH(path.edges) > 0 ? path.edges[LENGTH(path.edges) - 1] : edge
+
+                                RETURN {{
+                                    record: record,
+                                    permission: {{
+                                        role: finalEdge.role,
+                                        type: finalEdge.type
+                                    }}
+                                }}
                 )''' if include_connector_records else '[]'
             }
 
@@ -1879,6 +1944,7 @@ class BaseArangoService:
                 allConnectorRecordsNewPermission,
                 allGroupConnectorRecordsNewPermission,
                 allOrgAccessRecords,
+                orgRecordGroupRecordsFilter,
                 recordGroupConnectorRecordsFilter,
                 inheritedRecordGroupConnectorRecordsFilter,
                 directUserToRecordGroupRecordsFilter
@@ -1890,9 +1956,10 @@ class BaseArangoService:
                     RETURN FIRST(groups[*].item)
             )
 
-            LET mergeRecords = APPEND(allKbRecords, allConnectorRecords)
+            //LET mergeRecords = APPEND(allKbRecords, allConnectorRecords)
             //LET mergeRecordsNewPermission = APPEND(mergeRecords, connectorRecordsNewPermission)
-            LET allRecords = APPEND(mergeRecords, allConnectorRecordsDistinct)
+            // LET allRecords = APPEND(mergeRecords, allConnectorRecordsDistinct)
+            LET allRecords = APPEND(allKbRecords, allConnectorRecordsDistinct)
 
             LET flatRecords = (
                 FOR item IN allRecords
@@ -1933,7 +2000,7 @@ class BaseArangoService:
             if indexing_status:
                 filter_bind_vars["indexing_status"] = indexing_status
             if permissions:
-                filter_bind_vars["permissions"] = permissions
+                filter_bind_vars["permission"] = permissions
             if date_from:
                 filter_bind_vars["date_from"] = date_from
             if date_to:
@@ -1945,8 +2012,6 @@ class BaseArangoService:
                 "skip": skip,
                 "limit": limit,
                 "kb_permissions": final_kb_roles,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
-                "@permissions": CollectionNames.PERMISSIONS.value,
                 "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@inherit_permissions": CollectionNames.INHERIT_PERMISSIONS.value,
@@ -1959,8 +2024,6 @@ class BaseArangoService:
                 "user_from": f"users/{user_id}",
                 "org_id": org_id,
                 "kb_permissions": final_kb_roles,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
-                "@permissions": CollectionNames.PERMISSIONS.value,
                 "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@inherit_permissions": CollectionNames.INHERIT_PERMISSIONS.value,
@@ -1971,8 +2034,6 @@ class BaseArangoService:
             filters_bind_vars = {
                 "user_from": f"users/{user_id}",
                 "org_id": org_id,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
-                "@permissions": CollectionNames.PERMISSIONS.value,
                 "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@inherit_permissions": CollectionNames.INHERIT_PERMISSIONS.value,
@@ -2167,14 +2228,18 @@ class BaseArangoService:
                     "reason": permission_check["reason"]
                 }
 
-            # Create and publish single reindexFailed event
             try:
-                payload = await self._create_reindex_failed_event_payload(
-                    org_id, connector, origin
-                )
-                await self._publish_sync_event("reindexFailed", payload)
+                connector_normalized = connector.replace("_", "").lower()
+                event_type = f"{connector_normalized}.reindex"
 
-                self.logger.info(f"✅ Published reindexFailed event for {connector}")
+                payload = {
+                    "orgId": org_id,
+                    "statusFilters": ["FAILED"]
+                }
+
+                await self._publish_sync_event(event_type, payload)
+
+                self.logger.info(f"✅ Published {event_type} event for {connector}")
 
                 return {
                     "success": True,
@@ -2186,11 +2251,11 @@ class BaseArangoService:
                 }
 
             except Exception as event_error:
-                self.logger.error(f"❌ Failed to publish reindexFailed event: {str(event_error)}")
+                self.logger.error(f"❌ Failed to publish reindex event: {str(event_error)}")
                 return {
                     "success": False,
                     "code": 500,
-                    "reason": f"Failed to publish reindexFailed event: {str(event_error)}"
+                    "reason": f"Failed to publish reindex event: {str(event_error)}"
                 }
 
         except Exception as e:
@@ -2312,10 +2377,10 @@ class BaseArangoService:
 
             # Remove user's permission edges
             user_removal_query = """
-            FOR perm IN permissions
-                FILTER perm._from == @record_from
-                FILTER perm._to == @user_to
-                REMOVE perm IN permissions
+            FOR perm IN permission
+                FILTER perm._from == @user_to
+                FILTER perm._to == @record_from
+                REMOVE perm IN permission
                 RETURN OLD
             """
 
@@ -2601,9 +2666,9 @@ class BaseArangoService:
                 "bind_vars": {"record_from": f"records/{record_id}"},
                 "description": "IS_OF_TYPE edges"
             },
-            CollectionNames.PERMISSIONS.value: {
-                "filter": "edge._from == @record_from",
-                "bind_vars": {"record_from": f"records/{record_id}"},
+            CollectionNames.PERMISSION.value: {
+                "filter": "edge._to == @record_to",
+                "bind_vars": {"record_to": f"records/{record_id}"},
                 "description": "Permission edges"
             },
             CollectionNames.BELONGS_TO.value: {
@@ -2793,9 +2858,9 @@ class BaseArangoService:
                 },
                 "description": "Gmail record relations (SIBLING/ATTACHMENT)"
             },
-            CollectionNames.PERMISSIONS.value: {
-                "filter": "edge._from == @record_from",
-                "bind_vars": {"record_from": f"records/{record_id}"},
+            CollectionNames.PERMISSION.value: {
+                "filter": "edge._to == @record_to",
+                "bind_vars": {"record_to": f"records/{record_id}"},
                 "description": "Permission edges"
             },
             CollectionNames.BELONGS_TO.value: {
@@ -2904,7 +2969,7 @@ class BaseArangoService:
             outlook_edge_collections = [
                 CollectionNames.IS_OF_TYPE.value,
                 CollectionNames.RECORD_RELATIONS.value,
-                CollectionNames.PERMISSIONS.value,
+                CollectionNames.PERMISSION.value,
                 CollectionNames.BELONGS_TO.value,
             ]
             outlook_doc_collections = [
@@ -2983,9 +3048,9 @@ class BaseArangoService:
                     "record_to": f"records/{record_id}",
                 },
             },
-            CollectionNames.PERMISSIONS.value: {
-                "filter": "edge._from == @record_from",
-                "bind_vars": {"record_from": f"records/{record_id}"},
+            CollectionNames.PERMISSION.value: {
+                "filter": "edge._to == @record_to",
+                "bind_vars": {"record_to": f"records/{record_id}"},
             },
             CollectionNames.BELONGS_TO.value: {
                 "filter": "edge._from == @record_from",
@@ -3024,17 +3089,17 @@ class BaseArangoService:
         """Check user's permission role on a record"""
         try:
             query = f"""
-            FOR edge IN {CollectionNames.PERMISSIONS.value}
-                FILTER edge._from == @record_from
-                    AND edge._to == @user_to
+            FOR edge IN {CollectionNames.PERMISSION.value}
+                FILTER edge._to == @record_to
+                    AND edge._from == @user_from
                     AND edge.type == 'USER'
                 LIMIT 1
                 RETURN edge.role
             """
 
             cursor = self.db.aql.execute(query, bind_vars={
-                "record_from": f"records/{record_id}",
-                "user_to": f"users/{user_key}"
+                "record_to": f"records/{record_id}",
+                "user_from": f"users/{user_key}"
             })
 
             return next(cursor, None)
@@ -3105,7 +3170,7 @@ class BaseArangoService:
             // Check if user is KB owner (for KB connectors)
             LET kb_owner_count = @origin == 'UPLOAD' ? (
                 LENGTH(
-                    FOR perm IN @@permissions_to_kb
+                    FOR perm IN @@permission
                         FILTER perm._from == user._id
                         FILTER perm.role == 'OWNER'
                         LET kb = DOCUMENT(perm._to)
@@ -3116,10 +3181,10 @@ class BaseArangoService:
             // Check connector-specific permissions (simplified count)
             LET connector_access_count = @origin == 'CONNECTOR' ? (
                 LENGTH(
-                    FOR perm IN @@permissions
-                        FILTER perm._to == user._id
+                    FOR perm IN @@permission
+                        FILTER perm._from == user._id
                         FILTER perm.role IN ['OWNER', 'WRITER']
-                        LET record = DOCUMENT(perm._from)
+                        LET record = DOCUMENT(perm._to)
                         FILTER record != null
                         FILTER record.orgId == @org_id
                         FILTER record.connectorName == @connector
@@ -3181,8 +3246,7 @@ class BaseArangoService:
                 "connector": connector,
                 "origin": origin,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
-                "@permissions": CollectionNames.PERMISSIONS.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@records": CollectionNames.RECORDS.value,
             })
 
@@ -3224,15 +3288,9 @@ class BaseArangoService:
             LET record_from = CONCAT('records/', @record_id)
 
             // 1. Check direct user permissions on the record
-            LET direct_permission_old_permissions = FIRST(
-                FOR perm IN @@permissions
-                    FILTER perm._from == record_from
-                    FILTER perm._to == user_from
-                    FILTER perm.type == "USER"
-                    RETURN perm.role
-            )
 
-            LET direct_permission_new_permission = FIRST(
+
+            LET direct_permission = FIRST(
                 FOR perm IN @@permission
                     FILTER perm._from == user_from
                     FILTER perm._to == record_from
@@ -3240,23 +3298,10 @@ class BaseArangoService:
                     RETURN perm.role
             )
 
-            LET direct_permission = direct_permission_old_permissions ? direct_permission_old_permissions : direct_permission_new_permission
 
             // 2. Check group permissions
-            LET group_permission_old_permission = FIRST(
-                FOR belongs_edge IN @@belongs_to
-                    FILTER belongs_edge._from == user_from
-                    FILTER belongs_edge.entityType == "GROUP"
-                    LET group = DOCUMENT(belongs_edge._to)
-                    FILTER group != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == group._id
-                        FILTER perm.type == "GROUP"
-                        RETURN perm.role
-            )
 
-            LET group_permission_new_permission = FIRST(
+            LET group_permission = FIRST(
                 FOR permission IN @@permission
                     FILTER permission._from == user_from
                     FILTER permission.type == "USER"
@@ -3269,7 +3314,6 @@ class BaseArangoService:
                         RETURN perm.role
             )
 
-            LET group_permission = group_permission_old_permission ? group_permission_old_permission : group_permission_new_permission
 
             // 2.5 Check inherited group->record_group permissions
             LET record_group_permission = FIRST(
@@ -3326,21 +3370,25 @@ class BaseArangoService:
                         RETURN finalEdge.role
             )
 
-            // 3. Check domain/organization permissions
-            LET domain_permission_old_permission = FIRST(
-                FOR belongs_edge IN @@belongs_to
-                    FILTER belongs_edge._from == user_from
-                    FILTER belongs_edge.entityType == "ORGANIZATION"
-                    LET org = DOCUMENT(belongs_edge._to)
-                    FILTER org != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == org._id
-                        FILTER perm.type IN ["DOMAIN", "ORG"]
-                        RETURN perm.role
+            LET direct_user_record_group_permission = FIRST(
+                // Direct user -> record_group (with nested record groups support)
+                FOR recordGroup, userToRgEdge IN 1..1 ANY user_from @@permission
+                    FILTER userToRgEdge.type == "USER"
+                    FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                    // Record group -> nested record groups (0 to 5 levels) -> record
+                    FOR record, edge, path IN 0..5 INBOUND recordGroup._id @@inherit_permissions
+                        // Only process if final vertex is the target record
+                        FILTER record._id == record_from
+                        FILTER IS_SAME_COLLECTION("records", record)
+
+                        LET finalEdge = LENGTH(path.edges) > 0 ? path.edges[LENGTH(path.edges) - 1] : edge
+                        RETURN finalEdge.role
             )
 
-            LET domain_permission_new_permission = FIRST(
+            // 3. Check domain/organization permissions
+
+            LET domain_permission = FIRST(
                 FOR belongs_edge IN @@belongs_to
                     FILTER belongs_edge._from == user_from
                     FILTER belongs_edge.entityType == "ORGANIZATION"
@@ -3352,8 +3400,6 @@ class BaseArangoService:
                         FILTER perm.type IN ["DOMAIN", "ORG"]
                         RETURN perm.role
             )
-
-            LET domain_permission = domain_permission_old_permission ? domain_permission_old_permission : domain_permission_new_permission
 
             // 4. Check 'anyone' permissions (public sharing)
             LET user_org_id = FIRST(
@@ -3372,6 +3418,28 @@ class BaseArangoService:
                     FILTER anyone_perm.active == true
                     RETURN anyone_perm.role
             ) : null
+
+            LET anyone_record_group_permission = FIRST(
+                // User -> Organization -> RecordGroup -> Record (with nested record groups support)
+                FOR belongs_edge IN @@belongs_to
+                    FILTER belongs_edge._from == user_from
+                    FILTER belongs_edge.entityType == "ORGANIZATION"
+                    LET org = DOCUMENT(belongs_edge._to)
+                    FILTER org != null
+
+                    // Org -> record_group permission
+                    FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id @@permission
+                        FILTER orgToRgEdge.type == "ORG"
+                        FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                        // Record group -> nested record groups (0 to 2 levels) -> record
+                        FOR record, edge, path IN 0..2 INBOUND recordGroup._id @@inherit_permissions
+                            FILTER record._id == record_from
+                            FILTER IS_SAME_COLLECTION("records", record)
+
+                            LET finalEdge = LENGTH(path.edges) > 0 ? path.edges[LENGTH(path.edges) - 1] : edge
+                            RETURN finalEdge.role
+            )
 
             // 5. Check Drive-level access (if enabled)
             LET drive_access = @check_drive_inheritance ? FIRST(
@@ -3404,15 +3472,13 @@ class BaseArangoService:
             // Return the highest permission level found (in order of precedence)
             LET final_permission = (
                 direct_permission ? direct_permission :
-                direct_permission_new_permission ? direct_permission_new_permission : // FIXED
                 group_permission ? group_permission :
-                group_permission_new_permission ? group_permission_new_permission : // FIXED
                 record_group_permission ? record_group_permission :
                 direct_user_record_group_permission ? direct_user_record_group_permission :
                 nested_record_group_permission ? nested_record_group_permission :
                 domain_permission ? domain_permission :
-                domain_permission_new_permission ? domain_permission_new_permission : // FIXED
                 anyone_permission ? anyone_permission :
+                anyone_record_group_permission ? anyone_record_group_permission :
                 drive_access ? drive_access :
                 null
             )
@@ -3421,15 +3487,13 @@ class BaseArangoService:
                 permission: final_permission,
                 source: (
                     direct_permission ? "DIRECT" :
-                    direct_permission_new_permission ? "DIRECT" : // FIXED
                     group_permission ? "GROUP" :
-                    group_permission_new_permission ? "GROUP" : // FIXED
                     record_group_permission ? "RECORD_GROUP" :
                     direct_user_record_group_permission ? "DIRECT_USER_RECORD_GROUP" :
                     nested_record_group_permission ? "NESTED_RECORD_GROUP" :
                     domain_permission ? "DOMAIN" :
-                    domain_permission_new_permission ? "DOMAIN" : // FIXED
                     anyone_permission ? "ANYONE" :
+                    anyone_record_group_permission ? "ANYONE_RECORD_GROUP" :
                     drive_access ? "DRIVE_ACCESS" :
                     "NONE"
                 )
@@ -3440,7 +3504,6 @@ class BaseArangoService:
                 "record_id": record_id,
                 "user_key": user_key,
                 "check_drive_inheritance": check_drive_inheritance,
-                "@permissions": CollectionNames.PERMISSIONS.value,
                 "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@inherit_permissions": CollectionNames.INHERIT_PERMISSIONS.value,
@@ -3482,9 +3545,9 @@ class BaseArangoService:
             LET record_from = CONCAT('records/', @record_id)
             // 1. Check direct user permissions on the record
             LET direct_permission = FIRST(
-                FOR perm IN @@permissions
-                    FILTER perm._from == record_from
-                    FILTER perm._to == user_from
+                FOR perm IN @@permission
+                    FILTER perm._to == record_from
+                    FILTER perm._from == user_from
                     FILTER perm.type == "USER"
                     RETURN perm.role
             )
@@ -3495,9 +3558,9 @@ class BaseArangoService:
                     FILTER belongs_edge.entityType == "GROUP"
                     LET group = DOCUMENT(belongs_edge._to)
                     FILTER group != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == group._id
+                    FOR perm IN @@permission
+                        FILTER perm._to == record_from
+                        FILTER perm._from == group._id
                         FILTER perm.type == "GROUP"
                         RETURN perm.role
             )
@@ -3508,9 +3571,9 @@ class BaseArangoService:
                     FILTER belongs_edge.entityType == "ORGANIZATION"
                     LET org = DOCUMENT(belongs_edge._to)
                     FILTER org != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == org._id
+                    FOR perm IN @@permission
+                        FILTER perm._to == record_from
+                        FILTER perm._from == org._id
                         FILTER perm.type IN ["DOMAIN", "ORG"]
                         RETURN perm.role
             )
@@ -3582,7 +3645,7 @@ class BaseArangoService:
             cursor = self.db.aql.execute(drive_permission_query, bind_vars={
                 "record_id": record_id,
                 "user_key": user_key,
-                "@permissions": CollectionNames.PERMISSIONS.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@anyone": CollectionNames.ANYONE.value,
                 "@records": CollectionNames.RECORDS.value,
@@ -3643,9 +3706,9 @@ class BaseArangoService:
             LET email_permission = LENGTH(email_access) > 0 ? FIRST(email_access) : null
             // 2. Check direct user permissions on the record
             LET direct_permission = FIRST(
-                FOR perm IN @@permissions
-                    FILTER perm._from == record_from
-                    FILTER perm._to == user_from
+                FOR perm IN @@permission
+                    FILTER perm._to == record_from
+                    FILTER perm._from == user_from
                     FILTER perm.type == "USER"
                     RETURN perm.role
             )
@@ -3656,9 +3719,9 @@ class BaseArangoService:
                     FILTER belongs_edge.entityType == "GROUP"
                     LET group = DOCUMENT(belongs_edge._to)
                     FILTER group != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == group._id
+                    FOR perm IN @@permission
+                        FILTER perm._to == record_from
+                        FILTER perm._from == group._id
                         FILTER perm.type == "GROUP"
                         RETURN perm.role
             )
@@ -3669,9 +3732,9 @@ class BaseArangoService:
                     FILTER belongs_edge.entityType == "ORGANIZATION"
                     LET org = DOCUMENT(belongs_edge._to)
                     FILTER org != null
-                    FOR perm IN @@permissions
-                        FILTER perm._from == record_from
-                        FILTER perm._to == org._id
+                    FOR perm IN @@permission
+                        FILTER perm._to == record_from
+                        FILTER perm._from == org._id
                         FILTER perm.type IN ["DOMAIN", "ORG"]
                         RETURN perm.role
             )
@@ -3721,7 +3784,7 @@ class BaseArangoService:
                 "user_key": user_key,
                 "@records": CollectionNames.RECORDS.value,
                 "@is_of_type": CollectionNames.IS_OF_TYPE.value,
-                "@permissions": CollectionNames.PERMISSIONS.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to": CollectionNames.BELONGS_TO.value,
                 "@anyone": CollectionNames.ANYONE.value,
             })
@@ -4126,8 +4189,8 @@ class BaseArangoService:
                     FILTER mail._key == record._key
                         AND mail.conversationIndex == @conversation_index
                         AND mail.threadId == @thread_id
-                    FOR edge IN {CollectionNames.PERMISSIONS.value}
-                        FILTER edge._from == record._id
+                    FOR edge IN {CollectionNames.PERMISSION.value}
+                        FILTER edge._to == record._id
                             AND edge.role == 'OWNER'
                             AND edge.type == 'USER'
                         LET user_key = SPLIT(edge._to, '/')[1]
@@ -4300,6 +4363,162 @@ class BaseArangoService:
                 "❌ Failed to retrieve internal key for external file ID %s %s: %s", connector_name, external_id, str(e)
             )
             return None
+
+    # TODO: expand this method for specific users list
+    async def get_records_by_status(
+        self,
+        org_id: str,
+        connector_name: Connectors,
+        status_filters: List[str],
+        limit: Optional[int] = None,
+        offset: int = 0,
+        transaction: Optional[TransactionDatabase] = None
+    ) -> List[Record]:
+        """
+        Get records by their indexing status with pagination support.
+        Returns properly typed Record instances (FileRecord, MailRecord, etc.)
+
+        Args:
+            org_id (str): Organization ID
+            connector_name (Connectors): Connector name
+            status_filters (List[str]): List of status values to filter (e.g., ["FAILED", "COMPLETED"])
+            limit (Optional[int]): Maximum number of records to return (for pagination)
+            offset (int): Number of records to skip (for pagination)
+            transaction (Optional[TransactionDatabase]): Optional database transaction
+
+        Returns:
+            List[Record]: List of properly typed Record instances
+        """
+        try:
+            self.logger.info(f"Retrieving records for connector {connector_name.value} with status filters: {status_filters}, limit: {limit}, offset: {offset}")
+
+            limit_clause = "LIMIT @offset, @limit" if limit else ""
+
+            # Group record types by their collection
+            collection_to_types = defaultdict(list)
+            for record_type, collection in RECORD_TYPE_COLLECTION_MAPPING.items():
+                collection_to_types[collection].append(record_type)
+
+            # Build dynamic typeDoc conditions based on mapping
+            type_doc_conditions = []
+            bind_vars = {
+                "org_id": org_id,
+                "connector_name": connector_name.value,
+                "status_filters": status_filters,
+            }
+
+            # Generate conditions for each collection
+            for collection, record_types in collection_to_types.items():
+                # Create condition for checking if record type matches any in this group
+                if len(record_types) == 1:
+                    type_check = f"record.recordType == @type_{record_types[0].lower()}"
+                    bind_vars[f"type_{record_types[0].lower()}"] = record_types[0]
+                else:
+                    # Multiple types map to same collection (e.g., WEBPAGE, CONFLUENCE_PAGE, CONFLUENCE_BLOGPOST)
+                    type_checks = []
+                    for rt in record_types:
+                        type_checks.append(f"record.recordType == @type_{rt.lower()}")
+                        bind_vars[f"type_{rt.lower()}"] = rt
+                    type_check = " || ".join(type_checks)
+
+                # Add condition for this collection
+                condition = f"""({type_check}) ? (
+                        FOR edge IN {CollectionNames.IS_OF_TYPE.value}
+                            FILTER edge._from == record._id
+                            LET doc = DOCUMENT(edge._to)
+                            FILTER doc != null
+                            RETURN doc
+                    )[0]"""
+                type_doc_conditions.append(condition)
+
+            # Build the complete typeDoc expression
+            type_doc_expr = " :\n                    ".join(type_doc_conditions)
+            if type_doc_expr:
+                type_doc_expr += " :\n                    null"
+            else:
+                type_doc_expr = "null"
+
+            query = f"""
+            FOR record IN {CollectionNames.RECORDS.value}
+                FILTER record.orgId == @org_id
+                    AND record.connectorName == @connector_name
+                    AND record.indexingStatus IN @status_filters
+                SORT record._key
+                {limit_clause}
+
+                LET typeDoc = (
+                    {type_doc_expr}
+                )
+
+                RETURN {{
+                    record: record,
+                    typeDoc: typeDoc
+                }}
+            """
+
+            if limit:
+                bind_vars["limit"] = limit
+                bind_vars["offset"] = offset
+
+            db = transaction if transaction else self.db
+            cursor = db.aql.execute(query, bind_vars=bind_vars)
+
+            # Convert raw DB results to properly typed Record instances
+            typed_records = []
+            for result in cursor:
+                record = self._create_typed_record_from_arango(
+                    result["record"],
+                    result.get("typeDoc")
+                )
+                typed_records.append(record)
+
+            self.logger.info(f"✅ Successfully retrieved {len(typed_records)} typed records for connector {connector_name.value}")
+            return typed_records
+
+        except Exception as e:
+            self.logger.error(f"❌ Failed to retrieve records by status for connector {connector_name.value}: {str(e)}")
+            return []
+
+    def _create_typed_record_from_arango(self, record_dict: Dict, type_doc: Optional[Dict]) -> Record:
+        """
+        Factory method to create properly typed Record instances from ArangoDB data.
+        Uses centralized RECORD_TYPE_COLLECTION_MAPPING to determine which types have type collections.
+
+        Args:
+            record_dict: Dictionary from records collection
+            type_doc: Dictionary from type-specific collection (files, mails, etc.) or None
+
+        Returns:
+            Properly typed Record instance (FileRecord, MailRecord, etc.)
+        """
+        record_type = record_dict.get("recordType")
+
+        # Check if this record type has a type collection
+        if not type_doc or record_type not in RECORD_TYPE_COLLECTION_MAPPING:
+            # No type collection or no type doc - use base Record
+            return Record.from_arango_base_record(record_dict)
+
+        try:
+            # Determine which collection this type uses
+            collection = RECORD_TYPE_COLLECTION_MAPPING[record_type]
+
+            # Map collections to their corresponding Record classes
+            if collection == CollectionNames.FILES.value:
+                return FileRecord.from_arango_record(type_doc, record_dict)
+            elif collection == CollectionNames.MAILS.value:
+                return MailRecord.from_arango_record(type_doc, record_dict)
+            elif collection == CollectionNames.WEBPAGES.value:
+                return WebpageRecord.from_arango_record(type_doc, record_dict)
+            elif collection == CollectionNames.TICKETS.value:
+                return TicketRecord.from_arango_record(type_doc, record_dict)
+            elif collection == CollectionNames.COMMENTS.value:
+                return CommentRecord.from_arango_record(type_doc, record_dict)
+            else:
+                # Unknown collection - fallback to base Record
+                return Record.from_arango_base_record(record_dict)
+        except Exception as e:
+            self.logger.warning(f"Failed to create typed record for {record_type}, falling back to base Record: {str(e)}")
+            return Record.from_arango_base_record(record_dict)
 
     async def get_record_by_id(
         self, id: str, transaction: Optional[TransactionDatabase] = None
@@ -4793,7 +5012,8 @@ class BaseArangoService:
                     FILTER belongs_to_org == true
 
                     RETURN MERGE(user, {
-                        sourceUserId: edge.sourceUserId
+                        sourceUserId: edge.sourceUserId,
+                        appName: UPPER(app.name)
                     })
             """
 
@@ -4805,8 +5025,7 @@ class BaseArangoService:
                 "@belongs_to": CollectionNames.BELONGS_TO.value
             })
 
-            user_data_list  = list(cursor)
-            users = [AppUser.from_arango_user(user_data) for user_data in user_data_list]
+            users  = list(cursor)
             self.logger.info(f"✅ Successfully fetched {len(users)} users for {app_name.value}")
             return users
 
@@ -5003,7 +5222,7 @@ class BaseArangoService:
         Delete a list of nodes by key
         """
         try:
-            self.logger.info("🚀 Deleting nodes by keys: %s", keys)
+            self.logger.info(f"🚀 Deleting nodes by keys: {keys} from collection: {collection}")
             query = """
             FOR node IN @@collection
                 FILTER node._key IN @keys
@@ -5995,8 +6214,8 @@ class BaseArangoService:
         try:
             self.logger.info("🚀 Getting file permissions for %s", file_key)
             query = """
-            FOR perm IN @@permissions
-                FILTER perm._from == @file_key
+            FOR perm IN @@permission
+                FILTER perm._to == @file_key
                 RETURN perm
             """
 
@@ -6005,7 +6224,7 @@ class BaseArangoService:
                 query,
                 bind_vars={
                     "file_key": f"{CollectionNames.RECORDS.value}/{file_key}",
-                    "@permissions": CollectionNames.PERMISSIONS.value,
+                    "@permission": CollectionNames.PERMISSION.value,
                 },
             )
             self.logger.info("✅ File permissions retrieved successfully")
@@ -6034,20 +6253,20 @@ class BaseArangoService:
 
             # Use transaction if provided, otherwise use self.db
             db = transaction if transaction else self.db
-            permissions_collection = db.collection(CollectionNames.PERMISSIONS.value)
 
             timestamp = get_epoch_timestamp_in_ms()
 
-            # Determine the correct collection for the _to field
+            # Determine the correct collection for the _from field (User/Group/Org)
             entityType = permission_data.get("type", "user").lower()
             if entityType == "domain":
-                to_collection = CollectionNames.ORGS.value
+                from_collection = CollectionNames.ORGS.value
             else:
-                to_collection = f"{entityType}s"
+                from_collection = f"{entityType}s"
 
             existing_permissions = await self.get_file_permissions(file_key, transaction)
             if existing_permissions:
-                existing_perm = next((p for p in existing_permissions if p.get("_to") == f"{to_collection}/{entity_key}"), None)
+                # With reversed direction: User/Group/Org → Record, so check _from
+                existing_perm = next((p for p in existing_permissions if p.get("_from") == f"{from_collection}/{entity_key}"), None)
                 if existing_perm:
                     edge_key = existing_perm.get("_key")
                 else:
@@ -6057,10 +6276,11 @@ class BaseArangoService:
 
             self.logger.info("Permission data is %s", permission_data)
             # Create edge document with proper formatting
+            # Direction: User/Group/Org → Record (reversed from old direction)
             edge = {
                 "_key": edge_key,
-                "_from": f"{CollectionNames.RECORDS.value}/{file_key}",
-                "_to": f"{to_collection}/{entity_key}",
+                "_from": f"{from_collection}/{entity_key}",
+                "_to": f"{CollectionNames.RECORDS.value}/{file_key}",
                 "type": permission_data.get("type").upper(),
                 "role": permission_data.get("role", "READER").upper(),
                 "externalPermissionId": permission_data.get("id"),
@@ -6072,18 +6292,41 @@ class BaseArangoService:
             # Log the edge document for debugging
             self.logger.debug("Creating edge document: %s", edge)
 
-            # Check if permission edge exists
+            # Check if permission edge exists using AQL (works with transactions)
             try:
-                existing_edge = permissions_collection.get(edge_key)
+                # Use AQL query to get existing edge instead of direct collection access
+                get_edge_query = """
+                    FOR edge IN @@permission
+                        FILTER edge._key == @edge_key
+                        RETURN edge
+                """
+                cursor = db.aql.execute(
+                    get_edge_query,
+                    bind_vars={
+                        "@permission": CollectionNames.PERMISSION.value,
+                        "edge_key": edge_key,
+                    },
+                )
+                existing_edge_list = list(cursor)
+                existing_edge = existing_edge_list[0] if existing_edge_list else None
 
                 if not existing_edge:
-                    # New permission
-                    permissions_collection.insert(edge)
+                    # New permission - use batch_upsert_nodes which handles transactions properly
+                    self.logger.info("✅ Creating new permission edge: %s", edge_key)
+                    await self.batch_upsert_nodes(
+                        [edge],
+                        collection=CollectionNames.PERMISSION.value,
+                        transaction=transaction
+                    )
                     self.logger.info("✅ Created new permission edge: %s", edge_key)
                 elif self._permission_needs_update(existing_edge, permission_data):
                     # Update existing permission
                     self.logger.info("✅ Updating permission edge: %s", edge_key)
-                    await self.batch_upsert_nodes([edge], collection=CollectionNames.PERMISSIONS.value)
+                    await self.batch_upsert_nodes(
+                        [edge],
+                        collection=CollectionNames.PERMISSION.value,
+                        transaction=transaction
+                    )
                     self.logger.info("✅ Updated permission edge: %s", edge_key)
                 else:
                     self.logger.info(
@@ -6181,9 +6424,9 @@ class BaseArangoService:
 
                 for perm in permissions_to_remove:
                     query = """
-                    FOR p IN permissions
+                    FOR p IN permission
                         FILTER p._key == @perm_key
-                        REMOVE p IN permissions
+                        REMOVE p IN permission
                     """
                     db.aql.execute(query, bind_vars={"perm_key": perm["_key"]})
 
@@ -6219,7 +6462,7 @@ class BaseArangoService:
                             existing_perm = None
 
                         if existing_perm:
-                            entity_key = existing_perm.get("_to")
+                            entity_key = existing_perm.get("_from")
                             entity_key = entity_key.split("/")[1]
                             # Update existing permission
                             await self.store_permission(
@@ -6316,12 +6559,12 @@ class BaseArangoService:
             self.logger.info("🚀 Cleaning up old permissions for file %s", file_id)
 
             query = """
-            FOR edge IN permissions
-                FILTER edge._from == @file_id
-                AND NOT ([PARSE_IDENTIFIER(edge._to).key, PARSE_IDENTIFIER(edge._to).collection] IN @current_entities)
+            FOR edge IN permission
+                FILTER edge._to == @file_id
+                AND NOT ([PARSE_IDENTIFIER(edge._from).key, PARSE_IDENTIFIER(edge._from).collection] IN @current_entities)
                 UPDATE edge WITH {
                     hasAccess: false,
-                } IN permissions
+                } IN permission
             """
 
             self.db.aql.execute(
@@ -6366,11 +6609,11 @@ class BaseArangoService:
                 "🚀 Getting historical access information for file %s", file_id
             )
             query = """
-            FOR perm IN permissions
-                FILTER perm._from == @file_id
+            FOR perm IN permission
+                FILTER perm._to == @file_id
                 SORT perm.lastUpdatedTimestampAtSource DESC
                 RETURN {
-                    entity: DOCUMENT(perm._to),
+                    entity: DOCUMENT(perm._from),
                     permission: perm
                 }
             """
@@ -7506,12 +7749,14 @@ class BaseArangoService:
         for file_data in files:
             _normalized = self._normalize_name(file_data["fileRecord"].get("name"))
             file_name = _normalized if _normalized is not None else ""
+            mime_type = file_data["fileRecord"].get("mimeType")
 
             # Check for name conflicts using the updated validation
             conflict_result = await self._check_name_conflict_in_parent(
                 kb_id=kb_id,
                 parent_folder_id=parent_folder_id,
                 item_name=file_name,
+                mime_type=mime_type,
                 transaction=transaction
             )
 
@@ -7831,7 +8076,7 @@ class BaseArangoService:
             # user KB permission edge
             await self.batch_create_edges(
                 [permission_edge],
-                CollectionNames.PERMISSIONS_TO_KB.value,transaction=transaction
+                CollectionNames.PERMISSION.value,transaction=transaction
             )
 
             self.logger.info(f"✅ Knowledge base created successfully: {kb_data['_key']}")
@@ -7868,7 +8113,7 @@ class BaseArangoService:
                 bind_vars={
                     "kb_id": kb_id,
                     "user_id": user_id,
-                    "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                    "@permissions_collection": CollectionNames.PERMISSION.value,
                 },
             )
 
@@ -7895,7 +8140,7 @@ class BaseArangoService:
                     debug_query,
                     bind_vars={
                         "kb_id": kb_id,
-                        "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                        "@permissions_collection": CollectionNames.PERMISSION.value,
                     },
                 )
                 existing_perms = list(debug_cursor)
@@ -7964,7 +8209,7 @@ class BaseArangoService:
                 "user_from": f"users/{user_id}",
                 "@recordGroups_collection": CollectionNames.RECORD_GROUPS.value,
                 "@kb_to_folder_edges": CollectionNames.BELONGS_TO.value,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             })
             result = next(cursor, None)
             if result:
@@ -8123,7 +8368,7 @@ class BaseArangoService:
                 "kb_connector": Connectors.KNOWLEDGE_BASE.value,
                 "skip": skip,
                 "limit": limit,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
                 "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
             }
 
@@ -8141,7 +8386,7 @@ class BaseArangoService:
                 "count_org_id": org_id,
                 "count_kb_type": Connectors.KNOWLEDGE_BASE.value,
                 "count_kb_connector": Connectors.KNOWLEDGE_BASE.value,
-                "@count_permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@count_permissions_collection": CollectionNames.PERMISSION.value,
             }
 
             # Add search term if provided for count query
@@ -8158,7 +8403,7 @@ class BaseArangoService:
                 "filters_org_id": org_id,
                 "filters_kb_type": Connectors.KNOWLEDGE_BASE.value,
                 "filters_kb_connector": Connectors.KNOWLEDGE_BASE.value,
-                "@filters_permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@filters_permissions_collection": CollectionNames.PERMISSION.value,
             }
 
             # Execute queries
@@ -8717,7 +8962,7 @@ class BaseArangoService:
                 LET parent_folder = folder_edge ? DOCUMENT(folder_edge._from) : null
                 // Check user permissions on the KB
                 LET user_permission = kb ? FIRST(
-                    FOR perm IN @@permissions_to_kb
+                    FOR perm IN @@permission
                         FILTER perm._from == CONCAT('users/', @user_key)
                         FILTER perm._to == kb._id
                         FILTER perm.type == "USER"
@@ -8750,7 +8995,7 @@ class BaseArangoService:
                     "user_key": user_key,
                     "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
                     "@record_relations": CollectionNames.RECORD_RELATIONS.value,
-                    "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                    "@permission": CollectionNames.PERMISSION.value,
                     "@is_of_type": CollectionNames.IS_OF_TYPE.value,
                 })
 
@@ -9317,7 +9562,7 @@ class BaseArangoService:
             cursor = db.aql.execute(query, bind_vars={
                 "user_ids": user_ids,
                 "kb_id": kb_id,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             })
 
             result = {}
@@ -9437,7 +9682,7 @@ class BaseArangoService:
                 "role": role,
                 "@users_collection": CollectionNames.USERS.value,
                 "@teams_collection": CollectionNames.TEAMS.value,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
                 "@recordGroups_collection": CollectionNames.RECORD_GROUPS.value,
             })
 
@@ -9489,7 +9734,7 @@ class BaseArangoService:
                 if insert_docs:
                     operations.append((
                         "FOR doc IN @docs INSERT doc INTO @@permissions_collection",
-                        {"docs": insert_docs, "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value}
+                        {"docs": insert_docs, "@permissions_collection": CollectionNames.PERMISSION.value}
                     ))
 
             # Execute all operations in sequence (could be made parallel if needed)
@@ -9556,7 +9801,7 @@ class BaseArangoService:
                 "requester_id": requester_id,
                 "new_role": new_role,
                 "timestamp": get_epoch_timestamp_in_ms(),
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             }
 
             # Build conditions for targets
@@ -9694,7 +9939,7 @@ class BaseArangoService:
             conditions = []
             bind_vars = {
                 "kb_id": kb_id,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             }
 
             if user_ids:
@@ -9757,7 +10002,7 @@ class BaseArangoService:
 
             cursor = db.aql.execute(query, bind_vars={
                 "kb_id": kb_id,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             })
 
             count = next(cursor, 0)
@@ -9783,7 +10028,7 @@ class BaseArangoService:
             conditions = []
             bind_vars = {
                 "kb_id": kb_id,
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             }
 
             if user_ids:
@@ -9855,7 +10100,7 @@ class BaseArangoService:
 
             cursor = db.aql.execute(query, bind_vars={
                 "kb_to": f"recordGroups/{kb_id}",
-                "@permissions_collection": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permissions_collection": CollectionNames.PERMISSION.value,
             })
 
             return list(cursor)
@@ -9940,7 +10185,7 @@ class BaseArangoService:
             // KB Records Section - Get records DIRECTLY from belongs_to_kb edges (not through folders)
             LET kbRecords = {
                 f'''(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN @kb_permissions
@@ -9968,7 +10213,7 @@ class BaseArangoService:
             // Connector Records Section - Direct connector permissions
             LET connectorRecords = {
                 f'''(
-                    FOR permissionEdge IN @@permissions_to_kb
+                    FOR permissionEdge IN @@permission
                         FILTER permissionEdge._from == user_from
                         FILTER permissionEdge.type == "USER"
                         {permission_filter}
@@ -10035,7 +10280,7 @@ class BaseArangoService:
             LET org_id = @org_id
             LET kbCount = {
                 f'''LENGTH(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN @kb_permissions
@@ -10055,7 +10300,7 @@ class BaseArangoService:
             }
             LET connectorCount = {
                 f'''LENGTH(
-                    FOR permissionEdge IN @@permissions_to_kb
+                    FOR permissionEdge IN @@permission
                         FILTER permissionEdge._from == user_from
                         FILTER permissionEdge.type == "USER"
                         {permission_filter}
@@ -10077,7 +10322,7 @@ class BaseArangoService:
             LET org_id = @org_id
             LET allKbRecords = {
                 '''(
-                    FOR kbEdge IN @@permissions_to_kb
+                    FOR kbEdge IN @@permission
                         FILTER kbEdge._from == user_from
                         FILTER kbEdge.type == "USER"
                         FILTER kbEdge.role IN ["OWNER", "READER", "FILEORGANIZER", "WRITER", "COMMENTER", "ORGANIZER"]
@@ -10099,7 +10344,7 @@ class BaseArangoService:
             }
             LET allConnectorRecords = {
                 '''(
-                    FOR permissionEdge IN @@permissions_to_kb
+                    FOR permissionEdge IN @@permission
                         FILTER permissionEdge._from == user_from
                         FILTER permissionEdge.type == "USER"
                         LET record = DOCUMENT(permissionEdge._to)
@@ -10162,7 +10407,7 @@ class BaseArangoService:
                 "skip": skip,
                 "limit": limit,
                 "kb_permissions": final_kb_roles,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
                 "@is_of_type": CollectionNames.IS_OF_TYPE.value,
                 **filter_bind_vars,
@@ -10172,7 +10417,7 @@ class BaseArangoService:
                 "user_from": f"users/{user_id}",
                 "org_id": org_id,
                 "kb_permissions": final_kb_roles,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
                 **filter_bind_vars,
             }
@@ -10180,7 +10425,7 @@ class BaseArangoService:
             filters_bind_vars = {
                 "user_from": f"users/{user_id}",
                 "org_id": org_id,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
                 "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
             }
 
@@ -10240,7 +10485,7 @@ class BaseArangoService:
 
             # Check user permissions first
             perm_query = """
-            FOR perm IN @@permissions_to_kb
+            FOR perm IN @@permission
                 FILTER perm._from == @user_from
                 FILTER perm._to == @kb_to
                 FILTER perm.type == "USER"
@@ -10251,7 +10496,7 @@ class BaseArangoService:
             perm_cursor = db.aql.execute(perm_query, bind_vars={
                 "user_from": f"users/{user_id}",
                 "kb_to": f"recordGroups/{kb_id}",
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
             })
 
             user_permission = next(perm_cursor, None)
@@ -11034,7 +11279,7 @@ class BaseArangoService:
                             CollectionNames.RECORD_RELATIONS.value,
                             CollectionNames.BELONGS_TO.value,
                             CollectionNames.IS_OF_TYPE.value,
-                            CollectionNames.PERMISSIONS_TO_KB.value,
+                            CollectionNames.PERMISSION.value,
                         ]
                     )
                     self.logger.info(f"🔄 Transaction created for complete KB {kb_id} deletion")
@@ -11115,12 +11360,12 @@ class BaseArangoService:
                 all_record_keys = [rd["record"]["_key"] for rd in records_with_details]
                 edges_cleanup_query = """
                 LET btk_keys_to_delete = (FOR e IN @@belongs_to_kb FILTER e._to == CONCAT('recordGroups/', @kb_id) RETURN e._key)
-                LET perm_keys_to_delete = (FOR e IN @@permissions_to_kb FILTER e._to == CONCAT('recordGroups/', @kb_id) RETURN e._key)
+                LET perm_keys_to_delete = (FOR e IN @@permission FILTER e._to == CONCAT('recordGroups/', @kb_id) RETURN e._key)
                 LET iot_keys_to_delete = (FOR rk IN @all_records FOR e IN @@is_of_type FILTER e._from == CONCAT('records/', rk) RETURN e._key)
                 LET all_related_doc_ids = APPEND((FOR f IN @all_folders RETURN CONCAT('files/', f)), (FOR r IN @all_records RETURN CONCAT('records/', r)))
                 LET relation_keys_to_delete = (FOR e IN @@record_relations FILTER e._from IN all_related_doc_ids OR e._to IN all_related_doc_ids COLLECT k = e._key RETURN k)
                 FOR btk_key IN btk_keys_to_delete REMOVE btk_key IN @@belongs_to_kb OPTIONS { ignoreErrors: true }
-                FOR perm_key IN perm_keys_to_delete REMOVE perm_key IN @@permissions_to_kb OPTIONS { ignoreErrors: true }
+                FOR perm_key IN perm_keys_to_delete REMOVE perm_key IN @@permission OPTIONS { ignoreErrors: true }
                 FOR iot_key IN iot_keys_to_delete REMOVE iot_key IN @@is_of_type OPTIONS { ignoreErrors: true }
                 FOR relation_key IN relation_keys_to_delete REMOVE relation_key IN @@record_relations OPTIONS { ignoreErrors: true }
                 """
@@ -11129,7 +11374,7 @@ class BaseArangoService:
                     "all_folders": inventory["folders"],
                     "all_records": all_record_keys,
                     "@belongs_to_kb": CollectionNames.BELONGS_TO.value,
-                    "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                    "@permission": CollectionNames.PERMISSION.value,
                     "@is_of_type": CollectionNames.IS_OF_TYPE.value,
                     "@record_relations": CollectionNames.RECORD_RELATIONS.value,
                 })
@@ -11522,11 +11767,25 @@ class BaseArangoService:
         kb_id: str,
         parent_folder_id: Optional[str],
         item_name: str,
+        mime_type: Optional[str] = None,
         transaction: Optional[TransactionDatabase] = None
     ) -> Dict:
         """
-        Check if an item (folder or file) name already exists in the target parent location
-        Handles different field names: folders have 'name', records have 'recordName'
+        Check if an item (folder or file) name already exists in the target parent location.
+        Handles different field names: folders have 'name', records have 'recordName'.
+
+        For files: Only conflicts if same name AND same MIME type (allows same name with different MIME types).
+        For folders: Conflicts if same name (folders must have unique names).
+
+        Args:
+            kb_id: Knowledge base ID
+            parent_folder_id: Parent folder ID (None for KB root)
+            item_name: Name of the item to check
+            mime_type: Optional MIME type - if provided, checking a file; if None, checking a folder
+            transaction: Optional transaction database context
+
+        Returns:
+            Dict with 'has_conflict' (bool) and 'conflicts' (list) keys
         """
         try:
             db = transaction if transaction else self.db
@@ -11534,57 +11793,73 @@ class BaseArangoService:
             # Prepare normalized lowercase variants (NFC/NFD) to catch visually-identical names
             name_variants = self._normalized_name_variants_lower(item_name)
 
-            if parent_folder_id:
-                # Check siblings in folder
+            # Determine the parent reference based on whether we're in a folder or KB root
+            parent_from = f"files/{parent_folder_id}" if parent_folder_id else f"recordGroups/{kb_id}"
+
+            bind_vars = {
+                "parent_from": parent_from,
+                "name_variants": name_variants,
+                "@record_relations": CollectionNames.RECORD_RELATIONS.value,
+                "@files_collection": CollectionNames.FILES.value,
+            }
+
+            if mime_type:
+                # Checking a FILE: Only conflict if same name AND same MIME type
+                # Files are stored as records, and we can filter by mimeType on the record before expensive lookups
+                # edge._to for files points to records/{record_id}
                 query = """
                 FOR edge IN @@record_relations
                     FILTER edge._from == @parent_from
                     FILTER edge.relationshipType == "PARENT_CHILD"
+                    // edge._to for files points to records/{record_id}
+                    FILTER edge._to LIKE "records/%"
                     LET child = DOCUMENT(edge._to)
                     FILTER child != null
-                    // Get the appropriate name field based on document type
-                    LET child_name = child.isFile == false ? child.name : child.recordName
-                    LET child_name_l = LOWER(child_name)
+                    // Verify it's a record and filter by mimeType early to reduce lookups
+                    FILTER child.recordName != null
+                    FILTER child.mimeType == @mime_type
+                    LET child_name_l = LOWER(child.recordName)
                     FILTER child_name_l IN @name_variants
+                    // Get the associated file document to confirm it's a file
+                    // Records and files share the same _key
+                    LET file_doc = DOCUMENT(@@files_collection, child._key)
+                    FILTER file_doc != null AND file_doc.isFile == true
                     RETURN {
                         id: child._key,
-                        name: child_name,
-                        type: child.isFile == false ? "folder" : "record",
-                        document_type: child.isFile == false ? "files" : "records"
+                        name: child.recordName,
+                        type: "record",
+                        document_type: "records",
+                        mimeType: file_doc.mimeType
                     }
                 """
-
-                cursor = db.aql.execute(query, bind_vars={
-                    "parent_from": f"files/{parent_folder_id}",
-                    "name_variants": name_variants,
-                    "@record_relations": CollectionNames.RECORD_RELATIONS.value,
-                })
+                bind_vars["mime_type"] = mime_type
             else:
-                # Check siblings in KB root
+                # Checking a FOLDER: Conflict if same name (folders must be unique)
+                # Folders are stored in files collection with isFile=false
+                # edge._to for folders points to files/{folder_id}
                 query = """
                 FOR edge IN @@record_relations
-                    FILTER edge._from == @kb_from
+                    FILTER edge._from == @parent_from
                     FILTER edge.relationshipType == "PARENT_CHILD"
+                    // edge._to for folders points to files/{folder_id}
+                    FILTER edge._to LIKE "files/%"
                     LET child = DOCUMENT(edge._to)
                     FILTER child != null
-                    // Get the appropriate name field based on document type
-                    LET child_name = child.isFile == false ? child.name : child.recordName
+                    // Only check folders (exclude files/records)
+                    FILTER child.isFile == false
+                    LET child_name = child.name
+                    FILTER child_name != null
                     LET child_name_l = LOWER(child_name)
                     FILTER child_name_l IN @name_variants
                     RETURN {
                         id: child._key,
                         name: child_name,
-                        type: child.isFile == false ? "folder" : "record",
-                        document_type: child.isFile == false ? "files" : "records"
+                        type: "folder",
+                        document_type: "files"
                     }
                 """
 
-                cursor = db.aql.execute(query, bind_vars={
-                    "kb_from": f"recordGroups/{kb_id}",
-                    "name_variants": name_variants,
-                    "@record_relations": CollectionNames.RECORD_RELATIONS.value,
-                })
-
+            cursor = db.aql.execute(query, bind_vars=bind_vars)
             conflicts = list(cursor)
 
             return {
@@ -12035,6 +12310,241 @@ class BaseArangoService:
         cursor = self.db.aql.execute(query, bind_vars=bind_vars)
         return list(cursor)
 
+
+    async def update_queued_duplicates_status(
+        self,
+        record_id: str,
+        new_indexing_status: str,
+        virtual_record_id: Optional[str|None] = None,
+        transaction: Optional[TransactionDatabase] = None,
+    ) -> int:
+        """
+        Find all QUEUED duplicate records with the same file md5 hash and update their status.
+
+        Args:
+            record_id (str): The record ID to use as reference for finding duplicates
+            new_indexing_status (str): The new indexing status to set
+            new_extraction_status (Optional[str]): The new extraction status to set (if provided)
+            transaction (Optional[TransactionDatabase]): Optional database transaction
+
+        Returns:
+            int: Number of records updated
+        """
+        try:
+            self.logger.info(
+                f"🔍 Finding QUEUED duplicate records for record {record_id}"
+            )
+
+            # First get the file info for the reference record
+            file_query = f"""
+            FOR file IN {CollectionNames.FILES.value}
+                FILTER file._key == @record_id
+                RETURN file
+            """
+
+            db = transaction if transaction else self.db
+            cursor = db.aql.execute(
+                file_query,
+                bind_vars={"record_id": record_id}
+            )
+
+            file_doc = None
+            try:
+                file_doc = cursor.next()
+            except StopIteration:
+                self.logger.info(f"No file found for record {record_id}, skipping queued duplicate update")
+                return 0
+
+            if not file_doc:
+                self.logger.info(f"No file found for record {record_id}, skipping queued duplicate update")
+                return 0
+
+            md5_checksum = file_doc.get("md5Checksum")
+            size_in_bytes = file_doc.get("sizeInBytes")
+
+            if not md5_checksum or size_in_bytes is None:
+                self.logger.warning(f"File {record_id} missing md5Checksum or sizeInBytes")
+                return 0
+
+            # Find all queued duplicate records
+            query = f"""
+            FOR file IN {CollectionNames.FILES.value}
+                FILTER file.md5Checksum == @md5_checksum
+                AND file.sizeInBytes == @size_in_bytes
+                AND file._key != @record_id
+                LET record = (
+                    FOR r IN {CollectionNames.RECORDS.value}
+                        FILTER r._key == file._key
+                        AND r.indexingStatus == @queued_status
+                        RETURN r
+                )[0]
+                FILTER record != null
+                RETURN record
+            """
+
+            cursor = db.aql.execute(
+                query,
+                bind_vars={
+                    "md5_checksum": md5_checksum,
+                    "size_in_bytes": size_in_bytes,
+                    "record_id": record_id,
+                    "queued_status": "QUEUED"
+                }
+            )
+
+            queued_records = list(cursor)
+
+            if not queued_records:
+                self.logger.info("✅ No QUEUED duplicate records found")
+                return 0
+
+            self.logger.info(
+                f"✅ Found {len(queued_records)} QUEUED duplicate record(s) to update"
+            )
+
+            # Update all queued records
+            current_timestamp = get_epoch_timestamp_in_ms()
+            updated_records = []
+
+            for queued_record in queued_records:
+                doc = dict(queued_record)
+
+                # Map indexing status to extraction status
+                # For EMPTY status, extraction status should also be EMPTY, not FAILED
+                if new_indexing_status == ProgressStatus.COMPLETED.value:
+                    extraction_status = ProgressStatus.COMPLETED.value
+                elif new_indexing_status == ProgressStatus.EMPTY.value:
+                    extraction_status = ProgressStatus.EMPTY.value
+                else:
+                    extraction_status = ProgressStatus.FAILED.value
+
+                update_data = {
+                    "indexingStatus": new_indexing_status,
+                    "lastIndexTimestamp": current_timestamp,
+                    "isDirty": False,
+                    "virtualRecordId": virtual_record_id,
+                    "extractionStatus": extraction_status,
+                }
+
+
+                doc.update(update_data)
+                updated_records.append(doc)
+
+            # Batch update all queued records
+            await self.batch_upsert_nodes(updated_records, CollectionNames.RECORDS.value,transaction)
+
+            self.logger.info(
+                f"✅ Successfully updated {len(queued_records)} QUEUED duplicate record(s) to status {new_indexing_status}"
+            )
+
+            return len(queued_records)
+
+        except Exception as e:
+            self.logger.error(
+                f"❌ Failed to update queued duplicates status: {str(e)}"
+            )
+            return -1
+
+
+    async def find_next_queued_duplicate(
+        self,
+        record_id: str,
+        transaction: Optional[TransactionDatabase] = None,
+    ) -> Optional[dict]:
+        """
+        Find the next QUEUED duplicate record with the same file md5 hash.
+
+        Args:
+            record_id (str): The record ID to use as reference for finding duplicates
+            transaction (Optional[TransactionDatabase]): Optional database transaction
+
+        Returns:
+            Optional[dict]: The next queued record if found, None otherwise
+        """
+        try:
+            self.logger.info(
+                f"🔍 Finding next QUEUED duplicate record for record {record_id}"
+            )
+
+            # First get the file info for the reference record
+            file_query = f"""
+            FOR file IN {CollectionNames.FILES.value}
+                FILTER file._key == @record_id
+                RETURN file
+            """
+
+            db = transaction if transaction else self.db
+            cursor = db.aql.execute(
+                file_query,
+                bind_vars={"record_id": record_id}
+            )
+
+            file_doc = None
+            try:
+                file_doc = cursor.next()
+            except StopIteration:
+                self.logger.info(f"No file found for record {record_id}, skipping queued duplicate search")
+                return None
+
+            if not file_doc:
+                self.logger.info(f"No file found for record {record_id}, skipping queued duplicate search")
+                return None
+
+            md5_checksum = file_doc.get("md5Checksum")
+            size_in_bytes = file_doc.get("sizeInBytes")
+
+            if not md5_checksum or size_in_bytes is None:
+                self.logger.warning(f"File {record_id} missing md5Checksum or sizeInBytes")
+                return None
+
+            # Find the first queued duplicate record
+            query = f"""
+            FOR file IN {CollectionNames.FILES.value}
+                FILTER file.md5Checksum == @md5_checksum
+                AND file.sizeInBytes == @size_in_bytes
+                AND file._key != @record_id
+                LET record = (
+                    FOR r IN {CollectionNames.RECORDS.value}
+                        FILTER r._key == file._key
+                        AND r.indexingStatus == @queued_status
+                        RETURN r
+                )[0]
+                FILTER record != null
+                LIMIT 1
+                RETURN record
+            """
+
+            cursor = db.aql.execute(
+                query,
+                bind_vars={
+                    "md5_checksum": md5_checksum,
+                    "size_in_bytes": size_in_bytes,
+                    "record_id": record_id,
+                    "queued_status": "QUEUED"
+                }
+            )
+
+            queued_record = None
+            try:
+                queued_record = cursor.next()
+            except StopIteration:
+                self.logger.info("✅ No QUEUED duplicate record found")
+                return None
+
+            if queued_record:
+                self.logger.info(
+                    f"✅ Found QUEUED duplicate record: {queued_record.get('_key')}"
+                )
+                return dict(queued_record)
+
+            return None
+
+        except Exception as e:
+            self.logger.error(
+                f"❌ Failed to find next queued duplicate: {str(e)}"
+            )
+            return None
+
     async def get_accessible_records(
         self, user_id: str, org_id: str, filters: dict = None
     ) -> list:
@@ -12084,49 +12594,53 @@ class BaseArangoService:
                 RETURN user
             )
 
-            LET directRecords = (
-                FOR records IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS.value}
-                RETURN DISTINCT records
-            )
 
-            LET directRecordsPermissionEdge = (
+            // User -> Direct Records (via permission edges)
+            LET directRecords = (
                 FOR records IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                 RETURN DISTINCT records
             )
 
+            // User -> Group -> Records (via belongs_to edges)
             LET groupRecords = (
                 FOR group, edge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
-                FOR records IN 1..1 ANY group._id {CollectionNames.PERMISSIONS.value}
-                RETURN DISTINCT records
-            )
-
-            LET groupRecordsPermissionEdge = (
-                FOR group, edge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                FILTER edge.type == 'GROUP' or edge.type == 'ROLE'
                 FOR records IN 1..1 ANY group._id {CollectionNames.PERMISSION.value}
                 RETURN DISTINCT records
             )
 
-            LET orgRecords = (
-                FOR org, edge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
-                FOR records IN 1..1 ANY org._id {CollectionNames.PERMISSIONS.value}
+            // User -> Group -> Records (via permission edges)
+            LET groupRecordsPermissionEdge = (
+                FOR group, edge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
+                FOR records IN 1..1 ANY group._id {CollectionNames.PERMISSION.value}
                 RETURN DISTINCT records
             )
 
-            LET orgRecordsPermissionEdge = (
+            // User -> Organization -> Records (direct)
+            LET orgRecords = (
                 FOR org, edge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
                 FOR records IN 1..1 ANY org._id {CollectionNames.PERMISSION.value}
                 RETURN DISTINCT records
             )
 
+            // User -> Organization -> RecordGroup -> Records (direct and inherited)
+            LET orgRecordGroupRecords = (
+                FOR org, belongsEdge IN 1..1 ANY userDoc._id {CollectionNames.BELONGS_TO.value}
+
+                    FOR recordGroup, orgToRgEdge IN 1..1 ANY org._id {CollectionNames.PERMISSION.value}
+                        FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
+
+                        FOR record, edge, path IN 0..2 INBOUND recordGroup._id {CollectionNames.INHERIT_PERMISSIONS.value}
+                            FILTER IS_SAME_COLLECTION("records", record)
+                            RETURN DISTINCT record
+            )
+
+            // User -> Group/Role -> RecordGroup -> Record
             LET recordGroupRecords = (
-                // User -> Group/Role -> RecordGroup -> Record
+
                 FOR group, userToGroupEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                FILTER userToGroupEdge.type == 'USER'
                 FILTER IS_SAME_COLLECTION("groups", group) OR IS_SAME_COLLECTION("roles", group)
 
                 FOR recordGroup, groupToRecordGroupEdge IN 1..1 ANY group._id {CollectionNames.PERMISSION.value}
-                FILTER groupToRecordGroupEdge.type == 'GROUP' OR groupToRecordGroupEdge.type == 'ROLE'
 
                 // Support nested RecordGroups (0..5 levels)
                 FOR record, edge, path IN 0..5 INBOUND recordGroup._id {CollectionNames.INHERIT_PERMISSIONS.value}
@@ -12134,9 +12648,9 @@ class BaseArangoService:
                 RETURN DISTINCT record
             )
 
+            // User -> Group/Role -> RecordGroup -> Records (inherited)
             LET inheritedRecordGroupRecords = (
                 FOR recordGroup, userToRgEdge IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
-                FILTER userToRgEdge.type == 'USER'
                 FILTER IS_SAME_COLLECTION("recordGroups", recordGroup)
 
                 FOR record, edge, path IN 0..5 INBOUND recordGroup._id {CollectionNames.INHERIT_PERMISSIONS.value}
@@ -12144,7 +12658,15 @@ class BaseArangoService:
                 RETURN DISTINCT record
             )
 
-            LET directAndGroupRecords = UNION_DISTINCT(directRecords, groupRecords, orgRecords, directRecordsPermissionEdge, groupRecordsPermissionEdge, orgRecordsPermissionEdge, recordGroupRecords, inheritedRecordGroupRecords)
+            LET directAndGroupRecords = UNION_DISTINCT(
+                directRecords,
+                groupRecords,
+                orgRecords,
+                groupRecordsPermissionEdge,
+                recordGroupRecords,
+                inheritedRecordGroupRecords,
+                orgRecordGroupRecords
+            )
 
             LET anyoneRecords = (
                 FOR records IN @@anyone
@@ -12160,7 +12682,7 @@ class BaseArangoService:
                 self.logger.info("🔍 Getting all KB records")
                 query += f"""
                 LET kbRecords = (
-                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS_TO_KB.value}
+                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                     FOR records IN 1..1 ANY kb._id {CollectionNames.BELONGS_TO.value}
                     RETURN DISTINCT records
                 )
@@ -12185,7 +12707,7 @@ class BaseArangoService:
                     self.logger.info(f"🔍 Applying KB filtering for specific KBs: {kb_ids}")
                     query += f"""
                     LET kbRecords = (
-                        FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS_TO_KB.value}
+                        FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                         FILTER kb._key IN @kb_ids
                         FOR records IN 1..1 ANY kb._id {CollectionNames.BELONGS_TO.value}
                         RETURN DISTINCT records
@@ -12207,7 +12729,7 @@ class BaseArangoService:
                 self.logger.info("🔍 Getting all accessible records")
                 query += f"""
                 LET kbRecords = (
-                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS_TO_KB.value}
+                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                     FOR records IN 1..1 ANY kb._id {CollectionNames.BELONGS_TO.value}
                     RETURN DISTINCT records
                 )
@@ -12231,7 +12753,7 @@ class BaseArangoService:
                 self.logger.info("🔍 Fallback logic to all accessible records")
                 query += f"""
                 LET kbRecords = (
-                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSIONS_TO_KB.value}
+                    FOR kb IN 1..1 ANY userDoc._id {CollectionNames.PERMISSION.value}
                     FOR records IN 1..1 ANY kb._id {CollectionNames.BELONGS_TO.value}
                     RETURN DISTINCT records
                 )
@@ -12451,7 +12973,7 @@ class BaseArangoService:
             // Get user's accessible KBs in this org with direct filtering
             // Using FILTER early to reduce data processing
             LET user_accessible_kbs = (
-                FOR perm IN @@permissions_to_kb
+                FOR perm IN @@permission
                     FILTER perm._from == user_from
                     FILTER perm.type == "USER"
                     // Fast role check using IN operator
@@ -12493,7 +13015,7 @@ class BaseArangoService:
                 "user_from": f"users/{user_key}",
                 "org_id": org_id,
                 "kb_ids": kb_ids,
-                "@permissions_to_kb": CollectionNames.PERMISSIONS_TO_KB.value,
+                "@permission": CollectionNames.PERMISSION.value,
             }
 
             cursor = self.db.aql.execute(
@@ -13619,7 +14141,7 @@ class BaseArangoService:
             result = next(cursor, None)
             if result and result.get("file") and result.get("record"):
                 self.logger.info("✅ Successfully retrieved file record for id %s", id)
-                return FileRecord.from_arango_base_file_record(
+                return FileRecord.from_arango_record(
                     arango_base_file_record=result["file"],
                     arango_base_record=result["record"]
                 )

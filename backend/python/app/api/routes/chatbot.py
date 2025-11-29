@@ -25,6 +25,8 @@ from app.utils.query_decompose import QueryDecompositionExpansionService
 from app.utils.query_transform import setup_followup_query_transformation
 from app.utils.streaming import create_sse_event, stream_llm_response_with_tools
 
+DEFAULT_CONTEXT_LENGTH = 128000
+
 router = APIRouter()
 
 # Pydantic models
@@ -243,7 +245,7 @@ async def process_chat_query_with_status(
     search_results = result.get("searchResults", [])
     status_code = result.get("status_code", 500)
 
-    if status_code in [202, 500, 503]:
+    if status_code in [202, 500, 503, 404]:
         raise HTTPException(status_code=status_code, detail=result)
 
     if yield_status:
@@ -463,9 +465,15 @@ async def askAIStream(
                     query_info.chatMode
                 )
                 is_multimodal_llm = config.get("isMultimodal")
+                context_length = config.get("contextLength") or DEFAULT_CONTEXT_LENGTH
 
-                if llm is None:
+                logger.info(f"Context length: {context_length}")
+                logger.info(f"LLM used for streaming: {llm.model_name}")
+
+                if llm is None :
                     raise ValueError("Failed to initialize LLM service. LLM configuration is missing.")
+
+
 
                 if config.get("provider").lower() == "ollama":
                     query_info.mode = "simple"
@@ -512,7 +520,7 @@ async def askAIStream(
                 search_results = result.get("searchResults", [])
                 status_code = result.get("status_code", 500)
 
-                if status_code in [202, 500, 503]:
+                if status_code in [202, 500, 503,404]:
                     raise HTTPException(status_code=status_code, detail=result)
 
                 yield create_sse_event("status", {"status": "processing", "message": "Processing search results..."})
@@ -618,6 +626,7 @@ async def askAIStream(
                     virtual_record_id_to_result,
                     blob_store,
                     is_multimodal_llm,
+                    context_length,
                     tools=tools,
                     tool_runtime_kwargs=tool_runtime_kwargs,
                     target_words_per_chunk=1,

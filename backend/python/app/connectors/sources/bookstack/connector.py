@@ -1669,9 +1669,6 @@ class BookStackConnector(BaseConnector):
             elif record_update.is_new:
                 self.logger.info(f"New record detected: {record_update.record.record_name}")
             elif record_update.is_updated:
-                if record_update.content_changed:
-                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
-                    await self.data_entities_processor.on_record_content_update(record_update.record)
                 if record_update.metadata_changed:
                     self.logger.info(f"Metadata changed for record: {record_update.record.record_name}")
                     await self.data_entities_processor.on_record_metadata_update(record_update.record)
@@ -1681,6 +1678,9 @@ class BookStackConnector(BaseConnector):
                         record_update.record,
                         record_update.new_permissions
                     )
+                if record_update.content_changed:
+                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
+                    await self.data_entities_processor.on_record_content_update(record_update.record)
         except Exception as e:
             self.logger.error(f"Error handling record updates: {e}", exc_info=True)
 
@@ -1830,12 +1830,17 @@ class BookStackConnector(BaseConnector):
         # Could potentially trigger an incremental sync if webhooks are added
         asyncio.create_task(self.run_incremental_sync())
 
-    def cleanup(self) -> None:
+    async def cleanup(self) -> None:
         """
         Cleanup resources used by the connector.
         """
         self.logger.info("Cleaning up BookStack connector resources.")
         self.data_source = None
+
+    async def reindex_records(self, record_results: List[Record]) -> None:
+        """Reindex records - not implemented for BookStack yet."""
+        self.logger.warning("Reindex not implemented for BookStack connector")
+        pass
 
     @classmethod
     async def create_connector(

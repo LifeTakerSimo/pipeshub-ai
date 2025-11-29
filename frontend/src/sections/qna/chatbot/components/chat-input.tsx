@@ -19,24 +19,10 @@ import {
   Badge,
   Divider,
 } from '@mui/material';
-import axios from 'src/utils/axios';
 import { createScrollableContainerStyle } from '../utils/styles/scrollbar';
 import ChatBotFilters from './chat-bot-filters';
-
-export interface Model {
-  modelType: string;
-  provider: string;
-  modelName: string;
-  modelKey: string;
-  isMultimodal: boolean;
-  isDefault: boolean;
-}
-
-export interface ChatMode {
-  id: string;
-  name: string;
-  description: string;
-}
+import { Model, ChatMode } from '../types';
+import { CHAT_MODES, formattedProvider } from '../utils/utils';
 
 export type ChatInputProps = {
   onSubmit: (
@@ -48,6 +34,7 @@ export type ChatInputProps = {
   ) => Promise<void>;
   isLoading: boolean;
   disabled?: boolean;
+  isStreaming?: boolean;
   placeholder?: string;
   selectedModel: Model | null;
   selectedChatMode: ChatMode | null;
@@ -58,82 +45,15 @@ export type ChatInputProps = {
   initialSelectedApps?: string[];
   initialSelectedKbIds?: string[];
   onFiltersChange?: (filters: { apps: string[]; kb: string[] }) => void;
+  models: Model[];
 };
 
-// Define chat modes locally in the frontend
-const CHAT_MODES: ChatMode[] = [
-  {
-    id: 'quick',
-    name: 'Quick',
-    description: 'Quick responses with minimal context',
-  },
-  {
-    id: 'standard',
-    name: 'Standard',
-    description: 'Balanced responses with moderate creativity',
-  },
-];
-
-const normalizeDisplayName = (name: string): string =>
-  name
-    .split('_')
-    .map((word) => {
-      const upperWord = word.toUpperCase();
-      if (
-        [
-          'ID',
-          'URL',
-          'API',
-          'UI',
-          'DB',
-          'AI',
-          'ML',
-          'KB',
-          'PDF',
-          'CSV',
-          'JSON',
-          'XML',
-          'HTML',
-          'CSS',
-          'JS',
-          'GCP',
-          'AWS',
-        ].includes(upperWord)
-      ) {
-        return upperWord;
-      }
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(' ');
-
-const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
-  azureOpenAI: 'Azure OpenAI',
-  openAI: 'OpenAI',
-  anthropic: 'Anthropic',
-  gemini: 'Gemini',
-  claude: 'Claude',
-  ollama: 'Ollama',
-  bedrock: 'AWS Bedrock',
-  xai: 'xAI',
-  together: 'Together',
-  groq: 'Groq',
-  fireworks: 'Fireworks',
-  cohere: 'Cohere',
-  openAICompatible: 'OpenAI API Compatible',
-  mistral: 'Mistral',
-  voyage: 'Voyage',
-  jinaAI: 'Jina AI',
-  sentenceTransformers: 'Default',
-  default: 'Default',
-};
-
-export const formattedProvider = (provider: string): string =>
-  PROVIDER_DISPLAY_NAMES[provider] || normalizeDisplayName(provider);
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSubmit,
   isLoading,
   disabled = false,
+  isStreaming = false,
   placeholder = 'Type your message...',
   selectedModel,
   selectedChatMode,
@@ -144,14 +64,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
   initialSelectedApps = [],
   initialSelectedKbIds = [],
   onFiltersChange,
+  models,
 }) => {
   const [localValue, setLocalValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasText, setHasText] = useState(false);
-  const [models, setModels] = useState<Model[]>([]);
   const [modelMenuAnchor, setModelMenuAnchor] = useState<null | HTMLElement>(null);
   const [modeMenuAnchor, setModeMenuAnchor] = useState<null | HTMLElement>(null);
-  const [loadingModels, setLoadingModels] = useState(false);
   // Anchor for unified resources dropdown
   const [resourcesAnchor, setResourcesAnchor] = useState<null | HTMLElement>(null);
   const [selectedApps, setSelectedApps] = useState<string[]>(initialSelectedApps || []);
@@ -236,28 +155,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     return knowledgeBases.filter((kb) => (kb?.name || '').toLowerCase().includes(term));
   }, [knowledgeBases, searchTerm]);
 
-  const fetchAvailableModels = async () => {
-    try {
-      setLoadingModels(true);
-      const response = await axios.get('/api/v1/configurationManager/ai-models/available/llm');
-
-      if (response.data.status === 'success') {
-        setModels(response.data.models || []);
-
-        // Set default model if not already selected
-        if (!selectedModel && response.data.data && response.data.data.length > 0) {
-          const defaultModel =
-            response.data.data.find((model: Model) => model.isDefault) || response.data.data[0];
-          onModelChange(defaultModel);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch available models:', error);
-    } finally {
-      setLoadingModels(false);
-    }
-  };
-
   // Set default chat mode if not already selected
   useEffect(() => {
     if (!selectedChatMode && CHAT_MODES.length > 0) {
@@ -268,12 +165,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onModelChange(defaultModel); // Set first model as default
     }
   }, [selectedChatMode, onChatModeChange, models, onModelChange, selectedModel]);
-
-  useEffect(() => {
-    fetchAvailableModels();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   
   const openResourcesMenu = (event: React.MouseEvent<HTMLElement>) =>
     setResourcesAnchor(event.currentTarget);
@@ -305,15 +196,37 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [selectedApps, selectedKbIds, onFiltersChange]);
 
+  // Reset isSubmitting when streaming starts (streaming is handled separately)
+  // This ensures the input is not stuck in submitting state
+  useEffect(() => {
+    if (isStreaming && isSubmitting) {
+      // If streaming has started, reset submitting state
+      // The actual submission is handled by the parent, not this component
+      setIsSubmitting(false);
+    }
+  }, [isStreaming, isSubmitting]);
+
+  // Ensure input is properly enabled/disabled
+  // CRITICAL: Never disable during streaming - users must be able to type
   useEffect(() => {
     if (inputRef.current) {
-      const actuallyDisabled = inputRef.current.disabled;
-
-      if (actuallyDisabled && !isLoading && !disabled && !isSubmitting) {
+      // Only disable input if explicitly disabled (navigation blocked) or currently submitting
+      // IMPORTANT: isStreaming should NOT affect disabled state
+      const shouldBeDisabled = disabled || isSubmitting;
+      
+      // Force update if there's a mismatch
+      if (inputRef.current.disabled !== shouldBeDisabled) {
+        inputRef.current.disabled = shouldBeDisabled;
+      }
+      
+      // Safety check: if streaming is active, ensure input is NOT disabled
+      // (unless navigation is explicitly blocked)
+      if (isStreaming && inputRef.current.disabled && !disabled) {
         inputRef.current.disabled = false;
+        setIsSubmitting(false); // Also reset submitting state
       }
     }
-  });
+  }, [disabled, isSubmitting, isStreaming]);
 
   // Auto-resize textarea with debounce
   const autoResizeTextarea = useCallback(() => {
@@ -341,7 +254,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = useCallback(async () => {
     const trimmedValue = localValue.trim();
-    if (!trimmedValue || isLoading || isSubmitting || disabled) {
+    // Prevent submission if streaming is active, but allow typing
+    if (!trimmedValue || isSubmitting || disabled || isStreaming) {
       return;
     }
 
@@ -381,9 +295,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   }, [
     localValue,
-    isLoading,
     isSubmitting,
     disabled,
+    isStreaming,
     onSubmit,
     selectedModel,
     selectedChatMode,
@@ -394,11 +308,15 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
+        // Allow Enter to create new line if streaming is active
+        if (isStreaming) {
+          return; // Don't prevent default, allow new line
+        }
         e.preventDefault();
         handleSubmit();
       }
     },
-    [handleSubmit]
+    [handleSubmit, isStreaming]
   );
 
   const handleModelMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -407,10 +325,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleModelMenuClose = () => {
     setModelMenuAnchor(null);
-  };
-
-  const handleModeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setModeMenuAnchor(event.currentTarget);
   };
 
   const handleModeMenuClose = () => {
@@ -474,15 +388,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
     };
   }, [isDark]);
 
-  // Only disable input if THIS conversation is actively loading/submitting
-  const isInputDisabled = disabled || isSubmitting || isLoading;
-  const canSubmit = hasText && !isInputDisabled;
 
-  // Format model name for display
-  const getModelDisplayName = (model: Model | null) => {
-    if (!model) return 'Model';
-    return model.modelName || 'Model';
-  };
+  const canSubmit = hasText  && !isStreaming;
+
 
   return (
     <>
@@ -542,7 +450,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 value={localValue}
-                disabled={isInputDisabled}
                 style={{
                   width: '100%',
                   border: 'none',
@@ -559,8 +466,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   overflowX: 'hidden',
                   transition: 'all 0.2s ease',
                   cursor: 'text',
-                  opacity: isInputDisabled ? 0.6 : 1,
+                  opacity: 1,
+                  pointerEvents: 'auto',
                 }}
+                title={isStreaming ? 'You can type while the response is streaming, but cannot send until it completes' : ''}
               />
             </Box>
 
@@ -575,7 +484,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               }}
             >
               {/* Chat Mode Selector */}
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                 {CHAT_MODES.map((mode) => (
                   <Chip
                     key={mode.id}
@@ -613,7 +522,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 ))}
               </Box>
               <Box
-                sx={{ display: 'flex', gap: 1, flexDirection: 'row', mr: 2, alignItems: 'center' }}
+                sx={{ display: 'flex', gap: 1, flexDirection: 'row', mr: 2, alignItems: 'center', }}
               >
                 {/* Unified Resources selector with badge */}
                 <Tooltip title="Select apps and knowledge bases">
@@ -680,60 +589,74 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 </Tooltip>
 
                 {/* Send Button */}
-                <IconButton
-                  size="small"
-                  onClick={handleSubmit}
-                  disabled={!canSubmit}
-                  sx={{
-                    backgroundColor: canSubmit
-                      ? alpha(theme.palette.primary.main, 0.9)
-                      : 'transparent',
-                    width: 36,
-                    height: 36,
-                    borderRadius: '8px',
-                    flexShrink: 0,
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    color: canSubmit ? '#fff' : isDark ? alpha('#fff', 0.4) : alpha('#000', 0.3),
-                    opacity: canSubmit ? 1 : 0.5,
-                    border: canSubmit
-                      ? 'none'
-                      : `1px solid ${isDark ? alpha('#fff', 0.08) : alpha('#000', 0.06)}`,
-                    '&:hover': !isInputDisabled
-                      ? {
-                          backgroundColor: canSubmit
-                            ? theme.palette.primary.main
-                            : isDark
-                              ? alpha('#fff', 0.04)
-                              : alpha('#000', 0.03),
-                          transform: canSubmit ? 'scale(1.05)' : 'none',
-                        }
-                      : {},
-                    '&:active': {
-                      transform: canSubmit ? 'scale(0.98)' : 'none',
-                    },
-                    '&.Mui-disabled': {
-                      opacity: 0.5,
-                      backgroundColor: 'transparent',
-                    },
-                  }}
+                <Tooltip
+                  title={
+                    isStreaming
+                      ? 'Please wait for the current response to complete'
+                      : !hasText
+                        ? 'Type a message to send'
+                        : ''
+                  }
+                  placement="top"
                 >
-                  {isSubmitting ? (
-                    <Box
-                      component="span"
+                  <span>
+                    <IconButton
+                      size="small"
+                      onClick={handleSubmit}
+                      disabled={!canSubmit}
                       sx={{
-                        width: 16,
-                        height: 16,
-                        border: '2px solid transparent',
-                        borderTop: `2px solid ${canSubmit ? '#fff' : isDark ? '#fff' : '#000'}`,
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite',
-                        display: 'inline-block',
+                        backgroundColor: canSubmit
+                          ? alpha(theme.palette.primary.main, 0.9)
+                          : 'transparent',
+                        width: 36,
+                        height: 36,
+                        borderRadius: '8px',
+                        flexShrink: 0,
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        color: canSubmit ? '#fff' : isDark ? alpha('#fff', 0.4) : alpha('#000', 0.3),
+                        opacity: canSubmit ? 1 : 0.5,
+                        border: canSubmit
+                          ? 'none'
+                          : `1px solid ${isDark ? alpha('#fff', 0.08) : alpha('#000', 0.06)}`,
+                        '&:hover': canSubmit
+                          ? {
+                              backgroundColor: theme.palette.primary.main,
+                              transform: 'scale(1.05)',
+                            }
+                          : isStreaming
+                            ? {
+                                backgroundColor: isDark ? alpha('#fff', 0.04) : alpha('#000', 0.03),
+                              }
+                            : {},
+                        '&:active': {
+                          transform: canSubmit ? 'scale(0.98)' : 'none',
+                        },
+                        '&.Mui-disabled': {
+                          opacity: 0.5,
+                          backgroundColor: 'transparent',
+                          cursor: isStreaming ? 'not-allowed' : 'default',
+                        },
                       }}
-                    />
-                  ) : (
-                    <Icon icon={arrowUpIcon} width={18} height={18} />
-                  )}
-                </IconButton>
+                    >
+                      {isSubmitting || isStreaming ? (
+                        <Box
+                          component="span"
+                          sx={{
+                            width: 16,
+                            height: 16,
+                            border: '2px solid transparent',
+                            borderTop: `2px solid ${canSubmit ? '#fff' : isDark ? '#fff' : '#000'}`,
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                            display: 'inline-block',
+                          }}
+                        />
+                      ) : (
+                        <Icon icon={arrowUpIcon} width={18} height={18} />
+                      )}
+                    </IconButton>
+                  </span>
+                </Tooltip>
               </Box>
             </Box>
           </Box>

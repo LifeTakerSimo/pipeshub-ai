@@ -14,6 +14,7 @@ from app.config.constants.arangodb import (
     Connectors,
     ExtensionTypes,
     OriginTypes,
+    ProgressStatus,
 )
 from app.config.constants.service import config_node_constants
 from app.exceptions.indexing_exceptions import DocumentProcessingError
@@ -26,13 +27,13 @@ from app.models.blocks import (
     DataFormat,
     Point,
 )
-from app.models.entities import Record, RecordStatus, RecordType
+from app.models.entities import Record, RecordType
 from app.modules.parsers.pdf.docling import DoclingProcessor
 from app.modules.parsers.pdf.ocr_handler import OCRHandler
 from app.modules.transformers.pipeline import IndexingPipeline
 from app.modules.transformers.transformer import TransformContext
 from app.services.docling.client import DoclingClient
-from app.utils.llm import get_llm
+from app.utils.llm import get_embedding_model_config, get_llm
 from app.utils.mimetype_to_extension import get_extension_from_mimetype
 from app.utils.time_conversion import get_epoch_timestamp_in_ms
 
@@ -60,7 +61,7 @@ def convert_record_dict_to_record(record_dict: dict) -> Record:
         org_id=record_dict.get("orgId"),
         record_name=record_dict.get("recordName"),
         record_type=RecordType(record_dict.get("recordType", "FILE")),
-        record_status=RecordStatus(record_dict.get("indexingStatus", "NOT_STARTED")),
+        record_status=ProgressStatus(record_dict.get("indexingStatus", "NOT_STARTED")),
         external_record_id=record_dict.get("externalRecordId"),
         version=record_dict.get("version", 1),
         origin=origin,
@@ -114,6 +115,40 @@ class Processor:
             if record is None:
                 self.logger.error(f"❌ Record {record_id} not found in database")
                 return
+
+            _ , config = await get_llm(self.config_service)
+            is_multimodal_llm = config.get("isMultimodal")
+
+            embedding_config = await get_embedding_model_config(self.config_service)
+            is_multimodal_embedding = embedding_config.get("isMultimodal") if embedding_config else False
+            if not is_multimodal_embedding and not is_multimodal_llm:
+                try:
+                    record.update(
+                        {
+                            "indexingStatus": ProgressStatus.ENABLE_MULTIMODAL_MODELS.value,
+                            "extractionStatus": ProgressStatus.NOT_STARTED.value,
+                        })
+
+                    docs = [record]
+                    success = await self.arango_service.batch_upsert_nodes(
+                        docs, CollectionNames.RECORDS.value
+                    )
+                    if not success:
+                        raise DocumentProcessingError(
+                            "Failed to update indexing status", doc_id=record_id
+                        )
+
+                    return
+
+                except DocumentProcessingError:
+                    raise
+                except Exception as e:
+                    raise DocumentProcessingError(
+                        "Error updating record status: " + str(e),
+                        doc_id=record_id,
+                        details={"error": str(e)},
+                    )
+
             mime_type = record.get("mimeType")
             if mime_type is None:
                 raise Exception("No mime type present in the record from graph db")
@@ -300,11 +335,9 @@ class Processor:
                                     }
                                 )
 
-            # Index sentences if available
-            if sentence_data:
-                self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
-                pipeline = self.indexing_pipeline
-                await pipeline.index_documents(sentence_data)
+            self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
+            pipeline = self.indexing_pipeline
+            await pipeline.index_documents(sentence_data,record_id)
 
             self.logger.info("✅ Google Slides processing completed successfully")
             return {
@@ -511,11 +544,9 @@ class Processor:
                                 }
                             )
 
-            # Index sentences if available
-            if sentence_data:
-                self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
-                pipeline = self.indexing_pipeline
-                await pipeline.index_documents(sentence_data)
+            self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
+            pipeline = self.indexing_pipeline
+            await pipeline.index_documents(sentence_data,record_id)
 
             self.logger.info("✅ Google Docs processing completed successfully")
             return {
@@ -594,11 +625,9 @@ class Processor:
                             }
                         )
 
-            # Index sentences if available
-            if sentence_data:
-                self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
-                pipeline = self.indexing_pipeline
-                await pipeline.index_documents(sentence_data, merge_documents=False)
+            self.logger.debug(f"📑 Indexing {len(sentence_data)} sentences")
+            pipeline = self.indexing_pipeline
+            await pipeline.index_documents(sentence_data, record_id)
 
             self.logger.info("✅ Google sheets processing completed successfully")
             return {
@@ -650,16 +679,18 @@ class Processor:
             record = await self.arango_service.get_document(
                 recordId, CollectionNames.RECORDS.value
             )
+
             if record is None:
                 self.logger.error(f"❌ Record {recordId} not found in database")
                 return
+
             record = convert_record_dict_to_record(record)
             record.block_containers = block_containers
             record.virtual_record_id = virtual_record_id
             ctx = TransformContext(record=record)
             pipeline = IndexingPipeline(document_extraction=self.document_extraction, sink_orchestrator=self.sink_orchestrator)
             await pipeline.apply(ctx)
-            self.logger.info("✅ PDF processing completed successfully using external Docling service")
+            self.logger.info(f"✅ PDF processing completed for record: {recordName}, using external Docling service")
             return
         except Exception as e:
             self.logger.error(f"❌ Error processing PDF document with external Docling service: {str(e)}")
@@ -745,7 +776,15 @@ class Processor:
 
                     else:
                         paragraph = block
-                        if paragraph["content"]:
+                        if paragraph and paragraph.get("content"):
+                            bounding_boxes = None
+                            if paragraph.get("bounding_box"):
+                                try:
+                                    bounding_boxes = [Point(x=p["x"], y=p["y"]) for p in paragraph["bounding_box"]]
+                                except (TypeError, KeyError) as e:
+                                    self.logger.warning(f"Failed to process bounding boxes: {e}")
+                                    bounding_boxes = None
+
                             blocks.append(
                                 Block(
                                     index=index,
@@ -754,8 +793,8 @@ class Processor:
                                     data=paragraph["content"],
                                     comments=[],
                                     citation_metadata=CitationMetadata(
-                                        page_number=paragraph["page_number"],
-                                        bounding_boxes=[Point(x=p["x"], y=p["y"]) for p in paragraph["bounding_box"]],
+                                        page_number=paragraph.get("page_number"),
+                                        bounding_boxes=bounding_boxes,
                                     ),
                                 )
                             )
@@ -823,14 +862,14 @@ class Processor:
 
             processor = DoclingProcessor(logger=self.logger,config=self.config_service)
             block_containers = await processor.load_document(recordName, docx_binary)
+
             if block_containers is False:
                 raise Exception("Failed to process DOCX document. It might contain scanned pages.")
-
-
 
             record = await self.arango_service.get_document(
                 recordId, CollectionNames.RECORDS.value
             )
+
             if record is None:
                 self.logger.error(f"❌ Record {recordId} not found in database")
                 raise Exception(f"Record {recordId} not found in graph db")
@@ -841,7 +880,6 @@ class Processor:
             pipeline = IndexingPipeline(document_extraction=self.document_extraction, sink_orchestrator=self.sink_orchestrator)
             await pipeline.apply(ctx)
             self.logger.info("✅ Docx/Doc processing completed successfully using docling")
-
 
         except Exception as e:
             self.logger.error(f"❌ Error processing DOCX document: {str(e)}")
@@ -859,6 +897,10 @@ class Processor:
             self.logger.debug("📊 Processing Excel content")
             llm, _ = await get_llm(self.config_service)
             parser = self.parsers[ExtensionTypes.XLSX.value]
+            if not excel_binary:
+                self.logger.info(f"No Excel binary found for record: {recordName}")
+                await self._mark_record(recordId, ProgressStatus.EMPTY)
+                return
             blocks_containers = await parser.parse(excel_binary, llm)
             record = await self.arango_service.get_document(
                 recordId, CollectionNames.RECORDS.value
@@ -928,7 +970,6 @@ class Processor:
             # Try different encodings to decode binary data
             encodings = ["utf-8", "latin1", "cp1252", "iso-8859-1"]
             csv_result = None
-
             for encoding in encodings:
                 try:
                     self.logger.debug(
@@ -954,10 +995,11 @@ class Processor:
                     self.logger.debug(f"Failed to process CSV with {encoding} encoding: {str(e)}")
                     continue
 
+
             if csv_result is None:
-                raise ValueError(
-                    "Unable to decode and process CSV file with any supported encoding"
-                )
+                self.logger.info(f"Unable to decode CSV file with any supported encoding for record: {recordName}. Setting indexing status to EMPTY.")
+                await self._mark_record(recordId, ProgressStatus.EMPTY)
+                return
 
             self.logger.debug("📑 CSV result processed")
 
@@ -990,89 +1032,9 @@ class Processor:
             self.logger.error(f"❌ Error processing CSV document: {str(e)}")
             raise
 
-    def _process_content_in_order(self, doc_dict) -> list:
-        """
-        Process document content in proper reading order by following references.
 
-        Args:
-            doc_dict (dict): The document dictionary from Docling
 
-        Returns:
-            list: Ordered list of text items with their context
-        """
-        ordered_items = []
-        processed_refs = set()
-
-        def process_item(ref, level=0, parent_context=None) -> None:
-            """Recursively process items following references"""
-            if isinstance(ref, dict):
-                ref_path = ref.get("$ref", "")
-            else:
-                ref_path = ref
-
-            if not ref_path or ref_path in processed_refs:
-                return
-            processed_refs.add(ref_path)
-
-            if not ref_path.startswith("#/"):
-                return
-
-            path_parts = ref_path[2:].split("/")
-            item_type = path_parts[0]  # 'texts', 'groups', etc.
-            try:
-                item_index = int(path_parts[1])
-            except (IndexError, ValueError):
-                return
-
-            items = doc_dict.get(item_type, [])
-            if item_index >= len(items):
-                return
-            item = items[item_index]
-
-            # Get page number from the item's page reference
-            page_no = None
-            if "prov" in item:
-                prov = item["prov"]
-                if isinstance(prov, list) and len(prov) > 0:
-                    # Take the first page number from the prov list
-                    page_no = prov[0].get("page_no")
-                elif isinstance(prov, dict) and "$ref" in prov:
-                    # Handle legacy reference format if needed
-                    page_path = prov["$ref"]
-                    page_index = int(page_path.split("/")[-1])
-                    pages = doc_dict.get("pages", [])
-                    if page_index < len(pages):
-                        page_no = pages[page_index].get("page_no")
-
-            # Create context for current item
-            current_context = {
-                "ref": item.get("self_ref"),
-                "label": item.get("label"),
-                "level": item.get("level"),
-                "parent_context": parent_context,
-                "slide_number": item.get("slide_number"),
-                "pageNum": page_no,  # Add page number to context
-            }
-
-            if item_type == "texts":
-                ordered_items.append(
-                    {"text": item.get("text", ""), "context": current_context}
-                )
-
-            # Process children with current_context as parent
-            children = item.get("children", [])
-            for child in children:
-                process_item(child, level + 1, current_context)
-
-        # Start processing from body
-        body = doc_dict.get("body", {})
-        for child in body.get("children", []):
-            process_item(child)
-
-        self.logger.debug(f"Processed {len(ordered_items)} items in order")
-        return ordered_items
-
-    async def _mark_record_as_completed(self, record_id, virtual_record_id) -> None:
+    async def _mark_record(self, record_id, indexing_status: ProgressStatus) -> None:
         record = await self.arango_service.get_document(
                         record_id, CollectionNames.RECORDS.value
                     )
@@ -1082,12 +1044,14 @@ class Processor:
                 doc_id=record_id,
             )
         doc = dict(record)
+        timestamp = get_epoch_timestamp_in_ms()
         doc.update(
             {
-                "indexingStatus": "COMPLETED",
+                "indexingStatus": indexing_status.value,
                 "isDirty": False,
-                "lastIndexTimestamp": get_epoch_timestamp_in_ms(),
-                "virtualRecordId": virtual_record_id,
+                "lastIndexTimestamp": timestamp,
+                "extractionStatus": ProgressStatus.EMPTY.value,
+                "lastExtractionTimestamp": timestamp,
             }
         )
 
@@ -1200,7 +1164,7 @@ class Processor:
 
             if markdown is None or markdown == "":
                 try:
-                    await self._mark_record_as_completed(recordId, virtual_record_id)
+                    await self._mark_record(recordId, ProgressStatus.EMPTY)
                     self.logger.info("✅ HTML processing completed successfully using markdown conversion.")
                     return
                 except DocumentProcessingError:
@@ -1233,8 +1197,6 @@ class Processor:
                 for i, image in enumerate(images):
                     if base64_urls[i]:
                         caption_map[image["new_alt_text"]] = base64_urls[i]
-                    else:
-                        self.logger.warning(f"⚠️ Failed to convert image URL to base64: {image['url']}")
 
             md_bytes = parser.parse_string(modified_markdown)
 
@@ -1345,232 +1307,25 @@ class Processor:
         try:
             # Initialize PPTX parser
             self.logger.debug("📄 Processing PPTX content")
-            parser = self.parsers[ExtensionTypes.PPTX.value]
-            pptx_result = parser.parse_binary(pptx_binary)
 
-            # Get the full document structure
-            doc_dict = pptx_result.export_to_dict()
-
-            # Log structure counts
-            self.logger.debug("📊 Document structure counts:")
-            self.logger.debug(f"- Texts: {len(doc_dict.get('texts', []))}")
-            self.logger.debug(f"- Groups: {len(doc_dict.get('groups', []))}")
-            self.logger.debug(f"- Pictures: {len(doc_dict.get('pictures', []))}")
-
-            # Process content in reading order
-            ordered_items = []
-            processed_refs = set()
-
-            def process_item(ref, level=0, parent_context=None) -> None:
-                if isinstance(ref, dict):
-                    ref_path = ref.get("$ref", "")
-                else:
-                    ref_path = ref
-
-                if not ref_path or ref_path in processed_refs:
-                    return
-                processed_refs.add(ref_path)
-
-                if not ref_path.startswith("#/"):
-                    return
-
-                path_parts = ref_path[2:].split("/")
-                item_type = path_parts[0]
-                try:
-                    item_index = int(path_parts[1])
-                except (IndexError, ValueError):
-                    return
-
-                self.logger.debug(f"item_type: {item_type}")
-
-                items = doc_dict.get(item_type, [])
-                if item_index >= len(items):
-                    return
-                item = items[item_index]
-
-                # Get page number from the item's page reference
-                page_no = None
-                if "prov" in item:
-                    prov = item["prov"]
-                    if isinstance(prov, list) and len(prov) > 0:
-                        # Take the first page number from the prov list
-                        page_no = prov[0].get("page_no")
-                    elif isinstance(prov, dict) and "$ref" in prov:
-                        # Handle legacy reference format if needed
-                        page_path = prov["$ref"]
-                        page_index = int(page_path.split("/")[-1])
-                        pages = doc_dict.get("pages", [])
-                        if page_index < len(pages):
-                            page_no = pages[page_index].get("page_no")
-
-                # Create context for current item
-                current_context = {
-                    "ref": item.get("self_ref"),
-                    "label": item.get("label"),
-                    "level": item.get("level"),
-                    "parent_context": parent_context,
-                    "pageNum": page_no,  # Add page number to context
-                }
-
-                if item_type == "texts":
-                    ordered_items.append(
-                        {"text": item.get("text", ""), "context": current_context}
-                    )
-
-                children = item.get("children", [])
-                for child in children:
-                    process_item(child, level + 1, current_context)
-
-            # Start processing from body
-            body = doc_dict.get("body", {})
-            for child in body.get("children", []):
-                process_item(child)
-
-            # Extract text content from ordered items
-            text_content = "\n".join(
-                item["text"].strip() for item in ordered_items if item["text"].strip()
+            processor = DoclingProcessor(logger=self.logger, config=self.config_service)
+            block_containers = await processor.load_document(recordName, pptx_binary)
+            if block_containers is False:
+                raise Exception(("Failed to process PPTX document. It might contain scanned pages."))
+            record = await self.arango_service.get_document(
+                recordId, CollectionNames.RECORDS.value
             )
-
-            # Extract domain metadata
-            self.logger.info("🎯 Extracting domain metadata")
-            domain_metadata = None
-            if text_content:
-                try:
-                    metadata = await self.domain_extractor.extract_metadata(
-                        text_content, orgId
-                    )
-                    record = await self.domain_extractor.save_metadata_to_db(
-                        orgId, recordId, metadata, virtual_record_id
-                    )
-                    file = await self.arango_service.get_document(
-                        recordId, CollectionNames.FILES.value
-                    )
-                    domain_metadata = {**record, **file}
-
-                except Exception as e:
-                    self.logger.error(f"❌ Error extracting metadata: {str(e)}")
-                    domain_metadata = None
-
-            # Create numbered items with slide information
-            numbered_items = []
-            formatted_content = ""
-
-            for idx, item in enumerate(ordered_items, 1):
-                if item["text"].strip():
-                    context = item["context"]
-                    item_entry = {
-                        "number": idx,
-                        "content": item["text"].strip(),
-                        "type": context.get("label", "text"),
-                        "level": context.get("level"),
-                        "ref": context.get("ref"),
-                        "parent_ref": context.get("parent_context", {}).get("ref"),
-                        "pageNum": context.get("pageNum"),
-                    }
-                    numbered_items.append(item_entry)
-
-                    # Format with slide numbers
-                    slide_info = (
-                        f"[Slide {context.get('slide_number', '?')}] "
-                        if context.get("slide_number")
-                        else ""
-                    )
-                    formatted_content += f"{slide_info}[{idx}] {item['text'].strip()}\n"
-
-            # Create sentence data for indexing
-            self.logger.debug("📑 Creating semantic sentences")
-            sentence_data = []
-
-            # Keep track of previous items for context
-            context_window = []
-            context_window_size = 3  # Number of previous items to include for context
-
-            for idx, item in enumerate(ordered_items, 1):
-                if item["text"].strip():
-                    context = item["context"]
-
-                    # Create context text from previous items
-                    previous_context = " ".join(
-                        [prev["text"].strip() for prev in context_window]
-                    )
-
-                    # Current item's context with previous items
-                    full_context = {
-                        "previous": previous_context,
-                        "current": item["text"].strip(),
-                    }
-                    pageNum = context.get("pageNum")
-                    pageNum = int(pageNum) if pageNum else None
-
-                    sentence_data.append(
-                        {
-                            "text": item["text"].strip(),
-                            "metadata": {
-                                **(domain_metadata or {}),
-                                "recordId": recordId,
-                                "blockType": context.get("label", "text"),
-                                "blockNum": [idx],
-                                "blockText": json.dumps(full_context),
-                                "pageNum": [pageNum],
-                                "virtualRecordId": virtual_record_id,
-                            },
-                        }
-                    )
-
-                    # Update context window
-                    context_window.append(item)
-                    if len(context_window) > context_window_size:
-                        context_window.pop(0)
-
-            # Index sentences if available
-            if sentence_data:
-                self.logger.debug("📑 Indexing %s sentences", len(sentence_data))
-                pipeline = self.indexing_pipeline
-                await pipeline.index_documents(sentence_data)
-
-            # Prepare metadata
-            metadata = {
-                "recordId": recordId,
-                "recordName": recordName,
-                "orgId": orgId,
-                "version": version,
-                "source": source,
-                "domain_metadata": domain_metadata,
-                "document_info": {
-                    "schema_name": doc_dict.get("schema_name"),
-                    "version": doc_dict.get("version"),
-                    "name": doc_dict.get("name"),
-                    "origin": doc_dict.get("origin"),
-                },
-                "structure_info": {
-                    "text_count": len(doc_dict.get("texts", [])),
-                    "group_count": len(doc_dict.get("groups", [])),
-                    "picture_count": len(doc_dict.get("pictures", [])),
-                    "slide_count": len(
-                        set(
-                            item["context"].get("slide_number")
-                            for item in ordered_items
-                            if item["context"].get("slide_number")
-                        )
-                    ),
-                },
-            }
-
-            self.logger.info("✅ PPTX processing completed successfully")
-            return {
-                "pptx_result": {
-                    "items": numbered_items,
-                    "document_structure": {
-                        "body": doc_dict.get("body"),
-                        "groups": doc_dict.get("groups"),
-                    },
-                    "metadata": domain_metadata,
-                },
-                "formatted_content": formatted_content,
-                "numbered_items": numbered_items,
-                "metadata": metadata,
-            }
-
+            if record is None:
+                self.logger.error(f"❌ Record {recordId} not found in database")
+                raise Exception(f"Record {recordId} not found in graph db")
+            record = convert_record_dict_to_record(record)
+            record.block_containers = block_containers
+            record.virtual_record_id = virtual_record_id
+            ctx = TransformContext(record=record)
+            pipeline = IndexingPipeline(document_extraction=self.document_extraction, sink_orchestrator=self.sink_orchestrator)
+            await pipeline.apply(ctx)
+            self.logger.info("✅ PPTX processing completed successfully using docling")
+            return
         except Exception as e:
             self.logger.error(f"❌ Error processing PPTX document: {str(e)}")
             raise

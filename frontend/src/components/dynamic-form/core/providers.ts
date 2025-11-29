@@ -43,6 +43,7 @@ export const URL_VALIDATOR = createUrlValidator(true);
 const COMMON_API_FIELDS = [
   'apiKey',
   'model',
+  { name: 'contextLength', required: false, defaultValue: undefined },
   { name: 'isMultimodal', required: false, defaultValue: true },
   { name: 'isReasoning', required: false, defaultValue: false },
 ] as const;
@@ -85,6 +86,28 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
     fields: COMMON_API_FIELDS,
   },
   {
+    id: 'azureAI',
+    label: 'Azure AI',
+    description: 'Access Azure AI Foundry models including GPT-4o, DeepSeek R1, Cohere, Phi and Mistral.',
+    modelPlaceholder: 'e.g., gpt-5.1, claude-sonnet-4-5, DeepSeek-V3.1',
+    fields: [
+      'endpoint',
+      'apiKey',
+      'model',
+      { name: 'contextLength', required: false, defaultValue: undefined },
+      { name: 'isMultimodal', required: false, defaultValue: true },
+      { name: 'isReasoning', required: false, defaultValue: false },
+    ],
+    customFields: {
+      endpoint: {
+        placeholder: 'e.g., For Claude models: https://<your-resource-name>.inference.ai.azure.com/anthropic, For other models (OpenAI, DeepSeek): https://<your-resource-name>.cognitiveservices.azure.com/openai/v1/',
+      },
+      maxTokens: {
+        placeholder: 'e.g., 16000',
+      },
+    },
+  },
+  {
     id: 'azureOpenAI',
     label: 'Azure OpenAI',
     description: 'You need an active Azure subscription with Azure OpenAI Service enabled.',
@@ -94,6 +117,7 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
       'apiKey',
       'deploymentName',
       'model',
+      { name: 'contextLength', required: false, defaultValue: undefined },
       { name: 'isMultimodal', required: false, defaultValue: true },
       { name: 'isReasoning', required: false, defaultValue: false },
     ],
@@ -117,6 +141,7 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
         defaultValue: 'http://host.docker.internal:11434',
         placeholder: 'e.g.http://localhost:11434',
       }, // Optional endpoint
+      { name: 'contextLength', required: false, defaultValue: undefined },
       { name: 'isMultimodal', required: false, defaultValue: true },
       { name: 'isReasoning', required: false, defaultValue: false },
     ],
@@ -133,6 +158,7 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
       { name: 'region', required: true },
       { name: 'model', required: true, placeholder: 'model id/arn' },
       { name: 'provider', required: true, defaultValue: 'anthropic' },
+      { name: 'contextLength', required: false, defaultValue: undefined },
       { name: 'isMultimodal', required: false, defaultValue: true },
       { name: 'isReasoning', required: false, defaultValue: false },
     ],
@@ -160,6 +186,7 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
       'apiKey',
       'model',
       'endpoint',
+      { name: 'contextLength', required: false, defaultValue: undefined },
       { name: 'isMultimodal', required: false, defaultValue: true },
       { name: 'isReasoning', required: false, defaultValue: false },
     ],
@@ -199,6 +226,7 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
       'endpoint',
       'apiKey',
       'model',
+      { name: 'contextLength', required: false, defaultValue: undefined },
       { name: 'isMultimodal', required: false, defaultValue: true },
       { name: 'isReasoning', required: false, defaultValue: false },
     ],
@@ -239,6 +267,23 @@ export const EMBEDDING_PROVIDERS: readonly ProviderConfig[] = [
     description: 'Enter your Cohere API credentials for embeddings.',
     modelPlaceholder: 'e.g., embed-v4.0',
     fields: ['apiKey', 'model', { name: 'isMultimodal', required: false, defaultValue: false }],
+  },
+  {
+    id: 'azureAI',
+    label: 'Azure AI',
+    description: 'Access Azure AI Foundry embedding models.',
+    modelPlaceholder: 'e.g., text-embedding-ada-002, embed-v-4-0',
+    fields: [
+      'endpoint',
+      'apiKey',
+      'model',
+      { name: 'isMultimodal', required: false, defaultValue: false },
+    ],
+    customFields: {
+      endpoint: {
+        placeholder: 'e.g., https://<your-resource-name>.services.ai.azure.com/openai/v1/"',
+      },
+    },
   },
   {
     id: 'azureOpenAI',
@@ -324,6 +369,23 @@ export const EMBEDDING_PROVIDERS: readonly ProviderConfig[] = [
       { name: 'isMultimodal', required: false, defaultValue: false },
     ],
   },
+  {
+    id: 'openAICompatible',
+    label: 'OpenAI API Compatible',
+    description: 'Enter your OpenAI-compatible API credentials to get started.',
+    modelPlaceholder: 'e.g., text-embedding-3-small',
+    fields: [
+      'endpoint',
+      'apiKey',
+      'model',
+      { name: 'isMultimodal', required: false, defaultValue: false },
+    ],
+    customFields: {
+      endpoint: {
+        placeholder: 'e.g., https://api.openai.com/v1',
+      },
+    },
+  },
 ] as const;
 
 // STORAGE PROVIDERS
@@ -369,6 +431,6 @@ export const URL_PROVIDERS: readonly ProviderConfig[] = [
     id: 'urls',
     label: 'Public URLs',
     description: 'Configure the public URLs for your services.',
-    fields: ['frontendUrl',   { name: 'connectorUrl', required: false, defaultValue: '' }],
+    fields: ['frontendUrl', { name: 'connectorUrl', required: false, defaultValue: '' }],
   },
 ] as const;

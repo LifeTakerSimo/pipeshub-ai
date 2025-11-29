@@ -7,6 +7,7 @@ from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
 import aiohttp
 from fastapi import HTTPException
 from langchain.chat_models.base import BaseChatModel
+from langchain.output_parsers import PydanticOutputParser
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 
 from app.config.constants.http_status_code import HttpStatusCode
@@ -26,6 +27,7 @@ from app.utils.citations import (
 from app.utils.logger import create_logger
 
 MAX_TOKENS_THRESHOLD = 80000
+TOOL_EXECUTION_TOKEN_RATIO = 0.5
 
 # Create a logger for this module
 logger = create_logger("streaming")
@@ -125,13 +127,29 @@ async def aiter_llm_stream(llm, messages,parts=None) -> AsyncGenerator[str, None
             # Non-streaming – yield whole blob once
             response = await llm.ainvoke(messages)
             content = getattr(response, "content", response)
-            if parts is not None:
-                parts.append(content)
-            yield _stringify_content(content)
+            parts.append(response)
+
+            text = _stringify_content(content)
+            if text:
+                yield text
     except Exception as e:
         logger.error(f"Error in aiter_llm_stream: {str(e)}", exc_info=True)
         raise
 
+# Configuration for Qdrant limits based on context length.
+VECTOR_DB_LIMIT_TIERS = [
+    (17000, 65),  # For context lengths up to 17k
+    (33000, 231),  # For context lengths up to 33k
+    (65000, 320),  # For context lengths up to 65k
+]
+DEFAULT_VECTOR_DB_LIMIT = 400
+
+def get_vectorDb_limit(context_length: int) -> int:
+    """Determines the vector db search limit based on the LLM's context length."""
+    for length_threshold, limit in VECTOR_DB_LIMIT_TIERS:
+        if context_length <= length_threshold:
+            return limit
+    return DEFAULT_VECTOR_DB_LIMIT
 
 async def execute_tool_calls(
     llm,
@@ -145,10 +163,10 @@ async def execute_tool_calls(
     retrieval_service: RetrievalService,
     user_id: str,
     org_id: str,
+    context_length:int|None,
     target_words_per_chunk: int = 1,
     is_multimodal_llm: Optional[bool] = False,
     max_hops: int = 1,
-
 ) -> AsyncGenerator[Dict[str, Any], tuple[List[Dict], bool]]:
     """
     Execute tool calls if present in the LLM response.
@@ -169,32 +187,28 @@ async def execute_tool_calls(
         try:
             # Measure LLM invocation latency
 
-            parts = []
-            async for event in call_aiter_llm_stream(llm_with_tools, messages, final_results, records=[], target_words_per_chunk=target_words_per_chunk, parts=parts):
-                if event.get("event") == "complete":
+            ai = None
+            async for event in call_aiter_llm_stream(llm_with_tools, messages, final_results, records=[], target_words_per_chunk=target_words_per_chunk):
+                if event.get("event") == "complete" or event.get("event") == "error":
                     yield event
                     return
-                yield event
-
-            ai = None
-            for part in parts:
-                if ai is None:
-                    ai = part
+                elif event.get("event") == "tool_calls":
+                    ai = event.get("data").get("ai")
                 else:
-                    ai += part
+                    yield event
+
 
             ai = AIMessage(
-            content=ai.content,
-            tool_calls=getattr(ai, 'tool_calls', []),
+                content = ai.content,
+                tool_calls = getattr(ai, 'tool_calls', []),
             )
         except Exception as e:
             logger.debug("Error in llm call with tools: %s", str(e))
             break
 
-
         # Check if there are tool calls
         if not (isinstance(ai, AIMessage) and getattr(ai, "tool_calls", None)):
-            logger.debug("execute_tool_calls: no tool_calls returned; exiting tool loop without adding AI message (will be streamed)")
+            logger.debug("execute_tool_calls: no tool_calls returned; exiting tool loop")
             messages.append(ai)
             break
 
@@ -384,6 +398,8 @@ async def execute_tool_calls(
 
         current_message_tokens, new_tokens = count_tokens(messages,message_contents)
 
+        MAX_TOKENS_THRESHOLD = int(context_length * TOOL_EXECUTION_TOKEN_RATIO)
+
         logger.debug(
             "execute_tool_calls: token_count | current_messages=%d new_records=%d threshold=%d",
             current_message_tokens,
@@ -399,12 +415,13 @@ async def execute_tool_calls(
             )
 
             virtual_record_ids = [r.get("virtual_record_id") for r in records if r.get("virtual_record_id")]
-
+            vector_db_limit =  get_vectorDb_limit(context_length)
             result = await retrieval_service.search_with_filters(
                 queries=[all_queries[0]],
                 org_id=org_id,
                 user_id=user_id,
-                limit=500,
+                limit=vector_db_limit,
+
                 filter_groups=None,
                 virtual_record_ids_from_tool=virtual_record_ids,
             )
@@ -1016,10 +1033,12 @@ async def stream_llm_response_with_tools(
     virtual_record_id_to_result,
     blob_store,
     is_multimodal_llm,
+    context_length:int|None,
     tools: Optional[List] = None,
     tool_runtime_kwargs: Optional[Dict[str, Any]] = None,
     target_words_per_chunk: int = 1,
     mode: Optional[str] = "json",
+
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Enhanced streaming with tool support.
@@ -1051,7 +1070,22 @@ async def stream_llm_response_with_tools(
         tools_were_called = False
         try:
             logger.info(f"executing tool calls with tools={tools}")
-            async for tool_event in execute_tool_calls(llm, final_messages, tools, tool_runtime_kwargs, final_results,virtual_record_id_to_result, blob_store, all_queries, retrieval_service, user_id, org_id, is_multimodal_llm):
+
+            async for tool_event in execute_tool_calls(
+                llm=llm,
+                messages=final_messages,
+                tools=tools,
+                tool_runtime_kwargs=tool_runtime_kwargs,
+                final_results=final_results,
+                virtual_record_id_to_result=virtual_record_id_to_result,
+                blob_store=blob_store,
+                all_queries=all_queries,
+                retrieval_service=retrieval_service,
+                user_id=user_id,
+                org_id=org_id,
+                context_length=context_length,
+                is_multimodal_llm=is_multimodal_llm
+            ):
 
                 if tool_event.get("event") == "tool_execution_complete":
                     # Extract the final messages and tools_executed status
@@ -1081,7 +1115,7 @@ async def stream_llm_response_with_tools(
                         tools_were_called = True
                     logger.debug("stream_llm_response_with_tools: forwarding tool event type=%s", tool_event.get("event"))
                     yield tool_event
-                elif tool_event.get("event") == "complete":
+                elif tool_event.get("event") == "complete" or tool_event.get("event") == "error":
                     yield tool_event
                     return
                 else:
@@ -1151,13 +1185,15 @@ async def call_aiter_llm_stream(
     final_results,
     records=None,
     target_words_per_chunk=1,
-    parts=None,
+    reflection_retry_count=0,
+    max_reflection_retries=1,
 ) -> AsyncGenerator[Dict[str, Any], None]:
     """Stream LLM response and parse answer field from JSON, emitting chunks and final event."""
     state = AnswerParserState()
     answer_key_re, cite_block_re, incomplete_cite_re, word_iter = _initialize_answer_parser_regex()
 
-    async for token in aiter_llm_stream(llm, messages, parts):
+    parts = []
+    async for token in aiter_llm_stream(llm, messages,parts):
         state.full_json_buf += token
 
         # Look for the start of the "answer" field
@@ -1228,8 +1264,85 @@ async def call_aiter_llm_stream(
                         # Break after yielding to avoid re-processing the same words on next token
                         break
 
-    if not (state.answer_buf):
+    ai = None
+    for part in parts:
+        if ai is None:
+            ai = part
+        else:
+            ai += part
+
+    tool_calls = getattr(ai, 'tool_calls', [])
+    if tool_calls:
+        yield {
+            "event": "tool_calls",
+            "data": {
+                "ai": ai,
+            },
+        }
         return
+
+
+    if not (state.answer_buf):
+        # No answer field found in the response - use reflection to guide the LLM
+        if reflection_retry_count < max_reflection_retries:
+            logger.warning(
+                "call_aiter_llm_stream: No answer field found in LLM response. Using reflection to guide LLM to proper format. Retry count: %d",
+                reflection_retry_count
+            )
+
+            response_text = state.full_json_buf.strip()
+            if response_text.startswith("```json"):
+                response_text = response_text.replace("```json", "", 1)
+            if response_text.endswith("```"):
+                response_text = response_text.rsplit("```", 1)[0]
+            response_text = response_text.strip()
+            try:
+                parser = PydanticOutputParser(pydantic_object=AnswerWithMetadata)
+                parsed = parser.parse(response_text)
+            except Exception as e:
+                parse_error = str(e)
+                # Create reflection message to guide the LLM
+                reflection_message = HumanMessage(
+                    content=(f"""The previous response failed validation with the following error: {parse_error}
+
+                    Please correct your response to match the expected schema. Ensure all fields are properly formatted and all required fields are present. Respond only with valid JSON that matches the AnswerWithMetadata schema.""")
+                )
+                # Add the reflection message to the messages list
+                updated_messages = messages.copy()
+                if ai is not None:
+                    ai_message = AIMessage(
+                        content=ai.content,
+                    )
+                    updated_messages.append(ai_message)
+
+                updated_messages.append(reflection_message)
+
+                # Recursively call the function with updated messages
+                async for event in call_aiter_llm_stream(
+                    llm,
+                    updated_messages,
+                    final_results,
+                    records,
+                    target_words_per_chunk,
+                    reflection_retry_count + 1,
+                    max_reflection_retries,
+                ):
+                    yield event
+
+            return
+        else:
+            logger.error(
+                "call_aiter_llm_stream: No answer field found after %d reflection attempts. Returning error.",
+                max_reflection_retries
+            )
+            # After max retries, return an error event
+            yield {
+                "event": "error",
+                "data": {
+                    "error": "LLM did not provide any appropriate answer"
+                },
+            }
+            return
 
     try:
         parsed = json.loads(escape_ctl(state.full_json_buf))
@@ -1242,10 +1355,12 @@ async def call_aiter_llm_stream(
                 "citations": c,
                 "reason": parsed.get("reason"),
                 "confidence": parsed.get("confidence"),
+
             },
         }
     except Exception:
         # Fallback if JSON parsing fails
+
         normalized, c = normalize_citations_and_chunks(state.answer_buf, final_results, records)
         yield {
             "event": "complete",

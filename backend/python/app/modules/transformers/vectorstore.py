@@ -13,7 +13,7 @@ from qdrant_client.http.models import PointStruct
 from spacy.language import Language
 from spacy.tokens import Doc
 
-from app.config.constants.arangodb import CollectionNames, MimeTypes
+from app.config.constants.arangodb import CollectionNames
 from app.config.constants.service import config_node_constants
 from app.exceptions.indexing_exceptions import (
     DocumentProcessingError,
@@ -906,6 +906,7 @@ class VectorStore(Transformer):
 
             # Update record status
             await self._update_record_status(chunks, record_id)
+            self.logger.info(f"✅ Embeddings created and stored for record: {record_id}")
 
         except (
             EmbeddingError,
@@ -1010,7 +1011,11 @@ class VectorStore(Transformer):
                     "quote",
                 ]:
                     text_blocks.append(block)
-                elif block_type.lower() in ["image", "drawing"]:
+                elif (
+                    block_type.lower() in ["image", "drawing"]
+                    and isinstance(block.data, dict)
+                    and block.data.get("uri")
+                ):
                     image_blocks.append(block)
                 elif block_type.lower() in ["table", "table_row", "table_cell"]:
                     table_blocks.append(block)
@@ -1018,7 +1023,6 @@ class VectorStore(Transformer):
             for block_group in block_groups:
                 if block_group.type.lower() in ["table"]:
                     table_blocks.append(block_group)
-
 
             documents_to_embed = []
 
@@ -1105,45 +1109,8 @@ class VectorStore(Transformer):
                                             page_content=description, metadata=metadata
                                         )
                                     )
-                        elif mime_type in {MimeTypes.PNG.value, MimeTypes.JPG.value, MimeTypes.JPEG.value, MimeTypes.WEBP.value, MimeTypes.SVG.value, MimeTypes.HEIC.value, MimeTypes.HEIF.value}:
-                            try:
-                                record = await self.arango_service.get_document(
-                                    record_id, CollectionNames.RECORDS.value
-                                )
-                                if not record:
-                                    raise DocumentProcessingError(
-                                        "Record not found in database",
-                                        doc_id=record_id,
-                                    )
-                                doc = dict(record)
-                                doc.update(
-                                    {
-                                        "indexingStatus": "ENABLE_MULTIMODAL_MODELS",
-                                        "isDirty": True,
-                                        "virtualRecordId": virtual_record_id,
-                                    }
-                                )
 
-                                docs = [doc]
 
-                                success = await self.arango_service.batch_upsert_nodes(
-                                    docs, CollectionNames.RECORDS.value
-                                )
-                                if not success:
-                                    raise DocumentProcessingError(
-                                        "Failed to update indexing status", doc_id=record_id
-                                    )
-
-                                return False
-
-                            except DocumentProcessingError:
-                                raise
-                            except Exception as e:
-                                raise DocumentProcessingError(
-                                    "Error updating record status: " + str(e),
-                                    doc_id=record_id,
-                                    details={"error": str(e)},
-                                )
                 except Exception as e:
                     raise DocumentProcessingError(
                         "Failed to create image document objects: " + str(e),

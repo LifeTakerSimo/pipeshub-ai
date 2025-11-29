@@ -199,7 +199,9 @@ record_schema = {
                     "COMPLETED",
                     "FILE_TYPE_NOT_SUPPORTED",
                     "AUTO_INDEX_OFF",
-                    "ENABLE_MULTIMODAL_MODELS"
+                    "EMPTY",
+                    "ENABLE_MULTIMODAL_MODELS",
+                    "QUEUED"
                 ],
             },
             "extractionStatus": {
@@ -211,7 +213,8 @@ record_schema = {
                     "FAILED",
                     "COMPLETED",
                     "FILE_TYPE_NOT_SUPPORTED",
-                    "AUTO_INDEX_OFF"
+                    "AUTO_INDEX_OFF",
+                    "EMPTY"
                 ],
             },
             "isLatestVersion": {"type": "boolean", "default": True},
@@ -325,6 +328,20 @@ webpage_record_schema = {
     },
     "level": "strict",
     "message": "Document does not match the webpage record schema.",
+}
+
+comment_record_schema = {
+    "rule": {
+        "type": "object",
+        "properties": {
+            "authorSourceId": {"type": "string"},
+            "resolutionStatus": {"type": ["string", "null"]},
+            "commentSelection": {"type": ["string", "null"]},
+        },
+        "additionalProperties": False,
+    },
+    "level": "strict",
+    "message": "Document does not match the comment record schema.",
 }
 
 ticket_record_schema = {

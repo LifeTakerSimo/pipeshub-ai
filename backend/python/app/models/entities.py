@@ -4,7 +4,12 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
-from app.config.constants.arangodb import Connectors, MimeTypes, OriginTypes
+from app.config.constants.arangodb import (
+    Connectors,
+    MimeTypes,
+    OriginTypes,
+    ProgressStatus,
+)
 from app.models.blocks import BlocksContainer, SemanticMetadata
 from app.utils.time_conversion import get_epoch_timestamp_in_ms
 
@@ -32,20 +37,15 @@ class RecordType(str, Enum):
     MESSAGE = "MESSAGE"
     MAIL = "MAIL"
     TICKET = "TICKET"
+    COMMENT = "COMMENT"
+    INLINE_COMMENT = "INLINE_COMMENT"
+    CONFLUENCE_PAGE = "CONFLUENCE_PAGE"
+    CONFLUENCE_BLOGPOST = "CONFLUENCE_BLOGPOST"
     SHAREPOINT_LIST = "SHAREPOINT_LIST"
     SHAREPOINT_LIST_ITEM = "SHAREPOINT_LIST_ITEM"
     SHAREPOINT_DOCUMENT_LIBRARY = "SHAREPOINT_DOCUMENT_LIBRARY"
     OTHERS = "OTHERS"
 
-class RecordStatus(str, Enum):
-    NOT_STARTED = "NOT_STARTED"
-    IN_PROGRESS = "IN_PROGRESS"
-    PAUSED = "PAUSED"
-    FAILED = "FAILED"
-    COMPLETED = "COMPLETED"
-    FILE_TYPE_NOT_SUPPORTED = "FILE_TYPE_NOT_SUPPORTED"
-    MANUAL_SYNC = "MANUAL_SYNC"
-    AUTO_INDEX_OFF = "AUTO_INDEX_OFF"
 
 class Record(BaseModel):
     # Core record properties
@@ -53,7 +53,7 @@ class Record(BaseModel):
     org_id: str = Field(description="Unique identifier for the organization", default="")
     record_name: str = Field(description="Human-readable name for the record")
     record_type: RecordType = Field(description="Type/category of the record")
-    record_status: RecordStatus = Field(default=RecordStatus.NOT_STARTED)
+    record_status: ProgressStatus = Field(default=ProgressStatus.NOT_STARTED)
     parent_record_type: Optional[RecordType] = Field(default=None, description="Type of the parent record")
     record_group_type: Optional[RecordGroupType] = Field(default=None, description="Type of the record group")
     external_record_id: str = Field(description="Unique identifier for the record in the external system")
@@ -189,7 +189,7 @@ class FileRecord(Record):
         }
 
     @staticmethod
-    def from_arango_base_file_record(arango_base_file_record: Dict, arango_base_record: Dict) -> "FileRecord":
+    def from_arango_record(arango_base_file_record: Dict, arango_base_record: Dict) -> "FileRecord":
         return FileRecord(
             id=arango_base_record["_key"],
             org_id=arango_base_record["orgId"],
@@ -298,6 +298,45 @@ class MailRecord(Record):
             "subject": self.subject,
         }
 
+    @staticmethod
+    def from_arango_record(mail_doc: Dict, record_doc: Dict) -> "MailRecord":
+        """Create MailRecord from ArangoDB documents (records + mails collections)"""
+        conn_name_value = record_doc.get("connectorName")
+        try:
+            connector_name = Connectors(conn_name_value) if conn_name_value else Connectors.KNOWLEDGE_BASE
+        except ValueError:
+            connector_name = Connectors.KNOWLEDGE_BASE
+
+        return MailRecord(
+            id=record_doc["_key"],
+            org_id=record_doc["orgId"],
+            record_name=record_doc["recordName"],
+            record_type=RecordType(record_doc["recordType"]),
+            external_record_id=record_doc["externalRecordId"],
+            external_revision_id=record_doc.get("externalRevisionId"),
+            external_record_group_id=record_doc.get("externalGroupId"),
+            parent_external_record_id=record_doc.get("externalParentId"),
+            version=record_doc["version"],
+            origin=OriginTypes(record_doc["origin"]),
+            connector_name=connector_name,
+            mime_type=record_doc.get("mimeType", MimeTypes.UNKNOWN.value),
+            weburl=mail_doc.get("webUrl"),
+            created_at=record_doc.get("createdAtTimestamp"),
+            updated_at=record_doc.get("updatedAtTimestamp"),
+            source_created_at=record_doc.get("sourceCreatedAtTimestamp"),
+            source_updated_at=record_doc.get("sourceLastModifiedTimestamp"),
+            virtual_record_id=record_doc.get("virtualRecordId"),
+            subject=mail_doc.get("subject"),
+            from_email=mail_doc.get("from"),
+            to_emails=mail_doc.get("to", []),
+            cc_emails=mail_doc.get("cc", []),
+            bcc_emails=mail_doc.get("bcc", []),
+            thread_id=mail_doc.get("threadId"),
+            is_parent=mail_doc.get("isParent", False),
+            internet_message_id=mail_doc.get("messageIdHeader"),
+            conversation_index=mail_doc.get("conversationIndex"),
+        )
+
 class WebpageRecord(Record):
     def to_kafka_record(self) -> Dict:
         return {
@@ -319,6 +358,103 @@ class WebpageRecord(Record):
             "_key": self.id,
             "orgId": self.org_id,
         }
+
+    @staticmethod
+    def from_arango_record(webpage_doc: Dict, record_doc: Dict) -> "WebpageRecord":
+        """Create WebpageRecord from ArangoDB documents (records + webpages collections)"""
+        conn_name_value = record_doc.get("connectorName")
+        try:
+            connector_name = Connectors(conn_name_value) if conn_name_value else Connectors.KNOWLEDGE_BASE
+        except ValueError:
+            connector_name = Connectors.KNOWLEDGE_BASE
+
+        return WebpageRecord(
+            id=record_doc["_key"],
+            org_id=record_doc["orgId"],
+            record_name=record_doc["recordName"],
+            record_type=RecordType(record_doc["recordType"]),
+            external_record_id=record_doc["externalRecordId"],
+            external_revision_id=record_doc.get("externalRevisionId"),
+            external_record_group_id=record_doc.get("externalGroupId"),
+            parent_external_record_id=record_doc.get("externalParentId"),
+            version=record_doc["version"],
+            origin=OriginTypes(record_doc["origin"]),
+            connector_name=connector_name,
+            mime_type=record_doc.get("mimeType", MimeTypes.UNKNOWN.value),
+            weburl=record_doc.get("webUrl"),
+            created_at=record_doc.get("createdAtTimestamp"),
+            updated_at=record_doc.get("updatedAtTimestamp"),
+            source_created_at=record_doc.get("sourceCreatedAtTimestamp"),
+            source_updated_at=record_doc.get("sourceLastModifiedTimestamp"),
+            virtual_record_id=record_doc.get("virtualRecordId"),
+        )
+
+class CommentRecord(Record):
+    """
+    Comment record for page comments (footer and inline).
+
+    Fields:
+    - author_source_id: User accountId who created the comment
+    - resolution_status: Status of the comment (e.g., "resolved", "open", None)
+    - comment_selection: For inline comments, the original text selection (HTML)
+    """
+    author_source_id: str
+    resolution_status: Optional[str] = None
+    comment_selection: Optional[str] = None
+
+    def to_kafka_record(self) -> Dict:
+        return {
+            "recordId": self.id,
+            "orgId": self.org_id,
+            "recordName": self.record_name,
+            "recordType": self.record_type.value,
+            "mimeType": self.mime_type,
+            "createdAtTimestamp": self.created_at,
+            "updatedAtTimestamp": self.updated_at,
+            "sourceCreatedAtTimestamp": self.source_created_at,
+            "sourceLastModifiedTimestamp": self.source_updated_at,
+        }
+
+    def to_arango_record(self) -> Dict:
+        return {
+            "_key": self.id,
+            "authorSourceId": self.author_source_id,
+            "resolutionStatus": self.resolution_status,
+            "commentSelection": self.comment_selection,
+        }
+
+    @staticmethod
+    def from_arango_record(comment_doc: Dict, record_doc: Dict) -> "CommentRecord":
+        """Create CommentRecord from ArangoDB documents (records + comments collections)"""
+        conn_name_value = record_doc.get("connectorName")
+        try:
+            connector_name = Connectors(conn_name_value) if conn_name_value else Connectors.KNOWLEDGE_BASE
+        except ValueError:
+            connector_name = Connectors.KNOWLEDGE_BASE
+
+        return CommentRecord(
+            id=record_doc["_key"],
+            org_id=record_doc["orgId"],
+            record_name=record_doc["recordName"],
+            record_type=RecordType(record_doc["recordType"]),
+            external_record_id=record_doc["externalRecordId"],
+            external_revision_id=record_doc.get("externalRevisionId"),
+            external_record_group_id=record_doc.get("externalGroupId"),
+            parent_external_record_id=record_doc.get("externalParentId"),
+            version=record_doc["version"],
+            origin=OriginTypes(record_doc["origin"]),
+            connector_name=connector_name,
+            mime_type=record_doc.get("mimeType", MimeTypes.UNKNOWN.value),
+            weburl=record_doc.get("webUrl"),
+            created_at=record_doc.get("createdAtTimestamp"),
+            updated_at=record_doc.get("updatedAtTimestamp"),
+            source_created_at=record_doc.get("sourceCreatedAtTimestamp"),
+            source_updated_at=record_doc.get("sourceLastModifiedTimestamp"),
+            virtual_record_id=record_doc.get("virtualRecordId"),
+            author_id=comment_doc.get("authorId"),
+            resolution_status=comment_doc.get("resolutionStatus"),
+            comment_selection=comment_doc.get("commentSelection"),
+        )
 
 class TicketRecord(Record):
     summary: Optional[str] = None
@@ -347,6 +483,46 @@ class TicketRecord(Record):
             "creatorEmail": self.creator_email,
             "creatorName": self.creator_name,
         }
+
+    @staticmethod
+    def from_arango_record(ticket_doc: Dict, record_doc: Dict) -> "TicketRecord":
+        """Create TicketRecord from ArangoDB documents (records + tickets collections)"""
+        conn_name_value = record_doc.get("connectorName")
+        try:
+            connector_name = Connectors(conn_name_value) if conn_name_value else Connectors.KNOWLEDGE_BASE
+        except ValueError:
+            connector_name = Connectors.KNOWLEDGE_BASE
+
+        return TicketRecord(
+            id=record_doc["_key"],
+            org_id=record_doc["orgId"],
+            record_name=record_doc["recordName"],
+            record_type=RecordType(record_doc["recordType"]),
+            external_record_id=record_doc["externalRecordId"],
+            external_revision_id=record_doc.get("externalRevisionId"),
+            external_record_group_id=record_doc.get("externalGroupId"),
+            parent_external_record_id=record_doc.get("externalParentId"),
+            version=record_doc["version"],
+            origin=OriginTypes(record_doc["origin"]),
+            connector_name=connector_name,
+            mime_type=record_doc.get("mimeType", MimeTypes.UNKNOWN.value),
+            weburl=record_doc.get("webUrl"),
+            created_at=record_doc.get("createdAtTimestamp"),
+            updated_at=record_doc.get("updatedAtTimestamp"),
+            source_created_at=record_doc.get("sourceCreatedAtTimestamp"),
+            source_updated_at=record_doc.get("sourceLastModifiedTimestamp"),
+            virtual_record_id=record_doc.get("virtualRecordId"),
+            summary=ticket_doc.get("summary"),
+            description=ticket_doc.get("description"),
+            status=ticket_doc.get("status"),
+            priority=ticket_doc.get("priority"),
+            assignee=ticket_doc.get("assignee"),
+            reporter_email=ticket_doc.get("reporterEmail"),
+            assignee_email=ticket_doc.get("assigneeEmail"),
+            reporter_name=ticket_doc.get("reporterName"),
+            creator_email=ticket_doc.get("creatorEmail"),
+            creator_name=ticket_doc.get("creatorName"),
+        )
 
     def to_kafka_record(self) -> Dict:
 

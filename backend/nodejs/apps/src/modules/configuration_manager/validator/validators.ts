@@ -400,6 +400,7 @@ export const modelType = z.enum([
 export const embeddingProvider = z.enum([
   'anthropic',
   'bedrock',
+  'azureAI',
   'azureOpenAI', 
   'cohere',
   'default',
@@ -419,7 +420,8 @@ export const embeddingProvider = z.enum([
 
 export const llmProvider = z.enum([
   'anthropic',
-  'bedrock', 
+  'bedrock',
+  'azureAI',
   'azureOpenAI',
   'cohere',
   'fireworks',
@@ -464,7 +466,8 @@ export const modelConfigurationSchema = z.object({
   configuration: configurationSchema,
   isMultimodal: z.boolean().default(false).describe("Whether the model supports multimodal input"),
   isReasoning: z.boolean().default(false).describe("Whether the model supports reasoning"),
-  isDefault: z.boolean().default(false).describe("Whether this should be the default model")
+  isDefault: z.boolean().default(false).describe("Whether this should be the default model"),
+  contextLength: z.number().optional().nullable().describe("Context length for the model")
 });
 
 export const updateProviderRequestSchema = z.object({
@@ -477,7 +480,8 @@ export const updateProviderRequestSchema = z.object({
     configuration: configurationSchema,
     isMultimodal: z.boolean().default(false).describe("Whether the model supports multimodal input"),
     isReasoning: z.boolean().default(false).describe("Whether the model supports reasoning"),
-    isDefault: z.boolean().default(false).describe("Whether this should be the default model")
+    isDefault: z.boolean().default(false).describe("Whether this should be the default model"),
+    contextLength: z.number().optional().nullable().describe("Context length for the model")
   }),
 });
 
@@ -488,7 +492,8 @@ export const addProviderRequestSchema = z.object({
     configuration: configurationSchema,
     isMultimodal: z.boolean().default(false).describe("Whether the model supports multimodal input"),
     isReasoning: z.boolean().default(false).describe("Whether the model supports reasoning"),
-    isDefault: z.boolean().default(false).describe("Whether this should be the default model")
+    isDefault: z.boolean().default(false).describe("Whether this should be the default model"),
+    contextLength: z.number().optional().nullable().describe("Context length for the model")
   }),
 });
 

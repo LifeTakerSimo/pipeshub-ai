@@ -4,7 +4,11 @@ from typing import AsyncContextManager, Dict, List, Optional
 
 from arango.database import TransactionDatabase
 
-from app.config.constants.arangodb import CollectionNames, Connectors
+from app.config.constants.arangodb import (
+    RECORD_TYPE_COLLECTION_MAPPING,
+    CollectionNames,
+    Connectors,
+)
 from app.connectors.core.base.data_store.data_store import (
     DataStoreProvider,
     TransactionStore,
@@ -51,10 +55,14 @@ class ArangoTransactionStore(TransactionStore):
         return await self.arango_service.get_record_by_path(connector_name, path, transaction=self.txn)
 
     async def get_record_by_key(self, key: str) -> Optional[Record]:
-        return await self.arango_service.get_record_by_id(key, transaction=self.txn)
+        return await self.arango_service.get_document(key, CollectionNames.RECORDS.value, transaction=self.txn)
 
     async def get_record_by_external_id(self, connector_name: Connectors, external_id: str) -> Optional[Record]:
         return await self.arango_service.get_record_by_external_id(connector_name, external_id, transaction=self.txn)
+
+    async def get_records_by_status(self, org_id: str, connector_name: Connectors, status_filters: List[str], limit: Optional[int] = None, offset: int = 0) -> List[Record]:
+        """Get records by status. Returns properly typed Record instances."""
+        return await self.arango_service.get_records_by_status(org_id, connector_name, status_filters, limit, offset, transaction=self.txn)
 
     async def get_record_group_by_external_id(self, connector_name: Connectors, external_id: str) -> Optional[RecordGroup]:
         return await self.arango_service.get_record_group_by_external_id(connector_name, external_id, transaction=self.txn)
@@ -258,21 +266,8 @@ class ArangoTransactionStore(TransactionStore):
             for record in records:
                 # Define record type configurations
                 record_type_config = {
-                    RecordType.FILE: {
-                        "collection": CollectionNames.FILES.value,
-                    },
-                    RecordType.MAIL: {
-                        "collection": CollectionNames.MAILS.value,
-                    },
-                    # RecordType.MESSAGE.value: {
-                    #     "collection": CollectionNames.MESSAGES.value,
-                    # },
-                    RecordType.WEBPAGE: {
-                        "collection": CollectionNames.WEBPAGES.value,
-                    },
-                    RecordType.TICKET: {
-                        "collection": CollectionNames.TICKETS.value,
-                    },
+                    RecordType(record_type_str): {"collection": collection}
+                    for record_type_str, collection in RECORD_TYPE_COLLECTION_MAPPING.items()
                 }
 
                 # Get the configuration for the current record type
@@ -458,14 +453,6 @@ class ArangoTransactionStore(TransactionStore):
 
     async def get_all_orgs(self) -> List[Org]:
         return await self.arango_service.get_all_orgs()
-
-    async def create_record_permissions(self, record_id: str, permissions: List[Permission]) -> None:
-        return await self.arango_service.batch_create_edges([permission.to_arango_permission() for permission in permissions],
-                    collection=CollectionNames.PERMISSIONS.value, transaction=self.txn)
-
-    async def create_record_group_permissions(self, record_group_id: str, permissions: List[Permission]) -> None:
-        return await self.arango_service.batch_create_edges([permission.to_arango_permission() for permission in permissions],
-                    collection=CollectionNames.PERMISSIONS.value, transaction=self.txn)
 
     async def create_user_groups(self, user_groups: List[AppUserGroup]) -> None:
         return await self.arango_service.batch_upsert_nodes([user_group.to_arango_base_user_group() for user_group in user_groups],

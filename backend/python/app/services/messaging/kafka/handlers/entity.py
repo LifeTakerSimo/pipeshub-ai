@@ -186,16 +186,16 @@ class EntityEventService(BaseEventService):
         try:
             self.logger.info(f"📥 Processing user added event: {payload}")
             # Check if user already exists by email
-            existing_user = await self.arango_service.get_entity_id_by_email(
+            existing_user = await self.arango_service.get_user_by_email(
                 payload["email"]
             )
 
             current_timestamp = get_epoch_timestamp_in_ms()
 
             if existing_user:
-                user_key = existing_user
+                user_key = existing_user.id
                 user_data = {
-                    "_key": existing_user,
+                    "_key": user_key,
                     "userId": payload["userId"],
                     "orgId": payload["orgId"],
                     "isActive": True,
@@ -624,7 +624,7 @@ class EntityEventService(BaseEventService):
             # TODO: Use transaction instead of batch upsert
             await self.arango_service.batch_upsert_nodes([kb_data], CollectionNames.RECORD_GROUPS.value)
             await self.arango_service.batch_upsert_nodes([root_folder_data], CollectionNames.FILES.value)
-            await self.arango_service.batch_create_edges([permission_edge], CollectionNames.PERMISSIONS_TO_KB.value)
+            await self.arango_service.batch_create_edges([permission_edge], CollectionNames.PERMISSION.value)
             await self.arango_service.batch_create_edges([folder_edge], CollectionNames.BELONGS_TO.value)
 
             self.logger.info(f"Created new knowledge base for user {userId} in organization {orgId}")

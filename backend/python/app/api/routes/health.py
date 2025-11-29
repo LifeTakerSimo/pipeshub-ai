@@ -296,21 +296,19 @@ async def embedding_health_check(request: Request, embedding_configs: list[dict]
             },
         )
 
-
-
 async def perform_llm_health_check(
     llm_config: dict,
     logger: Logger,
 ) -> Dict[str, Any]:
     """Perform health check for LLM models"""
     try:
-        logger.info(f"Performing LLM health check for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}")
+        logger.info(f"Performing LLM health check for {llm_config.get('provider')} with configuration model {llm_config.get('configuration', {}).get('model', '')}")
         # Use the first model from comma-separated list
-        model_string = llm_config.get("configuration").get("model", "")
+        model_string = llm_config.get("configuration", {}).get("model", "")
         model_names = [name.strip() for name in model_string.split(",") if name.strip()]
 
         if not model_names:
-            logger.error(f"No valid model names found in configuration for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}")
+            logger.error(f"No valid model names found in configuration for {llm_config.get('provider')} with configuration model {llm_config.get('configuration', {}).get('model', '')}")
             return JSONResponse(
                 status_code=500,
                 content={
@@ -318,7 +316,7 @@ async def perform_llm_health_check(
                     "message": "No valid model names found in configuration",
                     "details": {
                     "provider": llm_config.get("provider"),
-                    "model": llm_config.get("configuration").get("model")
+                    "model": llm_config.get("configuration", {}).get("model", "")
                     },
                 },
             )
@@ -336,77 +334,96 @@ async def perform_llm_health_check(
         is_multimodal = llm_config.get("isMultimodal", False) or llm_config.get("configuration", {}).get("isMultimodal", False)
 
         # Set timeout for the test
-        try:
-            if is_multimodal:
-                # Test with multimodal input (text + small image)
-                logger.info("Multimodal model detected - testing with text and small image")
-                test_image_url = TEST_IMAGE
+        if is_multimodal:
+            # For multimodal models, test image first, then text if image fails
+            logger.info("Multimodal model detected - testing with image first")
+            test_image_url = TEST_IMAGE
 
-                # Create multimodal message content
-                multimodal_content = [
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": test_image_url
-                        }
+            # Create multimodal message content
+            multimodal_content = [
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": test_image_url
                     }
-                ]
+                }
+            ]
 
+            try:
                 test_message = HumanMessage(content=multimodal_content)
                 test_response = await asyncio.wait_for(
                     asyncio.to_thread(llm_model.invoke, [test_message]),
                     timeout=120.0  # 120 second timeout
                 )
-            else:
-                # Test with a simple text prompt
+                logger.info(f"Image test passed for multimodal model: {test_response}")
+            except asyncio.TimeoutError:
+                raise
+            except Exception as image_error:
+                logger.error(f"Image test failed for multimodal model: {str(image_error)}")
+
+                # Image test failed, now try text test to determine if model works at all
+                logger.info("Image test failed - testing with text to verify model functionality")
                 test_prompt = "Hello, this is a health check test. Please respond with 'Health check successful' if you can read this message."
-                test_response = await asyncio.wait_for(
-                    asyncio.to_thread(llm_model.invoke, test_prompt),
-                    timeout=120.0  # 120 second timeout
-                )
+                try:
+                    text_response = await asyncio.wait_for(
+                        asyncio.to_thread(llm_model.invoke, test_prompt),
+                        timeout=120.0  # 120 second timeout
+                    )
+                    logger.info(f"Text test passed for multimodal model: {text_response}")
 
-            return JSONResponse(
-                status_code=200,
-                content={
-                    "status": "healthy",
-                    "message": f"LLM model is responding. Sample response: {test_response}",
-                    "timestamp": get_epoch_timestamp_in_ms(),
-                },
+                    # Text works but image doesn't - model doesn't support images
+                    return JSONResponse(
+                        status_code=500,
+                        content={
+                            "status": "error",
+                            "message": "Model doesn't support images/vision. Disable Multimodal checkbox.",
+                            "details": {
+                                "provider": llm_config.get("provider"),
+                                "model": model_name,
+                                "error": str(image_error)
+                            },
+                        },
+                    )
+                except Exception as text_error:
+                    # Both tests failed - pass the original error as-is
+                    logger.error(f"Both image and text tests failed for multimodal model: {str(text_error)}")
+                    raise text_error
+        else:
+            # Test with a simple text prompt
+            test_prompt = "Hello, this is a health check test. Please respond with 'Health check successful' if you can read this message."
+            test_response = await asyncio.wait_for(
+                asyncio.to_thread(llm_model.invoke, test_prompt),
+                timeout=120.0  # 120 second timeout
             )
 
-        except asyncio.TimeoutError:
-            logger.error(f"LLM health check timed out for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}")
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "status": "error",
-                    "message": "LLM health check timed out",
-                    "details": {
-                        "provider": llm_config.get("provider"),
-                        "model": model_name,
-                        "timeout_seconds": 120
-                    },
-                },
-            )
+        return JSONResponse(
+            status_code=200,
+            content={
+                "status": "healthy",
+                "message": f"LLM model is responding. Sample response: {test_response}",
+                "timestamp": get_epoch_timestamp_in_ms(),
+            },
+        )
 
-    except Exception as e:
-        logger.error(f"LLM health check failed for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}: {str(e)}", exc_info=True)
+    except asyncio.TimeoutError:
+        logger.error(f"LLM health check timed out for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}")
         return JSONResponse(
             status_code=500,
             content={
                 "status": "error",
-                "message": f"LLM health check failed: {str(e)}",
+                "message": "LLM health check timed out",
                 "details": {
                     "provider": llm_config.get("provider"),
-                    "model": llm_config.get("configuration").get("model"),
-                    "error_type": type(e).__name__
-                }
+                    "model": model_name,
+                    "timeout_seconds": 120
+                },
             },
         )
     except HTTPException as he:
+        logger.error(f"LLM health check failed for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}: {str(he)}")
         return JSONResponse(status_code=he.status_code, content=he.detail)
     except Exception as e:
-        logger.error(f"LLM health check failed for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}: {str(e)}", exc_info=True)
+        logger.error(f"LLM health check failed for {llm_config.get('provider')} with configuration {llm_config.get('configuration')}: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={
@@ -414,9 +431,9 @@ async def perform_llm_health_check(
                 "message": f"LLM health check failed: {str(e)}",
                 "details": {
                     "provider": llm_config.get("provider"),
-                    "model": llm_config.get("configuration").get("model"),
+                    "model": model_name,
                     "error_type": type(e).__name__
-                },
+                }
             },
         )
 
@@ -427,13 +444,13 @@ async def perform_embedding_health_check(
 ) -> Dict[str, Any]:
     """Perform health check for embedding models"""
     try:
-        logger.info(f"Performing embedding health check for {embedding_config.get('provider')} with configuration {embedding_config.get('configuration')}")
+        logger.info(f"Performing embedding health check for {embedding_config.get('provider')} with configuration model {embedding_config.get('configuration', {}).get('model', '')}")
         # Use the first model from comma-separated list
-        model_string = embedding_config.get("configuration").get("model", "")
+        model_string = embedding_config.get("configuration", {}).get("model", "")
         model_names = [name.strip() for name in model_string.split(",") if name.strip()]
 
         if not model_names:
-            logger.error(f"No valid model names found in configuration for {embedding_config.get('provider')} with configuration {embedding_config.get('configuration')}")
+            logger.error(f"No valid model names found in configuration for {embedding_config.get('provider')} with configuration model {embedding_config.get('configuration', {}).get('model', '')}")
             return JSONResponse(
                 status_code=500,
                 content={
@@ -441,7 +458,7 @@ async def perform_embedding_health_check(
                     "message": "No valid model names found in configuration",
                     "details": {
                     "provider": embedding_config.get("provider"),
-                    "model": embedding_config.get("configuration").get("model")
+                    "model": embedding_config.get("configuration", {}).get("model", "")
                     },
                 },
             )
@@ -469,7 +486,7 @@ async def perform_embedding_health_check(
 
             logger.info(f"Test embeddings length: {len(test_embeddings)}")
             if not test_embeddings or len(test_embeddings) == 0:
-                logger.error(f"Embedding model returned empty results for {embedding_config.get('provider')} with configuration {embedding_config.get('configuration')}")
+                logger.error(f"Embedding model returned empty results for {embedding_config.get('provider')} with configuration model {embedding_config.get('configuration', {}).get('model', '')}")
                 return JSONResponse(
                     status_code=500,
                     content={
@@ -539,7 +556,7 @@ async def perform_embedding_health_check(
             )
 
         except asyncio.TimeoutError:
-            logger.error(f"Embedding health check timed out for {embedding_config.get('provider')} with configuration {embedding_config.get('configuration')}")
+            logger.error(f"Embedding health check timed out for {embedding_config.get('provider')} with configuration model {embedding_config.get('configuration', {}).get('model', '')}")
             return JSONResponse(
                 status_code=500,
                 content={
@@ -554,7 +571,7 @@ async def perform_embedding_health_check(
         )
 
     except Exception as e:
-        logger.error(f"Embedding health check failed for {embedding_config.get('provider')} with configuration {embedding_config.get('configuration')   }: {str(e)}", exc_info=True)
+        logger.error(f"Embedding health check failed for {embedding_config.get('provider')} with configuration model {embedding_config.get('configuration', {}).get('model', '')}: {str(e)}", exc_info=True)
         return JSONResponse(
             status_code=500,
             content={
@@ -593,14 +610,14 @@ async def health_check(request: Request, model_type: str, model_config: dict = B
     try:
         logger = request.app.container.logger()
         logger.info(f"Health check endpoint called for {model_type}")
-        logger.info(f"Request body: {model_config}")
+        logger.debug(f"Request body: {model_config}")
 
         if model_type == "embedding":
-            logger.info(f"Performing embedding health check for {model_config.get('provider')} with configuration {model_config.get('configuration')}")
+            logger.info(f"Performing embedding health check for {model_config.get('provider')} with configuration model {model_config.get('configuration', {}).get('model', '')}")
             return await perform_embedding_health_check(request, model_config, logger)
 
         elif model_type == "llm":
-            logger.info(f"Performing LLM health check for {model_config.get('provider')} with configuration {model_config.get('configuration')}")
+            logger.info(f"Performing LLM health check for {model_config.get('provider')} with configuration model {model_config.get('configuration', {}).get('model', '')}")
             return await perform_llm_health_check(model_config, logger)
 
     except Exception as e:

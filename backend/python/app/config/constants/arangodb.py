@@ -74,6 +74,8 @@ class LegacyCollectionNames(Enum):
     PERMISSIONS_TO_KNOWLEDGE_BASE = "permissionsToKnowledgeBase"
     BELONGS_TO_KNOWLEDGE_BASE = "belongsToKnowledgeBase"
     BELONGS_TO_KB = "belongsToKB"
+    PERMISSIONS = "permissions"
+    PERMISSIONS_TO_KB = "permissionsToKB"
 
 class LegacyGraphNames(Enum):
     FILE_ACCESS_GRAPH = "fileAccessGraph"
@@ -92,7 +94,6 @@ class CollectionNames(Enum):
     # Knowledge base
     IS_OF_TYPE = "isOfType"
     PERMISSION = "permission"
-    PERMISSIONS_TO_KB = "permissionsToKB"
 
     # Drive related
     DRIVES = "drives"
@@ -104,6 +105,7 @@ class CollectionNames(Enum):
     MAILS = "mails"
     #MESSAGES = "messages"
     WEBPAGES = "webpages"
+    COMMENTS = "comments"
     TICKETS = "tickets"
 
     # Users and groups
@@ -132,8 +134,6 @@ class CollectionNames(Enum):
     SUBCATEGORIES3 = "subcategories3"
     INTER_CATEGORY_RELATIONS = "interCategoryRelations"
 
-    # Permissions
-    PERMISSIONS = "permissions"
 
     # Other
     CHANNEL_HISTORY = "channelHistory"
@@ -230,6 +230,10 @@ class ProgressStatus(Enum):
     FAILED = "FAILED"
     FILE_TYPE_NOT_SUPPORTED = "FILE_TYPE_NOT_SUPPORTED"
     AUTO_INDEX_OFF = "AUTO_INDEX_OFF"
+    EMPTY = "EMPTY"
+    ENABLE_MULTIMODAL_MODELS = "ENABLE_MULTIMODAL_MODELS"
+    QUEUED = "QUEUED"
+
 
 class RecordTypes(Enum):
     FILE = "FILE"
@@ -238,6 +242,7 @@ class RecordTypes(Enum):
     MAIL = "MAIL"
     DRIVE = "DRIVE"
     WEBPAGE = "WEBPAGE"
+    COMMENT = "COMMENT"
     TICKET = "TICKET"
     MESSAGE = "MESSAGE"
     WEBPAGE_COMMENT = "WEBPAGE_COMMENT"
@@ -263,3 +268,15 @@ class AccountType(Enum):
     ENTERPRISE = "enterprise"
     BUSINESS = "business"
     ADMIN = "admin"
+
+RECORD_TYPE_COLLECTION_MAPPING = {
+    "FILE": CollectionNames.FILES.value,
+    "MAIL": CollectionNames.MAILS.value,
+    "WEBPAGE": CollectionNames.WEBPAGES.value,
+    "CONFLUENCE_PAGE": CollectionNames.WEBPAGES.value,
+    "CONFLUENCE_BLOGPOST": CollectionNames.WEBPAGES.value,
+    "TICKET": CollectionNames.TICKETS.value,
+    "COMMENT": CollectionNames.COMMENTS.value,
+    "INLINE_COMMENT": CollectionNames.COMMENTS.value,
+    # Note: MESSAGE, DRIVE, SHAREPOINT_*, and other types are stored only in records collection
+}

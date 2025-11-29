@@ -355,6 +355,38 @@ class DataSourceEntitiesProcessor:
         async with self.data_store_provider.transaction() as tx_store:
             await tx_store.delete_record_by_key(record_id)
 
+    async def reindex_existing_records(self, records: List[Record]) -> None:
+        """
+        Publish reindex events for existing records without DB operations.
+        Used for reindexing functionality where records already exist in DB.
+        This method only publishes newRecord events to trigger re-indexing in the indexing service.
+
+        Args:
+            records: List of properly typed Record instances (FileRecord, MailRecord, etc.)
+        """
+        try:
+            if not records:
+                self.logger.info("No records to reindex")
+                return
+
+            for record in records:
+                payload = record.to_kafka_record()
+
+                await self.messaging_producer.send_message(
+                    "record-events",
+                    {
+                        "eventType": "newRecord",
+                        "timestamp": get_epoch_timestamp_in_ms(),
+                        "payload": payload
+                    },
+                    key=record.id
+                )
+
+            self.logger.info(f"Published reindex events for {len(records)} records")
+        except Exception as e:
+            self.logger.error(f"Failed to publish reindex events: {str(e)}")
+            raise e
+
     async def on_new_record_groups(self, record_groups: List[Tuple[RecordGroup, List[Permission]]]) -> None:
         try:
             async with self.data_store_provider.transaction() as tx_store:
@@ -479,6 +511,9 @@ class DataSourceEntitiesProcessor:
                             else:
                                 self.logger.warning(f"Could not find role with external_id {permission.external_id} for RecordGroup permission.")
                         # (The ORG case is no longer needed here as it's handled by BELONGS_TO)
+                        # Update adding ORG permission to allow fetching of records via record groups
+                        elif permission.entity_type == EntityType.ORG:
+                            from_collection = f"{CollectionNames.ORGS.value}/{self.org_id}"
 
                         if from_collection:
                             record_group_permissions.append(
@@ -548,7 +583,7 @@ class DataSourceEntitiesProcessor:
                     # Set the org_id on the object, as it's needed for the doc
                     user_group.org_id = self.org_id
 
-                    self.logger.info(f"Processing user group: {user_group.name}")
+                    self.logger.info(f"Processing user group: {user_group.name} with id {user_group.id}")
                     self.logger.info(f"Processing user group permissions: {members}")
 
                     # Check if the user group already exists in the DB

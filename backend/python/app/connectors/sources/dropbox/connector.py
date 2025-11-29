@@ -1,5 +1,6 @@
 import asyncio
 import mimetypes
+import re
 import uuid
 
 # from datetime import datetime
@@ -50,9 +51,7 @@ from app.connectors.core.registry.connector_builder import (
 
 # App-specific Dropbox client imports
 from app.connectors.sources.dropbox.common.apps import DropboxApp
-from app.connectors.sources.microsoft.common.msgraph_client import (
-    RecordUpdate,
-)
+from app.connectors.sources.microsoft.common.msgraph_client import RecordUpdate
 
 # Model imports
 from app.models.entities import (
@@ -406,7 +405,7 @@ class DropboxConnector(BaseConnector):
 
                         if 'shared_link_already_exists' in second_error_str:
                             # Extract URL using regex
-                            import re
+
                             # Pattern to match url='...' in the error string
                             url_pattern = r"url='(https://[^']+)'"
                             url_match = re.search(url_pattern, second_error_str)
@@ -1025,9 +1024,6 @@ class DropboxConnector(BaseConnector):
                 self.logger.info(f"New record detected: {record_update.record.record_name}")
             elif record_update.is_updated:
 
-                if record_update.content_changed:
-                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
-                    await self.data_entities_processor.on_record_content_update(record_update.record)
                 if record_update.metadata_changed:
                     self.logger.info(f"Metadata changed for record: {record_update.record.record_name}")
                     await self.data_entities_processor.on_record_metadata_update(record_update.record)
@@ -1037,6 +1033,9 @@ class DropboxConnector(BaseConnector):
                         record_update.record,
                         record_update.new_permissions
                     )
+                if record_update.content_changed:
+                    self.logger.info(f"Content changed for record: {record_update.record.record_name}")
+                    await self.data_entities_processor.on_record_content_update(record_update.record)
         except Exception as e:
             self.logger.error(f"Error handling record updates: {e}", exc_info=True)
 
@@ -2639,9 +2638,14 @@ class DropboxConnector(BaseConnector):
         self.logger.info("Dropbox webhook received. Triggering incremental sync.")
         asyncio.create_task(self.run_incremental_sync())
 
-    def cleanup(self) -> None:
+    async def cleanup(self) -> None:
         self.logger.info("Cleaning up Dropbox connector resources.")
         self.data_source = None
+
+    async def reindex_records(self, record_results: List[Record]) -> None:
+        """Reindex records - not implemented for Dropbox yet."""
+        self.logger.warning("Reindex not implemented for Dropbox connector")
+        pass
 
     # @classmethod
     # async def create_connector(

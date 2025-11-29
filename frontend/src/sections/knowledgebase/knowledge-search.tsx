@@ -33,8 +33,26 @@ import { ORIGIN } from './constants/knowledge-search';
 import { createScrollableContainerStyle } from '../qna/chatbot/utils/styles/scrollbar';
 
 import type { SearchResult, KnowledgeSearchProps } from './types/search-response';
+import { extractCleanTextFragment, addTextFragmentToUrl } from './utils/utils';
 
-const VIEWABLE_EXTENSIONS = ['pdf', 'xlsx', 'xls', 'csv', 'docx', 'html', 'txt', 'md', 'mdx', 'ppt', 'pptx', 'jpg', 'jpeg', 'png', 'webp', 'svg'];
+const VIEWABLE_EXTENSIONS = [
+  'pdf',
+  'xlsx',
+  'xls',
+  'csv',
+  'docx',
+  'html',
+  'txt',
+  'md',
+  'mdx',
+  'ppt',
+  'pptx',
+  'jpg',
+  'jpeg',
+  'png',
+  'webp',
+  'svg',
+];
 
 // Helper function to get file icon color based on extension
 export const getFileIconColor = (extension: string): string => {
@@ -131,6 +149,7 @@ export const highlightText = (text: string, query: string, theme: any) => {
     return text;
   }
 };
+
 
 function isDocViewable(extension: string): boolean {
   return VIEWABLE_EXTENSIONS.includes(extension?.toLowerCase());
@@ -281,6 +300,14 @@ const KnowledgeSearch = ({
     if (recordMeta.origin === 'UPLOAD' && !webUrl.startsWith('http')) {
       const baseUrl = `${window.location.protocol}//${window.location.host}`;
       webUrl = baseUrl + webUrl;
+    }
+
+    const content = record.content;
+    if (content && typeof content === 'string' && content.trim().length > 0) {
+      const textFragment = extractCleanTextFragment(content, 5);
+      if (textFragment) {
+        webUrl = addTextFragmentToUrl(webUrl, textFragment);
+      }
     }
 
     window.open(webUrl, '_blank', 'noopener,noreferrer');
