@@ -4,7 +4,9 @@ Tool discovery system with strategy pattern for flexible discovery.
 
 import importlib
 import logging
+import signal
 from abc import ABC, abstractmethod
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -12,17 +14,39 @@ from app.agents.tools.config import ToolDiscoveryConfig
 from app.agents.tools.registry import _global_tools_registry
 
 
+class TimeoutError(Exception):
+    """Custom timeout exception"""
+    pass
+
+
+@contextmanager
+def timeout_context(seconds: int):
+    """Context manager for timeout operations"""
+    def timeout_handler(signum, frame):
+        raise TimeoutError(f"Operation timed out after {seconds} seconds")
+    
+    # Set the signal handler
+    old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
+
+
 class ModuleImporter:
     """Handles dynamic module importing with error tracking"""
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, logger: logging.Logger, import_timeout: int = 5) -> None:
         self.logger = logger
         self.imported_modules: List[str] = []
         self.failed_imports: List[str] = []
+        self.import_timeout = import_timeout
 
     def import_module(self, module_path: str) -> bool:
         """
-        Import a module and track success/failure.
+        Import a module and track success/failure with timeout.
 
         Args:
             module_path: Full module path to import
@@ -32,15 +56,27 @@ class ModuleImporter:
         """
         try:
             self.logger.debug(f"Importing module: {module_path}")
-            importlib.import_module(module_path)
+            # Use timeout to prevent hanging on blocking imports
+            try:
+                with timeout_context(self.import_timeout):
+                    importlib.import_module(module_path)
+            except TimeoutError:
+                self.logger.warning(f"Import timeout for {module_path} after {self.import_timeout}s")
+                self.failed_imports.append(f"{module_path}: timeout after {self.import_timeout}s")
+                return False
+            except ImportError as e:
+                self.logger.warning(f"Failed to import {module_path}: {e}")
+                self.failed_imports.append(f"{module_path}: {e}")
+                return False
+            except Exception as e:
+                self.logger.error(f"Error importing {module_path}: {e}")
+                self.failed_imports.append(f"{module_path}: {e}")
+                return False
+            
             self.imported_modules.append(module_path)
             return True
-        except ImportError as e:
-            self.logger.warning(f"Failed to import {module_path}: {e}")
-            self.failed_imports.append(f"{module_path}: {e}")
-            return False
         except Exception as e:
-            self.logger.error(f"Error importing {module_path}: {e}")
+            self.logger.error(f"Unexpected error importing {module_path}: {e}")
             self.failed_imports.append(f"{module_path}: {e}")
             return False
 
@@ -141,9 +177,9 @@ class NestedAppDiscovery(DiscoveryStrategy):
 class ToolsDiscovery:
     """Enhanced discovery class with strategy pattern"""
 
-    def __init__(self, logger: logging.Logger) -> None:
+    def __init__(self, logger: logging.Logger, import_timeout: int = 5) -> None:
         self.logger = logger
-        self.importer = ModuleImporter(logger)
+        self.importer = ModuleImporter(logger, import_timeout=import_timeout)
         self.strategies: Dict[str, DiscoveryStrategy] = {}
         self._initialize_strategies()
 
@@ -230,14 +266,15 @@ class ToolsDiscovery:
         }
 
 
-def discover_tools(logger: logging.Logger) -> Dict[str, Any]:
+def discover_tools(logger: logging.Logger, import_timeout: int = 5) -> Dict[str, Any]:
     """
     Convenience function to discover all tools.
 
     Args:
         logger: Logger instance
+        import_timeout: Timeout in seconds for each module import (default: 5)
     Returns:
         Dictionary with discovery results
     """
-    discovery = ToolsDiscovery(logger)
+    discovery = ToolsDiscovery(logger, import_timeout=import_timeout)
     return discovery.discover_all_tools()

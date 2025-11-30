@@ -1532,7 +1532,6 @@ export const addMessageStream =
           logger.error('Failed to save AI response to conversation', {
             requestId,
             conversationId: existingConversation?._id,
-            agentKey: existingConversation?.agentKey,
             error: dbError.message,
             errorName: dbError.name,
             errorCode: dbError.code,
@@ -5645,6 +5644,7 @@ export const addMessageStreamToAgentConversation =
                 wasTruncated = true;
                 logger.warn('AI response truncated due to size limit', {
                   requestId,
+                  wasTruncated,
                   originalSize: Buffer.byteLength(completeData.answer, 'utf8'),
                   truncatedSize: Buffer.byteLength(processedAnswer, 'utf8'),
                 });

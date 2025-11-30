@@ -1,0 +1,1 @@
+﻿#!/bin/bashcd /app/backend/distnode index.js

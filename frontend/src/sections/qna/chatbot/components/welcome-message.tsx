@@ -60,7 +60,7 @@ const Footer = memo(({ isDark }: { isDark: boolean }) => {
             color: 'inherit',
           }}
         />
-        pipeshub-ai
+        ragnow-ai
       </Link>
     </Box>
   );
@@ -170,7 +170,7 @@ const WelcomeMessageComponent = ({
             WebkitTextFillColor: 'transparent',
           }}
         >
-          PipesHub AI
+          RagNow AI
         </Typography>
 
         <Typography

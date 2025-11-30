@@ -12,6 +12,7 @@ services:
         memlock:
           soft: -1
           hard: -1
+    command: ["/bin/bash", "-c", "ln -sf /app/backend/src /app/backend/dist/src 2>/dev/null || true; cd /app/backend/dist && node index.js & cd /app/python && python -m app.connectors_main & cd /app/python && python -m app.indexing_main & cd /app/python && python -m app.query_main & wait"]
     ports:
       - "8091:8091"
       - "8081:8081"
@@ -121,19 +122,20 @@ services:
       - redis_data:/data
 
   arango:
-    image: arangodb:3.11.14
+    image: arangodb:3.12.4
     restart: always
     ports:
       - "8529:8529"
     environment:
       - ARANGO_ROOT_PASSWORD=${ARANGO_PASSWORD:-your_password}
     volumes:
-      - arango_data:/var/lib/arangodb3
+      - arango_data_dev:/var/lib/arangodb3
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8529/_api/version"]
+      test: ["CMD-SHELL", "arangosh --server.endpoint tcp://localhost:8529 --server.password '${ARANGO_PASSWORD:-your_password}' --javascript.execute-string 'db._version()' || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 30s
 
   etcd:
     image: quay.io/coreos/etcd:v3.5.17
@@ -230,7 +232,7 @@ volumes:
     driver: local
   redis_data:
     driver: local
-  arango_data:
+  arango_data_dev:
     driver: local
   etcd_data:
     driver: local
