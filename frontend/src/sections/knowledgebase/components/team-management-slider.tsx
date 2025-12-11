@@ -1,45 +1,45 @@
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import {
-  Drawer,
-  Box,
-  Stack,
-  Typography,
-  IconButton,
-  TextField,
-  Button,
-  Avatar,
-  Paper,
-  Divider,
-  Tooltip,
-  CircularProgress,
-  InputAdornment,
-  alpha,
-  useTheme,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  ListItemSecondaryAction,
-  TablePagination,
-  Chip,
-  Skeleton,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import axios from 'src/utils/axios';
 import closeIcon from '@iconify-icons/mdi/close';
+import addIcon from '@iconify-icons/eva/plus-fill';
 import teamIcon from '@iconify-icons/mdi/account-group';
 import searchIcon from '@iconify-icons/eva/search-fill';
-import addIcon from '@iconify-icons/eva/plus-fill';
-import editIcon from '@iconify-icons/mdi/pencil-outline';
-import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import refreshIcon from '@iconify-icons/eva/refresh-fill';
 import personAddIcon from '@iconify-icons/eva/person-add-fill';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+import {
+  Box,
+  List,
+  Chip,
+  Stack,
+  alpha,
+  Drawer,
+  Button,
+  Divider,
+  Tooltip,
+  useTheme,
+  ListItem,
+  Skeleton,
+  TextField,
+  Typography,
+  IconButton,
+  ListItemText,
+  InputAdornment,
+  ListItemAvatar,
+  TablePagination,
+  ListItemSecondaryAction,
+} from '@mui/material';
+
+import axios from 'src/utils/axios';
+
 import { createScrollableContainerStyle } from 'src/sections/qna/chatbot/utils/styles/scrollbar';
-import CreateTeamDialog from './dialogs/create-team-dialog';
+
 import EditTeamDialog from './dialogs/edit-team-dialog';
+import CreateTeamDialog from './dialogs/create-team-dialog';
 import DeleteTeamDialog from './dialogs/delete-team-dialog';
 import TeamDetailsDialog from './dialogs/team-details-dialog';
-import { Team, User, TeamFormData } from '../types/teams';
+
+import type { Team, TeamFormData } from '../types/teams';
 
 interface TeamManagementSliderProps {
   open: boolean;

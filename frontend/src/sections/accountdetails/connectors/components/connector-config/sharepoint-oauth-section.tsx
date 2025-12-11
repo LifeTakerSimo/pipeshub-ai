@@ -1,24 +1,26 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  alpha,
-  useTheme,
-  Divider,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
+import lockIcon from '@iconify-icons/mdi/lock';
+import uploadIcon from '@iconify-icons/mdi/upload';
 import cloudIcon from '@iconify-icons/mdi/microsoft-azure';
 import certificateIcon from '@iconify-icons/mdi/certificate';
-import lockIcon from '@iconify-icons/mdi/lock';
 import checkCircleIcon from '@iconify-icons/mdi/check-circle';
-import fileDocumentIcon from '@iconify-icons/mdi/file-document-outline';
-import uploadIcon from '@iconify-icons/mdi/upload';
 import alertCircleIcon from '@iconify-icons/mdi/alert-circle-outline';
+import fileDocumentIcon from '@iconify-icons/mdi/file-document-outline';
+
+import {
+  Box,
+  Paper,
+  alpha,
+  Button,
+  Divider,
+  Checkbox,
+  useTheme,
+  TextField,
+  Typography,
+  FormControlLabel,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 interface SharePointOAuthSectionProps {
   // Basic Auth Fields

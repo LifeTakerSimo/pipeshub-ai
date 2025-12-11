@@ -1,36 +1,40 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  Alert,
-  Link,
-  Grid,
-  CircularProgress,
-  alpha,
-  useTheme,
-  Collapse,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
+import keyIcon from '@iconify-icons/mdi/key';
+import codeIcon from '@iconify-icons/mdi/code';
+import checkIcon from '@iconify-icons/mdi/check';
+import personIcon from '@iconify-icons/mdi/person';
 import infoIcon from '@iconify-icons/eva/info-outline';
 import bookIcon from '@iconify-icons/mdi/book-outline';
 import settingsIcon from '@iconify-icons/mdi/settings';
-import keyIcon from '@iconify-icons/mdi/key';
-import personIcon from '@iconify-icons/mdi/person';
-import shieldIcon from '@iconify-icons/mdi/shield-outline';
-import codeIcon from '@iconify-icons/mdi/code';
-import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
-import openInNewIcon from '@iconify-icons/mdi/open-in-new';
 import copyIcon from '@iconify-icons/mdi/content-copy';
-import checkIcon from '@iconify-icons/mdi/check';
+import shieldIcon from '@iconify-icons/mdi/shield-outline';
+import openInNewIcon from '@iconify-icons/mdi/open-in-new';
 import chevronDownIcon from '@iconify-icons/mdi/chevron-down';
+import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
+
+import {
+  Box,
+  Link,
+  Grid,
+  Paper,
+  Alert,
+  alpha,
+  Tooltip,
+  useTheme,
+  Collapse,
+  Typography,
+  IconButton,
+  CircularProgress,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { FieldRenderer } from '../field-renderers';
-import { shouldShowElement } from '../../utils/conditional-display';
 import BusinessOAuthSection from './business-oauth-section';
 import SharePointOAuthSection from './sharepoint-oauth-section';
-import { Connector, ConnectorConfig } from '../../types/types';
+import { shouldShowElement } from '../../utils/conditional-display';
+
+import type { Connector, ConnectorConfig } from '../../types/types';
 
 interface AuthSectionProps {
   connector: Connector;

@@ -1,46 +1,49 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Stack,
-  Typography,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  InputAdornment,
-  Avatar,
-  Autocomplete,
-  alpha,
-  useTheme,
-  IconButton,
-  Divider,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Paper,
-  Chip,
-  Alert,
-  Tooltip,
-  Menu,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import axios from 'src/utils/axios';
-import editIcon from '@iconify-icons/mdi/pencil-outline';
-import searchIcon from '@iconify-icons/eva/search-fill';
 import closeIcon from '@iconify-icons/mdi/close';
+import infoIcon from '@iconify-icons/eva/info-outline';
+import searchIcon from '@iconify-icons/eva/search-fill';
+import editIcon from '@iconify-icons/mdi/pencil-outline';
 import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import personAddIcon from '@iconify-icons/eva/person-add-fill';
-import infoIcon from '@iconify-icons/eva/info-outline';
 import settingsIcon from '@iconify-icons/mdi/settings-outline';
-import { User, Team, TeamFormData, RoleOption, TeamRole } from '../../types/teams';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+import {
+  Box,
+  List,
+  Chip,
+  Menu,
+  Stack,
+  alpha,
+  Paper,
+  Alert,
+  Dialog,
+  Button,
+  Select,
+  Avatar,
+  Divider,
+  Tooltip,
+  MenuItem,
+  useTheme,
+  ListItem,
+  TextField,
+  Typography,
+  InputLabel,
+  IconButton,
+  DialogTitle,
+  FormControl,
+  Autocomplete,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  ListItemAvatar,
+  CircularProgress,
+} from '@mui/material';
+
+import axios from 'src/utils/axios';
+
+import type { User, Team, RoleOption, TeamFormData} from '../../types/teams';
 
 interface EditTeamDialogProps {
   open: boolean;

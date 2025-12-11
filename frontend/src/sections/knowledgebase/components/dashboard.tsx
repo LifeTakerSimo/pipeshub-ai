@@ -4,9 +4,9 @@ import addIcon from '@iconify-icons/mdi/plus';
 import clearIcon from '@iconify-icons/mdi/close';
 import searchIcon from '@iconify-icons/mdi/magnify';
 import databaseIcon from '@iconify-icons/mdi/database';
+import teamIcon from '@iconify-icons/mdi/account-group';
 import gridViewIcon from '@iconify-icons/mdi/view-grid-outline';
 import listViewIcon from '@iconify-icons/mdi/format-list-bulleted';
-import teamIcon from '@iconify-icons/mdi/account-group';
 import React, { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -14,7 +14,9 @@ import {
   Fade,
   Stack,
   alpha,
+  Alert,
   Button,
+  Snackbar,
   Container,
   TextField,
   Typography,
@@ -23,20 +25,18 @@ import {
   LinearProgress,
   CircularProgress,
   ToggleButtonGroup,
-  Alert,
-  Snackbar,
 } from '@mui/material';
 
+import { GridView } from './dashboard-grid-view';
+import { ListView } from './dashboard-list-view';
 import { KnowledgeBaseAPI } from '../services/api';
+import TeamManagementSlider from './team-management-slider';
+import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
+import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
+import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
 
 import type { KnowledgeBase } from '../types/kb';
 import type { RouteParams } from '../hooks/use-router';
-import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
-import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
-import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
-import { GridView } from './dashboard-grid-view';
-import { ListView } from './dashboard-list-view';
-import TeamManagementSlider from './team-management-slider';
 
 interface DashboardProps {
   theme: any;

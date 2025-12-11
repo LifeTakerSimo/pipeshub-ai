@@ -1,45 +1,47 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Stack,
-  Typography,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  InputAdornment,
-  Avatar,
-  Autocomplete,
-  alpha,
-  useTheme,
-  IconButton,
-  Paper,
-  Alert,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Divider,
-  Chip,
-  Tooltip,
-  Menu,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import axios from 'src/utils/axios';
-import addIcon from '@iconify-icons/eva/plus-fill';
-import searchIcon from '@iconify-icons/eva/search-fill';
 import closeIcon from '@iconify-icons/mdi/close';
+import addIcon from '@iconify-icons/eva/plus-fill';
 import infoIcon from '@iconify-icons/eva/info-outline';
+import searchIcon from '@iconify-icons/eva/search-fill';
 import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import settingsIcon from '@iconify-icons/mdi/settings-outline';
-import { User, TeamFormData, RoleOption, TeamRole as TeamRoleType } from '../../types/teams';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+import {
+  Box,
+  List,
+  Chip,
+  Menu,
+  Stack,
+  alpha,
+  Paper,
+  Alert,
+  Dialog,
+  Button,
+  Select,
+  Avatar,
+  Divider,
+  Tooltip,
+  MenuItem,
+  useTheme,
+  ListItem,
+  TextField,
+  Typography,
+  IconButton,
+  DialogTitle,
+  FormControl,
+  Autocomplete,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  ListItemAvatar,
+  CircularProgress,
+} from '@mui/material';
+
+import axios from 'src/utils/axios';
+
+import type { User, RoleOption, TeamFormData} from '../../types/teams';
 
 interface CreateTeamDialogProps {
   open: boolean;

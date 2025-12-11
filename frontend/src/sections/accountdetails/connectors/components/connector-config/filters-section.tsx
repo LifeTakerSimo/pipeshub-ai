@@ -1,43 +1,47 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  Grid,
-  alpha,
-  useTheme,
-  Alert,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Checkbox,
-  FormControlLabel,
-  Button,
-  IconButton,
-  Autocomplete,
-  TextField,
-  Popper,
-  Chip,
-  Tooltip,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
-import filterIcon from '@iconify-icons/mdi/filter-outline';
 import addIcon from '@iconify-icons/mdi/plus';
+import React, { useState, useEffect } from 'react';
+import filterIcon from '@iconify-icons/mdi/filter-outline';
 import removeIcon from '@iconify-icons/mdi/delete-outline';
 import infoIcon from '@iconify-icons/mdi/information-outline';
-import { 
-  ConnectorConfig, 
-  FilterSchemaField, 
-  FilterValueData,
-  FilterValue,
-  DatetimeRange 
-} from '../../types/types';
+
+import {
+  Box,
+  Grid,
+  Chip,
+  Paper,
+  alpha,
+  Alert,
+  Button,
+  Popper,
+  Divider,
+  Tooltip,
+  useTheme,
+  Checkbox,
+  Accordion,
+  TextField,
+  Typography,
+  IconButton,
+  Autocomplete,
+  AccordionSummary,
+  AccordionDetails,
+  FormControlLabel,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
+import { FieldRenderer } from '../field-renderers';
 import { 
   convertEpochToISOString,
   normalizeDatetimeValueForDisplay
 } from '../../utils/time-utils';
-import { FieldRenderer } from '../field-renderers';
+
+import type { 
+  FilterValue, 
+  DatetimeRange, 
+  ConnectorConfig,
+  FilterValueData,
+  FilterSchemaField 
+} from '../../types/types';
 
 interface FiltersSectionProps {
   connectorConfig: ConnectorConfig | null;

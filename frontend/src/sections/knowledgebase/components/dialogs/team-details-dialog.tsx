@@ -1,47 +1,50 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Stack,
-  Typography,
-  TextField,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
-  InputAdornment,
-  Avatar,
-  Autocomplete,
-  alpha,
-  useTheme,
-  IconButton,
-  Paper,
-  Alert,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Divider,
-  Chip,
-  Tooltip,
-  Menu,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import axios from 'src/utils/axios';
-import editIcon from '@iconify-icons/mdi/pencil-outline';
-import searchIcon from '@iconify-icons/eva/search-fill';
 import closeIcon from '@iconify-icons/mdi/close';
+import infoIcon from '@iconify-icons/eva/info-outline';
+import searchIcon from '@iconify-icons/eva/search-fill';
+import teamIcon from '@iconify-icons/mdi/account-group';
+import editIcon from '@iconify-icons/mdi/pencil-outline';
 import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import personAddIcon from '@iconify-icons/eva/person-add-fill';
-import infoIcon from '@iconify-icons/eva/info-outline';
 import settingsIcon from '@iconify-icons/mdi/settings-outline';
-import teamIcon from '@iconify-icons/mdi/account-group';
-import { User, Team, TeamFormData, RoleOption } from '../../types/teams';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+
+import {
+  Box,
+  List,
+  Chip,
+  Menu,
+  Stack,
+  alpha,
+  Paper,
+  Alert,
+  Dialog,
+  Button,
+  Select,
+  Avatar,
+  Divider,
+  Tooltip,
+  MenuItem,
+  useTheme,
+  ListItem,
+  TextField,
+  Typography,
+  InputLabel,
+  IconButton,
+  DialogTitle,
+  FormControl,
+  Autocomplete,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  ListItemAvatar,
+  CircularProgress,
+} from '@mui/material';
+
+import axios from 'src/utils/axios';
+
+import type { User, Team, RoleOption, TeamFormData } from '../../types/teams';
 
 interface TeamDetailsDialogProps {
   open: boolean;

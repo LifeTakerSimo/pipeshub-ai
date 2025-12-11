@@ -1,26 +1,28 @@
+import { Icon } from '@iconify/react';
 import React, { useState } from 'react';
+import closeIcon from '@iconify-icons/mdi/close';
+import deleteIcon from '@iconify-icons/mdi/delete-outline';
+import warningIcon from '@iconify-icons/eva/alert-triangle-fill';
+
 import {
+  Box,
+  Chip,
+  Stack,
+  alpha,
+  Alert,
+  Paper,
   Dialog,
+  Button,
+  useTheme,
+  Typography,
+  IconButton,
   DialogTitle,
   DialogContent,
   DialogActions,
-  Box,
-  Stack,
-  Typography,
-  Button,
   CircularProgress,
-  alpha,
-  useTheme,
-  Alert,
-  IconButton,
-  Paper,
-  Chip,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import warningIcon from '@iconify-icons/eva/alert-triangle-fill';
-import deleteIcon from '@iconify-icons/mdi/delete-outline';
-import closeIcon from '@iconify-icons/mdi/close';
-import { Team } from '../../types/teams';
+
+import type { Team } from '../../types/teams';
 
 interface DeleteTeamDialogProps {
   open: boolean;

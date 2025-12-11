@@ -1,18 +1,20 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  alpha,
-  useTheme,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
 import keyIcon from '@iconify-icons/mdi/key';
-import checkCircleIcon from '@iconify-icons/mdi/check-circle';
 import uploadIcon from '@iconify-icons/mdi/upload';
+import checkCircleIcon from '@iconify-icons/mdi/check-circle';
 import fileDocumentIcon from '@iconify-icons/mdi/file-document-outline';
+
+import {
+  Box,
+  Paper,
+  alpha,
+  Button,
+  useTheme,
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 interface BusinessOAuthSectionProps {
   adminEmail: string;

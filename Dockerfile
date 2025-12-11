@@ -39,10 +39,20 @@ ENV PIP_DEFAULT_TIMEOUT=100
 RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu/ "torch==2.9.1+cpu" || true
 
 RUN uv pip install --system -e .
-# Download NLTK and spaCy models
-RUN python -m spacy download en_core_web_sm && \
-    python -m nltk.downloader punkt && \
-    python -c "from sentence_transformers import CrossEncoder; model = CrossEncoder(model_name='BAAI/bge-reranker-base')"
+# NOTE: downloading large NLP/model artifacts during the Docker build is
+# fragile (network timeouts, GitHub/HuggingFace rate limits) and often causes
+# build failures (504/timeout). We remove the direct download from the build
+# to make the image build deterministic and fast.
+#
+# If you need the models, run the included script at runtime (it implements
+# retries and backoff): `/app/scripts/download_models.sh`.
+# You can enable automatic download on container startup by setting the
+# environment variable `RUN_MODEL_DOWNLOAD_ON_STARTUP=true` (see runtime
+# `process_monitor.sh` which will conditionally run the script).
+
+## The model download step was intentionally removed from the build to avoid
+## 504/timeouts. See scripts/download_models.sh for a robust downloader that
+## can be executed post-build (or in CI with proper network access).
 
 # Stage 3: Node.js backend
 FROM base AS nodejs-backend
@@ -94,12 +104,27 @@ COPY --from=nodejs-backend /app/backend/node_modules ./backend/dist/node_modules
 COPY --from=frontend-build /app/frontend/dist ./backend/dist/public
 COPY backend/python/app/ /app/python/app/
 
+# Copy model downloader script into the final image. This script is NOT run
+# during build by default. To run it automatically at container startup set
+# RUN_MODEL_DOWNLOAD_ON_STARTUP=true in your docker-compose or container env.
+COPY scripts/download_models.sh /app/scripts/download_models.sh
+RUN chmod +x /app/scripts/download_models.sh || true
+
 # Copy the process monitor script
 COPY <<'EOF' /app/process_monitor.sh
 #!/bin/bash
 
 # Process monitor script with parent-child process management
 set -e
+
+# Optional: download large NLP models at container startup if requested.
+# Set RUN_MODEL_DOWNLOAD_ON_STARTUP=true to run `/app/scripts/download_models.sh`
+# before starting services. This makes builds reliable while still allowing
+# automated model provisioning at runtime when network access is available.
+if [ "${RUN_MODEL_DOWNLOAD_ON_STARTUP:-false}" = "true" ]; then
+    echo "[process_monitor] RUN_MODEL_DOWNLOAD_ON_STARTUP=true -> starting model download"
+    /app/scripts/download_models.sh || echo "[process_monitor] model download script failed (non-fatal)"
+fi
 
 LOG_FILE="/app/process_monitor.log"
 CHECK_INTERVAL=${CHECK_INTERVAL:-20}

@@ -1,29 +1,32 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  Grid,
-  alpha,
-  useTheme,
-  Collapse,
-  IconButton,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
 import syncIcon from '@iconify-icons/mdi/sync';
+import bookIcon from '@iconify-icons/mdi/book-outline';
 import clockIcon from '@iconify-icons/mdi/clock-outline';
 import optionsIcon from '@iconify-icons/mdi/dots-vertical';
-import bookIcon from '@iconify-icons/mdi/book-outline';
 import openInNewIcon from '@iconify-icons/mdi/open-in-new';
 import chevronDownIcon from '@iconify-icons/mdi/chevron-down';
+
+import {
+  Box,
+  Grid,
+  Paper,
+  Alert,
+  alpha,
+  Select,
+  MenuItem,
+  useTheme,
+  Collapse,
+  Typography,
+  InputLabel,
+  FormControl,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { FieldRenderer } from '../field-renderers';
 import ScheduledSyncConfig from '../scheduled-sync-config';
-import { ConnectorConfig } from '../../types/types';
+
+import type { ConnectorConfig } from '../../types/types';
 
 interface SyncSectionProps {
   connectorConfig: ConnectorConfig | null;
