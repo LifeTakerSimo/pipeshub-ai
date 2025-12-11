@@ -16,23 +16,17 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { 
-  getOAuthConfig, 
-  type OAuthConfig, 
-  updateOAuthConfig 
+import {
+  getOAuthConfig,
+  type OAuthConfig,
+  updateOAuthConfig,
 } from '../utils/auth-configuration-service';
 
 // Validation schema for OAuth configuration
 const OAuthConfigSchema = zod.object({
-  providerName: zod
-    .string()
-    .min(1, { message: 'Provider name is required!' }),
-  clientId: zod
-    .string()
-    .min(1, { message: 'Client ID is required!' }),
-  clientSecret: zod
-    .string()
-    .optional(),
+  providerName: zod.string().min(1, { message: 'Provider name is required!' }),
+  clientId: zod.string().min(1, { message: 'Client ID is required!' }),
+  clientSecret: zod.string().optional(),
   authorizationUrl: zod
     .string()
     .url({ message: 'Please enter a valid authorization URL!' })
@@ -48,9 +42,7 @@ const OAuthConfigSchema = zod.object({
     .url({ message: 'Please enter a valid user info endpoint URL!' })
     .optional()
     .or(zod.literal('')),
-  scope: zod
-    .string()
-    .optional(),
+  scope: zod.string().optional(),
   redirectUri: zod
     .string()
     .url({ message: 'Please enter a valid redirect URI!' })
@@ -141,7 +133,7 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
 
       await updateOAuthConfig(configData);
       setSuccess(true);
-      
+
       if (onSuccess) {
         onSuccess();
       }
@@ -202,7 +194,9 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 label="Provider Name"
                 placeholder="e.g., Custom OAuth Provider"
                 error={!!errors.providerName}
-                helperText={errors.providerName?.message || 'A friendly name for your OAuth provider'}
+                helperText={
+                  errors.providerName?.message || 'A friendly name for your OAuth provider'
+                }
                 fullWidth
                 required
               />
@@ -223,7 +217,10 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 type="password"
                 placeholder="Your OAuth application client secret"
                 error={!!errors.clientSecret}
-                helperText={errors.clientSecret?.message || 'Optional: Client secret if required by your provider'}
+                helperText={
+                  errors.clientSecret?.message ||
+                  'Optional: Client secret if required by your provider'
+                }
                 fullWidth
               />
 
@@ -232,7 +229,9 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 label="Authorization URL"
                 placeholder="https://provider.com/oauth/authorize"
                 error={!!errors.authorizationUrl}
-                helperText={errors.authorizationUrl?.message || 'The OAuth authorization endpoint URL'}
+                helperText={
+                  errors.authorizationUrl?.message || 'The OAuth authorization endpoint URL'
+                }
                 fullWidth
               />
 
@@ -241,7 +240,10 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 label="Token Endpoint"
                 placeholder="https://provider.com/oauth/token"
                 error={!!errors.tokenEndpoint}
-                helperText={errors.tokenEndpoint?.message || 'Optional: URL to exchange authorization code for tokens'}
+                helperText={
+                  errors.tokenEndpoint?.message ||
+                  'Optional: URL to exchange authorization code for tokens'
+                }
                 fullWidth
               />
 
@@ -250,7 +252,10 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 label="User Info Endpoint"
                 placeholder="https://provider.com/oauth/userinfo"
                 error={!!errors.userInfoEndpoint}
-                helperText={errors.userInfoEndpoint?.message || 'Optional: URL to fetch user information with access token'}
+                helperText={
+                  errors.userInfoEndpoint?.message ||
+                  'Optional: URL to fetch user information with access token'
+                }
                 fullWidth
               />
 
@@ -268,7 +273,9 @@ export default function OAuthAuthForm({ open, onClose, onSuccess }: OAuthAuthFor
                 label="Redirect URI"
                 placeholder="https://yourapp.com/auth/oauth/callback"
                 error={!!errors.redirectUri}
-                helperText={errors.redirectUri?.message || 'Optional: Custom redirect URI for OAuth callback'}
+                helperText={
+                  errors.redirectUri?.message || 'Optional: Custom redirect URI for OAuth callback'
+                }
                 fullWidth
               />
             </Box>

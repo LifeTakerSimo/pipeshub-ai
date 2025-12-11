@@ -1,17 +1,20 @@
 import React from 'react';
+
 import {
-  Paper,
   Box,
-  Typography,
+  Chip,
+  Paper,
+  Stack,
+  alpha,
   Switch,
   Tooltip,
-  Stack,
-  Chip,
-  alpha,
   useTheme,
+  Typography,
 } from '@mui/material';
-import { Connector } from '../../types/types';
+
 import { isNoneAuthType } from '../../utils/auth';
+
+import type { Connector } from '../../types/types';
 
 interface ConnectorStatusCardProps {
   connector: Connector;
@@ -36,9 +39,11 @@ const ConnectorStatusCard: React.FC<ConnectorStatusCardProps> = ({
   const isOauth = authType === 'OAUTH';
   const canEnable = isActive
     ? true
-    : (isOauth
-        ? (hideAuthenticate ? isConfigured : isAuthenticated)
-        : isConfigured);
+    : isOauth
+      ? hideAuthenticate
+        ? isConfigured
+        : isAuthenticated
+      : isConfigured;
   const enableBlocked = !isActive && !canEnable;
 
   const getTooltipMessage = () => {
@@ -211,11 +216,7 @@ const ConnectorStatusCard: React.FC<ConnectorStatusCardProps> = ({
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
               Connector Status
             </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ fontSize: '0.8125rem' }}
-            >
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
               {isActive
                 ? 'Active and syncing data'
                 : isEnablingWithFilters
@@ -256,7 +257,9 @@ const ConnectorStatusCard: React.FC<ConnectorStatusCardProps> = ({
                     },
                   },
                   '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                    backgroundColor: isDark ? theme.palette.primary.main : theme.palette.primary.main,
+                    backgroundColor: isDark
+                      ? theme.palette.primary.main
+                      : theme.palette.primary.main,
                   },
                 }}
               />

@@ -17,7 +17,7 @@ export interface User {
   slug: string;
   __v: number;
   designation?: string;
-  firstName?: string; 
+  firstName?: string;
   lastName?: string;
   deletedBy?: string;
   isEmailVerified: boolean;
@@ -52,11 +52,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     return null;
   }
 
-  return (
-    <UserContext.Provider value={users}>
-      {children}
-    </UserContext.Provider>
-  );
+  return <UserContext.Provider value={users}>{children}</UserContext.Provider>;
 };
 
 export const useUsers = (): User[] => {

@@ -72,7 +72,7 @@ export function AuthProvider({ children }: Props) {
 
   const status = state.loading ? 'loading' : checkAuthenticated;
 
-  useEffect(() => { 
+  useEffect(() => {
     if (checkAuthenticated === 'authenticated' && path.pathname === '/auth/sign-in') {
       navigate('/');
     }

@@ -1,7 +1,6 @@
-import { useState } from 'react';
-
 import type { IconifyIcon } from '@iconify/react';
 
+import { useState } from 'react';
 import syncIcon from '@iconify-icons/mdi/sync';
 import refreshIcon from '@iconify-icons/mdi/refresh';
 import clockOutlineIcon from '@iconify-icons/mdi/clock-outline';
@@ -13,19 +12,21 @@ import alertCircleOutlineIcon from '@iconify-icons/mdi/alert-circle-outline';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
+  Grid,
   Paper,
+  Alert,
   Avatar,
   Button,
   Tooltip,
   Snackbar,
   Typography,
-  Grid,
-  Alert,
   CircularProgress,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';
+
 import { Iconify } from 'src/components/iconify';
+
 import { useConnectors } from '../context';
 
 interface IndexingStatusStats {
@@ -73,15 +74,14 @@ type SnackbarSeverity = 'success' | 'error' | 'warning' | 'info';
 
 // Helper function to get connector data dynamically
 const getConnectorData = (connectorName: string, allConnectors: any[]) => {
-  const connector = allConnectors.find(c => 
-    c.name.toUpperCase() === connectorName.toUpperCase() || 
-    c.name === connectorName
+  const connector = allConnectors.find(
+    (c) => c.name.toUpperCase() === connectorName.toUpperCase() || c.name === connectorName
   );
-  
+
   return {
     displayName: connector?.name || connectorName,
     iconPath: connector?.iconPath || '/assets/icons/connectors/default.svg',
-    appGroup: connector?.appGroup || ''
+    appGroup: connector?.appGroup || '',
   };
 };
 
@@ -110,7 +110,7 @@ export const ConnectorStatsCard = ({
 
   // Get dynamic connector data
   const connectorData = getConnectorData(connectorName, allConnectors);
-  const displayName = connectorData.displayName;
+  const { displayName } = connectorData;
   const iconName = connectorData.iconPath;
 
   const percentComplete =

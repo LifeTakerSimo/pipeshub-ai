@@ -2,32 +2,35 @@
 import type { User } from 'src/context/UserContext';
 
 import { Icon } from '@iconify/react';
+import ReactMarkdown from 'react-markdown';
+import { useState, useEffect } from 'react';
 import robotIcon from '@iconify-icons/mdi/robot';
 import closeIcon from '@iconify-icons/mdi/close';
-import { useState, useEffect } from 'react';
 import updateIcon from '@iconify-icons/mdi/update';
 import accountIcon from '@iconify-icons/mdi/account';
+import databaseIcon from '@iconify-icons/mdi/database';
 import clockIcon from '@iconify-icons/mdi/clock-outline';
 import emailIcon from '@iconify-icons/mdi/email-outline';
 import { useParams, useNavigate } from 'react-router-dom';
 import arrowLeftIcon from '@iconify-icons/mdi/arrow-left';
+import infoIcon from '@iconify-icons/mdi/information-outline';
 import fileAlertIcon from '@iconify-icons/mdi/file-alert-outline';
 import connectorIcon from '@iconify-icons/mdi/cloud-sync-outline';
 import fileDocumentBoxIcon from '@iconify-icons/mdi/file-document-box';
 import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
-import databaseIcon from '@iconify-icons/mdi/database';
-import infoIcon from '@iconify-icons/mdi/information-outline';
 
 import {
   Box,
   Chip,
   Grid,
   Card,
+  Menu,
   Stack,
   alpha,
   Alert,
   Drawer,
   Button,
+  Dialog,
   Divider,
   Tooltip,
   useTheme,
@@ -38,36 +41,35 @@ import {
   CardHeader,
   CardContent,
   useMediaQuery,
-  CircularProgress,
-  Dialog,
   DialogContent,
-  Menu,
+  CircularProgress,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';
-import ReactMarkdown from 'react-markdown';
+
 import { CONFIG } from 'src/config-global';
 import { useUsers } from 'src/context/UserContext';
 
-import { KnowledgeBaseAPI } from './services/api';
 import RecordSalesAgent from './ask-me-anything';
+import { KnowledgeBaseAPI } from './services/api';
 import RecordDocumentViewer from './show-documents';
 import EditRecordDialog from './edit-record-dialog';
 import DeleteRecordDialog from './delete-record-dialog';
-import type { MetadataItem, Permissions, RecordDetailsResponse } from './types/record-details';
 import {
-  DeleteButton,
-  EditButton,
-  OpenButton,
-  ReindexButton,
-  SummaryButton,
-} from './components/buttons';
-import {
-  formatFileSize,
   getFileIcon,
+  formatFileSize,
   getFileIconColor,
   getIndexingStatusColor,
 } from './utils/utils';
+import {
+  EditButton,
+  OpenButton,
+  DeleteButton,
+  ReindexButton,
+  SummaryButton,
+} from './components/buttons';
+
+import type { Permissions, MetadataItem, RecordDetailsResponse } from './types/record-details';
 
 export default function RecordDetails() {
   const { recordId } = useParams<{ recordId: string }>();

@@ -22,7 +22,7 @@ type DocxViewerProps = {
   renderOptions?: Record<string, unknown>;
   sx?: Record<string, unknown>;
   highlightCitation?: SearchResult | CustomCitation | null;
-  onClosePdf :() => void;
+  onClosePdf: () => void;
 };
 
 // Styled components
@@ -67,7 +67,7 @@ const DocumentContainer = styled(Box)({
   width: '100%',
   height: '100%',
   overflow: 'auto',
-  minHeight: '100px', 
+  minHeight: '100px',
 });
 
 // Helper function to generate unique IDs
@@ -144,7 +144,7 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
   sx = {},
   citations = [],
   highlightCitation = null,
-  onClosePdf
+  onClosePdf,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -326,7 +326,7 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
     const styleId = 'docx-highlight-styles';
 
     if (document.getElementById(styleId)) {
-      return undefined; 
+      return undefined;
     }
 
     const style = document.createElement('style');
@@ -487,7 +487,6 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
     return cleanup;
   };
 
-
   // STEP 3: Process citations when document is ready
   useEffect(() => {
     if (!documentReady || processingCitationsRef.current || !citations?.length) {
@@ -523,7 +522,6 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
     } catch (err) {
       console.error('Error processing citations:', err);
     } finally {
-
       processingCitationsRef.current = false;
     }
     // eslint-disable-next-line
@@ -808,7 +806,7 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
           let chunkMatchCount = 0;
 
           chunks.forEach((chunk, i) => {
-            if (chunk.length < 20) return; 
+            if (chunk.length < 20) return;
 
             const chunkMatches = Array.from(textElements).filter((el) =>
               (el.textContent || '').includes(chunk)
@@ -1007,26 +1005,26 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
     }
   }, [documentReady, processedCitations, highlightedCitationId, scrollToHighlight]);
 
-     const handleFullscreenChange = useCallback((): void => {
-        setIsFullscreen(!!document.fullscreenElement);
-      }, []);
-    
-      useEffect(() => {
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      }, [handleFullscreenChange]);
-    
-      const toggleFullScreen = useCallback(async (): Promise<void> => {
-        try {
-          if (!document.fullscreenElement && fullScreenContainerRef.current) {
-            await fullScreenContainerRef.current.requestFullscreen();
-          } else {
-            await document.exitFullscreen();
-          }
-        } catch (err) {
-          console.error('Error toggling fullscreen:', err);
-        }
-      }, []);
+  const handleFullscreenChange = useCallback((): void => {
+    setIsFullscreen(!!document.fullscreenElement);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [handleFullscreenChange]);
+
+  const toggleFullScreen = useCallback(async (): Promise<void> => {
+    try {
+      if (!document.fullscreenElement && fullScreenContainerRef.current) {
+        await fullScreenContainerRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error('Error toggling fullscreen:', err);
+    }
+  }, []);
 
   return (
     <DocViewerContainer ref={fullScreenContainerRef} component={Paper}>
@@ -1045,27 +1043,29 @@ const DocxViewer: React.FC<DocxViewerProps> = ({
       )}
 
       <Box sx={{ display: 'flex', height: '100%', width: '100%' }}>
-  {/* Document container - takes remaining space */}
-  <Box sx={{ 
-    height: '100%', 
-    flex: 1, 
-    position: 'relative',
-    minWidth: 0, // Prevents flex item from overflowing
-  }}>
-    <DocumentContainer ref={containerRef} />
-  </Box>
+        {/* Document container - takes remaining space */}
+        <Box
+          sx={{
+            height: '100%',
+            flex: 1,
+            position: 'relative',
+            minWidth: 0, // Prevents flex item from overflowing
+          }}
+        >
+          <DocumentContainer ref={containerRef} />
+        </Box>
 
-  {/* Sidebar - takes its natural width (300px) */}
-  {processedCitations.length > 0 && (
-    <CitationSidebar
-      citations={processedCitations}
-      scrollViewerTo={scrollViewerToRef.current}
-      highlightedCitationId={highlightedCitationId}
-      toggleFullScreen={toggleFullScreen}
-      onClosePdf={onClosePdf}
-    />
-  )}
-</Box>
+        {/* Sidebar - takes its natural width (300px) */}
+        {processedCitations.length > 0 && (
+          <CitationSidebar
+            citations={processedCitations}
+            scrollViewerTo={scrollViewerToRef.current}
+            highlightedCitationId={highlightedCitationId}
+            toggleFullScreen={toggleFullScreen}
+            onClosePdf={onClosePdf}
+          />
+        )}
+      </Box>
     </DocViewerContainer>
   );
 };

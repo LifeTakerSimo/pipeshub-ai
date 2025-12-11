@@ -40,5 +40,3 @@ export function buildCronFromSchedule(cfg: ScheduledConfigLike): string {
 
   return '0 * * * *';
 }
-
-

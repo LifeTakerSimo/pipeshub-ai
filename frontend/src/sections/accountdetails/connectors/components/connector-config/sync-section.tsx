@@ -1,27 +1,30 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Alert,
-  Grid,
-  alpha,
-  useTheme,
-  Link,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
 import syncIcon from '@iconify-icons/mdi/sync';
+import bookIcon from '@iconify-icons/mdi/book-outline';
 import clockIcon from '@iconify-icons/mdi/clock-outline';
 import optionsIcon from '@iconify-icons/mdi/dots-vertical';
-import bookIcon from '@iconify-icons/mdi/book-outline';
 import openInNewIcon from '@iconify-icons/mdi/open-in-new';
+
+import {
+  Box,
+  Grid,
+  Paper,
+  Alert,
+  alpha,
+  Select,
+  MenuItem,
+  useTheme,
+  Typography,
+  InputLabel,
+  FormControl,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { FieldRenderer } from '../field-renderers';
 import ScheduledSyncConfig from '../scheduled-sync-config';
-import { ConnectorConfig } from '../../types/types';
+
+import type { ConnectorConfig } from '../../types/types';
 
 interface SyncSectionProps {
   connectorConfig: ConnectorConfig | null;
@@ -70,18 +73,25 @@ const SyncSection: React.FC<SyncSectionProps> = ({
             <Iconify icon={syncIcon} width={14} height={14} color={theme.palette.text.secondary} />
           </Box>
           <Box>
-            <Typography variant="subtitle2" sx={{ 
-              fontWeight: 600, 
-              fontSize: '0.8125rem',
-              color: theme.palette.text.primary,
-              mb: 0.125
-            }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 600,
+                fontSize: '0.8125rem',
+                color: theme.palette.text.primary,
+                mb: 0.125,
+              }}
+            >
               Sync Strategy
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ 
-              fontSize: '0.75rem',
-              lineHeight: 1.3
-            }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontSize: '0.75rem',
+                lineHeight: 1.3,
+              }}
+            >
               Choose how data will be synchronized from {connectorConfig.name}
             </Typography>
           </Box>
@@ -137,18 +147,25 @@ const SyncSection: React.FC<SyncSectionProps> = ({
               />
             </Box>
             <Box>
-              <Typography variant="subtitle2" sx={{ 
-                fontWeight: 600, 
-                fontSize: '0.8125rem',
-                color: theme.palette.text.primary,
-                mb: 0.125
-              }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  color: theme.palette.text.primary,
+                  mb: 0.125,
+                }}
+              >
                 Scheduled Sync Settings
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ 
-                fontSize: '0.75rem',
-                lineHeight: 1.3
-              }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: '0.75rem',
+                  lineHeight: 1.3,
+                }}
+              >
                 Configure synchronization interval and timezone
               </Typography>
             </Box>
@@ -191,18 +208,25 @@ const SyncSection: React.FC<SyncSectionProps> = ({
               />
             </Box>
             <Box>
-              <Typography variant="subtitle2" sx={{ 
-                fontWeight: 600, 
-                fontSize: '0.8125rem',
-                color: theme.palette.text.primary,
-                mb: 0.125
-              }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.8125rem',
+                  color: theme.palette.text.primary,
+                  mb: 0.125,
+                }}
+              >
                 Additional Settings
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ 
-                fontSize: '0.75rem',
-                lineHeight: 1.3
-              }}>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{
+                  fontSize: '0.75rem',
+                  lineHeight: 1.3,
+                }}
+              >
                 Configure advanced sync options
               </Typography>
             </Box>
@@ -236,129 +260,120 @@ const SyncSection: React.FC<SyncSectionProps> = ({
             'Webhook: Real-time updates when data changes. '}
           {sync.supportedStrategies.includes('SCHEDULED') &&
             'Scheduled: Periodic sync at regular intervals. '}
-          {sync.supportedStrategies.includes('MANUAL') &&
-            'Manual: On-demand sync when triggered. '}
+          {sync.supportedStrategies.includes('MANUAL') && 'Manual: On-demand sync when triggered. '}
           {sync.supportedStrategies.includes('REALTIME') &&
             'Real-time: Continuous sync for live updates.'}
         </Typography>
       </Alert>
 
       {/* Documentation Links - Compact Visual Guide */}
-      {connectorConfig.config.documentationLinks && connectorConfig.config.documentationLinks.length > 0 && (
-        <Paper
-          variant="outlined"
-          sx={{
-            p: 1.5,
-            borderRadius: 1.5,
-            bgcolor: alpha(theme.palette.info.main, 0.02),
-            borderColor: alpha(theme.palette.info.main, 0.08),
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
-            <Box
-              sx={{
-                p: 0.375,
-                borderRadius: 0.75,
-                bgcolor: alpha(theme.palette.info.main, 0.1),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                mt: 0.125,
-              }}
-            >
-              <Iconify
-                icon={bookIcon}
-                width={12}
-                height={12}
-                color={theme.palette.info.main}
-              />
-            </Box>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 600,
-                  color: theme.palette.info.main,
-                  fontSize: '0.6875rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: 0.5,
-                  mb: 0.5,
-                  display: 'block',
-                }}
-              >
-                Documentation & Resources
-              </Typography>
+      {connectorConfig.config.documentationLinks &&
+        connectorConfig.config.documentationLinks.length > 0 && (
+          <Paper
+            variant="outlined"
+            sx={{
+              p: 1.5,
+              borderRadius: 1.5,
+              bgcolor: alpha(theme.palette.info.main, 0.02),
+              borderColor: alpha(theme.palette.info.main, 0.08),
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25 }}>
               <Box
                 sx={{
+                  p: 0.375,
+                  borderRadius: 0.75,
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 0.5,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  mt: 0.125,
                 }}
               >
-                {connectorConfig.config.documentationLinks.map((link, index) => (
-                  <Box
-                    key={index}
-                    onClick={() => window.open(link.url, '_blank')}
-                    sx={{
-                      p: 1,
-                      borderRadius: 0.75,
-                      bgcolor: alpha(theme.palette.info.main, 0.04),
-                      border: `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                      '&:hover': {
-                        bgcolor: alpha(theme.palette.info.main, 0.08),
-                        borderColor: alpha(theme.palette.info.main, 0.2),
-                        transform: 'translateY(-1px)',
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: 500,
-                          color: theme.palette.text.primary,
-                          fontSize: '0.75rem',
-                          flex: 1,
-                          minWidth: 0,
-                        }}
-                      >
-                        {link.title}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.25,
-                          color: theme.palette.info.main,
-                        }}
-                      >
+                <Iconify icon={bookIcon} width={12} height={12} color={theme.palette.info.main} />
+              </Box>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    color: theme.palette.info.main,
+                    fontSize: '0.6875rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    mb: 0.5,
+                    display: 'block',
+                  }}
+                >
+                  Documentation & Resources
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.5,
+                  }}
+                >
+                  {connectorConfig.config.documentationLinks.map((link, index) => (
+                    <Box
+                      key={index}
+                      onClick={() => window.open(link.url, '_blank')}
+                      sx={{
+                        p: 1,
+                        borderRadius: 0.75,
+                        bgcolor: alpha(theme.palette.info.main, 0.04),
+                        border: `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        '&:hover': {
+                          bgcolor: alpha(theme.palette.info.main, 0.08),
+                          borderColor: alpha(theme.palette.info.main, 0.2),
+                          transform: 'translateY(-1px)',
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                         <Typography
-                          variant="caption"
+                          variant="body2"
                           sx={{
-                            fontSize: '0.625rem',
                             fontWeight: 500,
-                            textTransform: 'uppercase',
-                            letterSpacing: 0.5,
+                            color: theme.palette.text.primary,
+                            fontSize: '0.75rem',
+                            flex: 1,
+                            minWidth: 0,
                           }}
                         >
-                          {link.type}
+                          {link.title}
                         </Typography>
-                        <Iconify
-                          icon={openInNewIcon}
-                          width={10}
-                          height={10}
-                        />
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.25,
+                            color: theme.palette.info.main,
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontSize: '0.625rem',
+                              fontWeight: 500,
+                              textTransform: 'uppercase',
+                              letterSpacing: 0.5,
+                            }}
+                          >
+                            {link.type}
+                          </Typography>
+                          <Iconify icon={openInNewIcon} width={10} height={10} />
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
-                ))}
+                  ))}
+                </Box>
               </Box>
             </Box>
-          </Box>
-        </Paper>
-      )}
+          </Paper>
+        )}
     </Box>
   );
 };

@@ -33,8 +33,8 @@ import { HeaderSection } from '../core/header-section';
 import { StyledDivider, useNavColorVars } from './styles';
 import { AccountDrawer } from '../components/account-drawer';
 import { getDashboardNavData } from '../config-nav-dashboard';
-import {ThemeToggleButton } from '../components/theme-toggle-button';
-   
+import { ThemeToggleButton } from '../components/theme-toggle-button';
+
 // ----------------------------------------------------------------------
 
 export type DashboardLayoutProps = {
@@ -56,7 +56,7 @@ export function DashboardLayout({ sx, children, header, data }: DashboardLayoutP
   const settings = useSettingsContext();
   const navColorVars = useNavColorVars(theme, settings);
   const layoutQuery: Breakpoint = 'sm';
-  const dynamicNavData = getDashboardNavData(user?.accountType, isAdmin);
+  const dynamicNavData = getDashboardNavData(user?.accountType, isAdmin, !!user);
 
   const navData = data?.nav ?? dynamicNavData;
   const navigate = useNavigate();
@@ -108,8 +108,8 @@ export function DashboardLayout({ sx, children, header, data }: DashboardLayoutP
                   [theme.breakpoints.up(layoutQuery)]: {
                     height: 'var(--layout-nav-horizontal-height)',
                   },
-                   borderBottom: `1px solid ${theme.palette.divider}`,
-                boxShadow: theme.shadows[1],
+                  borderBottom: `1px solid ${theme.palette.divider}`,
+                  boxShadow: theme.shadows[1],
                 }),
               },
             },

@@ -151,8 +151,6 @@ export interface AgentFilterOptions {
   searchQuery?: string;
 }
 
-
-
 export interface FlowNode {
   id: string;
   type: string;

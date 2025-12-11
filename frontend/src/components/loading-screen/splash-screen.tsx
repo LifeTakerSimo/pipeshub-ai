@@ -19,7 +19,7 @@ export function SplashScreen({ portal = true, sx, ...other }: Props) {
     const timer = setTimeout(() => {
       setLoaded(true);
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -37,7 +37,7 @@ export function SplashScreen({ portal = true, sx, ...other }: Props) {
           position: 'fixed',
           alignItems: 'center',
           justifyContent: 'center',
-          bgcolor: (theme) => 
+          bgcolor: (theme) =>
             `radial-gradient(circle, ${theme.palette.background.paper} 10%, ${theme.palette.background.default} 100%)`,
           opacity: loaded ? 1 : 0,
           transition: 'opacity 0.3s ease',
@@ -56,13 +56,13 @@ export function SplashScreen({ portal = true, sx, ...other }: Props) {
             transform: loaded ? 'scale(1)' : 'scale(0.8)',
           }}
         />
-        
+
         {/* Loading indicators */}
-        <Box 
-          sx={{ 
+        <Box
+          sx={{
             mt: 4,
             display: 'flex',
-            gap: 1.5
+            gap: 1.5,
           }}
         >
           {[0, 1, 2].map((i) => (
@@ -73,7 +73,7 @@ export function SplashScreen({ portal = true, sx, ...other }: Props) {
                 height: 12,
                 borderRadius: '50%',
                 bgcolor: '#70CDA7',
-                opacity: dotOpacity[i], 
+                opacity: dotOpacity[i],
                 transition: 'opacity 0.3s ease',
               }}
             />

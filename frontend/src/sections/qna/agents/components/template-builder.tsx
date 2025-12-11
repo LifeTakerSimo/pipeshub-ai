@@ -1,44 +1,42 @@
 // src/sections/agents/components/template-builder.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Box,
-  Button,
-  Typography,
-  TextField,
-  Grid,
-  Chip,
-  IconButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Alert,
-  CircularProgress,
-  useTheme,
-  Autocomplete,
-  alpha,
-  useMediaQuery,
-  Fade,
-} from '@mui/material';
+import type { AgentTemplate, AgentTemplateFormData } from 'src/types/agent';
+
 import { Icon } from '@iconify/react';
+import addIcon from '@iconify-icons/mdi/plus';
 import closeIcon from '@iconify-icons/mdi/close';
 import checkIcon from '@iconify-icons/mdi/check';
-import addIcon from '@iconify-icons/mdi/plus';
 import deleteIcon from '@iconify-icons/mdi/delete';
 import templateIcon from '@iconify-icons/mdi/file-document';
+import React, { useState, useEffect, useCallback } from 'react';
 
-import type { AgentTemplate, AgentTemplateFormData } from 'src/types/agent';
-import AgentApiService from '../services/api';
 import {
-  validateAgentTemplateForm,
-  getInitialTemplateFormData,
-  TEMPLATE_CATEGORIES,
-} from '../utils/agent';
+  Box,
+  Grid,
+  Chip,
+  Fade,
+  Alert,
+  alpha,
+  Dialog,
+  Button,
+  Select,
+  Switch,
+  MenuItem,
+  useTheme,
+  TextField,
+  Typography,
+  IconButton,
+  InputLabel,
+  DialogTitle,
+  FormControl,
+  Autocomplete,
+  DialogContent,
+  useMediaQuery,
+  FormControlLabel,
+  CircularProgress,
+} from '@mui/material';
+
+import AgentApiService from '../services/api';
+import { TEMPLATE_CATEGORIES, getInitialTemplateFormData } from '../utils/agent';
 
 interface TemplateBuilderProps {
   open: boolean;
@@ -97,38 +95,44 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     [errors]
   );
 
-  const handleSave = useCallback(async (e?: React.MouseEvent) => {
-    // Prevent any event bubbling that might interfere
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  const handleSave = useCallback(
+    async (e?: React.MouseEvent) => {
+      // Prevent any event bubbling that might interfere
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
 
-    try {
-      setIsSaving(true);
-      const template = editingTemplate
-        ? await AgentApiService.updateTemplate(editingTemplate._key, formData)
-        : await AgentApiService.createTemplate(formData);
+      try {
+        setIsSaving(true);
+        const template = editingTemplate
+          ? await AgentApiService.updateTemplate(editingTemplate._key, formData)
+          : await AgentApiService.createTemplate(formData);
 
-      onSuccess(template);
-      onClose();
-    } catch (error) {
-      console.error('Error saving template:', error);
-      setErrors({ general: 'Failed to save template. Please try again.' });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [formData, editingTemplate, onSuccess, onClose]);
+        onSuccess(template);
+        onClose();
+      } catch (error) {
+        console.error('Error saving template:', error);
+        setErrors({ general: 'Failed to save template. Please try again.' });
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [formData, editingTemplate, onSuccess, onClose]
+  );
 
-  const handleClose = useCallback((e?: React.MouseEvent) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    if (!isSaving) {
-      onClose();
-    }
-  }, [isSaving, onClose]);
+  const handleClose = useCallback(
+    (e?: React.MouseEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (!isSaving) {
+        onClose();
+      }
+    },
+    [isSaving, onClose]
+  );
 
   // Array field helpers with safe handling
   const addArrayItem = useCallback(
@@ -154,14 +158,17 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
     [formData, handleFormChange]
   );
 
-  const handleAddTag = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (newTag.trim()) {
-      addArrayItem('tags', newTag);
-      setNewTag('');
-    }
-  }, [newTag, addArrayItem]);
+  const handleAddTag = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (newTag.trim()) {
+        addArrayItem('tags', newTag);
+        setNewTag('');
+      }
+    },
+    [newTag, addArrayItem]
+  );
 
   const renderArrayField = (
     field: keyof AgentTemplateFormData,
@@ -260,10 +267,14 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
             />
           )}
           <Button
-            onClick={field === 'tags' ? handleAddTag : () => {
-              addArrayItem(field, newValue);
-              setNewValue('');
-            }}
+            onClick={
+              field === 'tags'
+                ? handleAddTag
+                : () => {
+                    addArrayItem(field, newValue);
+                    setNewValue('');
+                  }
+            }
             disabled={!newValue.trim()}
             variant="outlined"
             size="small"
@@ -359,9 +370,9 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
             </Typography>
           </Box>
         </Box>
-        <IconButton 
-          onClick={handleClose} 
-          size="small" 
+        <IconButton
+          onClick={handleClose}
+          size="small"
           disabled={isSaving}
           sx={{
             color: theme.palette.text.secondary,
@@ -376,10 +387,10 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
       </DialogTitle>
 
       {/* Content */}
-      <DialogContent 
-        sx={{ 
-          flexGrow: 1, 
-          overflow: 'auto', 
+      <DialogContent
+        sx={{
+          flexGrow: 1,
+          overflow: 'auto',
           p: 3,
           '&::-webkit-scrollbar': { width: 6 },
           '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
@@ -392,7 +403,10 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
       >
         {/* Basic Information */}
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 2.5, fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}
+          >
             Basic Information
           </Typography>
           <Grid container spacing={2.5}>
@@ -426,7 +440,7 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
                   onChange={(e) => handleFormChange('category', e.target.value)}
                   label="Category"
                   error={!!errors.category}
-                  sx={{ 
+                  sx={{
                     borderRadius: 1.5,
                     bgcolor: alpha(theme.palette.background.default, 0.5),
                     '&:hover': { bgcolor: alpha(theme.palette.background.default, 0.7) },
@@ -529,7 +543,10 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
 
         {/* Default Configuration */}
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}>
+          <Typography
+            variant="h6"
+            sx={{ mb: 2.5, fontWeight: 600, color: 'text.primary', fontSize: '1.1rem' }}
+          >
             Default Configuration
           </Typography>
           <Grid container spacing={2.5}>
@@ -546,10 +563,10 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
 
         {/* Validation Errors */}
         {errors.general && (
-          <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 2, 
+          <Alert
+            severity="error"
+            sx={{
+              mb: 2,
               borderRadius: 1.5,
               border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
             }}
@@ -575,9 +592,9 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
         <Button
           onClick={handleClose}
           disabled={isSaving}
-          sx={{ 
-            borderRadius: 1.5, 
-            px: 3, 
+          sx={{
+            borderRadius: 1.5,
+            px: 3,
             py: 1,
             color: theme.palette.text.secondary,
             '&:hover': {
@@ -599,10 +616,10 @@ const TemplateBuilder: React.FC<TemplateBuilderProps> = ({
               <Icon icon={checkIcon} width={16} height={16} />
             )
           }
-          sx={{ 
-            borderRadius: 1.5, 
-            px: 3, 
-            py: 1, 
+          sx={{
+            borderRadius: 1.5,
+            px: 3,
+            py: 1,
             minWidth: 140,
             fontWeight: 600,
             boxShadow: 'none',

@@ -2,14 +2,7 @@ import type { ReactNode } from 'react';
 import type { AxiosRequestConfig } from 'axios';
 
 import axios from 'axios';
-import React, {
-  useMemo,
-  useState,
-  useEffect,
-  useContext,
-  useCallback,
-  createContext,
-} from 'react';
+import React, { useMemo, useState, useEffect, useContext, useCallback, createContext } from 'react';
 
 import { Alert, Snackbar } from '@mui/material';
 
@@ -93,7 +86,7 @@ axiosInstance.interceptors.response.use(
         processedError.statusCode = error.response.status;
 
         // Set message and details from response if available
-        const data: any = error.response.data;
+        const { data } = error.response;
         if (data) {
           if (typeof data === 'string') {
             processedError.message = data;
@@ -107,7 +100,11 @@ axiosInstance.interceptors.response.use(
             if (Array.isArray(issues) && issues.length > 0) {
               const first = issues[0];
               const issueMsg = (first?.message || first)?.toString?.() || '';
-              const path = first?.path ? (Array.isArray(first.path) ? first.path.join('.') : String(first.path)) : '';
+              const path = first?.path
+                ? Array.isArray(first.path)
+                  ? first.path.join('.')
+                  : String(first.path)
+                : '';
               const combined = path ? `${issueMsg} (${path})` : issueMsg;
               if (combined) processedError.message = combined;
             }
@@ -174,7 +171,6 @@ axiosInstance.interceptors.response.use(
     else if (error instanceof Error) {
       processedError.message = error.message;
     }
-    
 
     // Try to show error in snackbar if ErrorContext is available
     try {

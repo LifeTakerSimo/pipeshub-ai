@@ -17,7 +17,7 @@ export interface LlmFormValues extends BaseFormValues {
   isMultimodal?: boolean;
   isReasoning?: boolean;
   contextLength?: number;
-  }
+}
 
 export interface EmbeddingFormValues extends BaseFormValues {
   apiKey?: string;
@@ -61,12 +61,15 @@ export interface SmtpFormValues extends BaseFormValues {
   fromEmail?: string;
 }
 
-
 export interface SaveResult {
   success: boolean;
   warning?: string;
   error?: string;
 }
 
-
-export type AnyFormValues = LlmFormValues | EmbeddingFormValues | StorageFormValues | UrlFormValues | SmtpFormValues;
+export type AnyFormValues =
+  | LlmFormValues
+  | EmbeddingFormValues
+  | StorageFormValues
+  | UrlFormValues
+  | SmtpFormValues;

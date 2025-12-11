@@ -67,10 +67,10 @@ export interface Metadata {
   origin: string;
   extension: string;
   rowNum?: number;
-  sheetNum?:number;
-  sheetName?:string;
+  sheetNum?: number;
+  sheetName?: string;
   _collection_name: string;
-  webUrl?:string;
+  webUrl?: string;
 }
 
 // The Citation interface as specified

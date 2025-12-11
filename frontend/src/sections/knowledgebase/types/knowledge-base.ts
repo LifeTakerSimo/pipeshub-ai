@@ -58,7 +58,7 @@ export interface Filters {
   connectors?: string[];
   app?: string[];
   permissions?: string[];
-  kb?:string[];
+  kb?: string[];
 }
 
 export interface FilterHeaderProps {

@@ -36,7 +36,7 @@ export default function Page() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isDarkMode = theme.palette.mode === 'dark';
-  
+
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -88,50 +88,45 @@ export default function Page() {
       </Helmet>
 
       {/* Account Type Selection Dialog */}
-      <Dialog 
-        open={open} 
-        onClose={handleClose} 
-        maxWidth="sm" 
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="sm"
         fullWidth
         PaperProps={{
           sx: {
             borderRadius: 1,
             bgcolor: isDarkMode ? 'background.paper' : '#fff',
-            boxShadow: isDarkMode ? '0 4px 20px rgba(0, 0, 0, 0.3)' : '0 4px 20px rgba(0, 0, 0, 0.1)',
-          }
+            boxShadow: isDarkMode
+              ? '0 4px 20px rgba(0, 0, 0, 0.3)'
+              : '0 4px 20px rgba(0, 0, 0, 0.1)',
+          },
         }}
       >
-        <DialogTitle 
-          sx={{ 
-            textAlign: 'center', 
+        <DialogTitle
+          sx={{
+            textAlign: 'center',
             pt: 4,
             pb: 2,
           }}
         >
-          <Typography 
-            variant="h5" 
-            sx={{ 
-              fontWeight: 600, 
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
               mb: 1,
               color: 'text.primary',
             }}
           >
             Choose Account Type
           </Typography>
-          <Typography 
-            variant="body2" 
-            color="text.secondary"
-          >
+          <Typography variant="body2" color="text.secondary">
             Select the type of account you want to create
           </Typography>
         </DialogTitle>
 
         <DialogContent sx={{ px: 3, pb: 4 }}>
-          <Stack 
-            spacing={2} 
-            direction={{ xs: 'column', sm: 'row' }} 
-            sx={{ mt: 1 }}
-          >
+          <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }} sx={{ mt: 1 }}>
             <Card
               sx={{
                 flex: 1,
@@ -143,9 +138,9 @@ export default function Page() {
                 borderColor: isDarkMode ? 'divider' : theme.palette.grey[200],
                 '&:hover': {
                   borderColor: 'primary.main',
-                  boxShadow: isDarkMode ? 
-                    `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.15)}` : 
-                    `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.08)}`,
+                  boxShadow: isDarkMode
+                    ? `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.15)}`
+                    : `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.08)}`,
                 },
               }}
               onClick={() => handleAccountTypeSelect('individual')}
@@ -168,30 +163,29 @@ export default function Page() {
                     width: 48,
                     height: 48,
                     borderRadius: '12px',
-                    bgcolor: isDarkMode ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
+                    bgcolor: isDarkMode
+                      ? alpha(theme.palette.primary.main, 0.08)
+                      : alpha(theme.palette.primary.main, 0.04),
                     mb: 2,
                   }}
                 >
-                  <Icon 
+                  <Icon
                     icon={personIcon}
                     width={24}
                     height={24}
-                    color={theme.palette.primary.main} 
+                    color={theme.palette.primary.main}
                   />
                 </Box>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
-                    fontWeight: 600, 
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
                     mb: 0.5,
                   }}
                 >
                   Individual
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                >
+                <Typography variant="body2" color="text.secondary">
                   For personal use or freelancers
                 </Typography>
               </CardContent>
@@ -208,9 +202,9 @@ export default function Page() {
                 borderColor: isDarkMode ? 'divider' : theme.palette.grey[200],
                 '&:hover': {
                   borderColor: 'primary.main',
-                  boxShadow: isDarkMode ? 
-                    `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.15)}` : 
-                    `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.08)}`,
+                  boxShadow: isDarkMode
+                    ? `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.15)}`
+                    : `0 4px 12px 0 ${alpha(theme.palette.primary.main, 0.08)}`,
                 },
               }}
               onClick={() => handleAccountTypeSelect('business')}
@@ -233,30 +227,29 @@ export default function Page() {
                     width: 48,
                     height: 48,
                     borderRadius: '12px',
-                    bgcolor: isDarkMode ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.04),
+                    bgcolor: isDarkMode
+                      ? alpha(theme.palette.primary.main, 0.08)
+                      : alpha(theme.palette.primary.main, 0.04),
                     mb: 2,
                   }}
                 >
-                  <Icon 
+                  <Icon
                     icon={buildingIcon}
                     width={24}
                     height={24}
-                    color={theme.palette.primary.main} 
+                    color={theme.palette.primary.main}
                   />
                 </Box>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{ 
-                    fontWeight: 600, 
+                <Typography
+                  variant="subtitle1"
+                  sx={{
+                    fontWeight: 600,
                     mb: 0.5,
                   }}
                 >
                   Organization
                 </Typography>
-                <Typography 
-                  variant="body2" 
-                  color="text.secondary"
-                >
+                <Typography variant="body2" color="text.secondary">
                   For companies and teams
                 </Typography>
               </CardContent>

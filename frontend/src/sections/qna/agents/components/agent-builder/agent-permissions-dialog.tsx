@@ -1,11 +1,16 @@
-import React from 'react';
-import axios from 'src/utils/axios';
-import UnifiedPermissionsDialog, {
-  UnifiedPermissionsApi,
-  UnifiedPermission,
+import type {
   Team,
   User,
+  UnifiedPermission,
+  UnifiedPermissionsApi,
 } from 'src/components/permissions/UnifiedPermissionsDialog';
+
+import React from 'react';
+
+import axios from 'src/utils/axios';
+
+import UnifiedPermissionsDialog from 'src/components/permissions/UnifiedPermissionsDialog';
+
 import AgentApiService from '../../services/api';
 
 interface AgentPermissionsDialogProps {
@@ -29,7 +34,6 @@ const makeAgentApi = (agentId: string): UnifiedPermissionsApi => ({
       updatedAtTimestamp: p.updatedAtTimestamp,
     }));
     return mapped;
-  
   },
   loadUsers: async () => {
     const { data } = await axios.get(`/api/v1/users/graph/list`);
@@ -74,11 +78,19 @@ const makeAgentApi = (agentId: string): UnifiedPermissionsApi => ({
     await axios.put(`/api/v1/agents/${agentId}/permissions`, { userIds, teamIds, role });
   },
   removePermissions: async ({ userIds, teamIds }) => {
-    await axios.post(`/api/v1/agents/${agentId}/unshare`, { userIds: userIds || [], teamIds: teamIds || [] });
+    await axios.post(`/api/v1/agents/${agentId}/unshare`, {
+      userIds: userIds || [],
+      teamIds: teamIds || [],
+    });
   },
 });
 
-const AgentPermissionsDialog: React.FC<AgentPermissionsDialogProps> = ({ open, onClose, agentId, agentName }) => {
+const AgentPermissionsDialog: React.FC<AgentPermissionsDialogProps> = ({
+  open,
+  onClose,
+  agentId,
+  agentName,
+}) => {
   const api = React.useMemo(() => makeAgentApi(agentId), [agentId]);
   return (
     <UnifiedPermissionsDialog
@@ -93,5 +105,3 @@ const AgentPermissionsDialog: React.FC<AgentPermissionsDialogProps> = ({ open, o
 };
 
 export default AgentPermissionsDialog;
-
-

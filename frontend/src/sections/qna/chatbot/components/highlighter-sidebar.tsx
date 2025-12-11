@@ -169,7 +169,7 @@ const CitationSidebar = ({
   const isDarkMode = theme.palette.mode === 'dark';
   const scrollableStyles = createScrollableContainerStyle(theme);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
-  
+
   useEffect(() => {
     if (highlightedCitationId) {
       // Find the citation that matches the highlighted ID using multiple strategies
@@ -183,11 +183,12 @@ const CitationSidebar = ({
 
       if (citationToHighlight) {
         // Use the citation's highlight ID or fallback to other IDs
-        const citationId = citationToHighlight.highlight?.id || 
-                          citationToHighlight.citationId || 
-                          citationToHighlight.metadata?._id || 
-                          citationToHighlight.id;
-        
+        const citationId =
+          citationToHighlight.highlight?.id ||
+          citationToHighlight.citationId ||
+          citationToHighlight.metadata?._id ||
+          citationToHighlight.id;
+
         setSelectedCitation(citationId || null);
 
         // If we found it, scroll to it in the sidebar
@@ -219,7 +220,11 @@ const CitationSidebar = ({
           pageNumber: citation.metadata?.pageNum?.[0] || 1,
         },
         // Make sure id is defined with multiple fallback strategies
-        id: citation.highlight.id || citation.citationId || citation.metadata?._id || String(Math.random()).slice(2),
+        id:
+          citation.highlight.id ||
+          citation.citationId ||
+          citation.metadata?._id ||
+          String(Math.random()).slice(2),
       };
       // Try using the highlight we constructed rather than citation.highlight directly
       try {
@@ -349,13 +354,21 @@ const CitationSidebar = ({
             onClick={() => handleCitationClick(citation)}
             sx={{
               bgcolor:
-                selectedCitation === (citation.highlight?.id || citation.citationId || citation.metadata?._id || citation.id)
+                selectedCitation ===
+                (citation.highlight?.id ||
+                  citation.citationId ||
+                  citation.metadata?._id ||
+                  citation.id)
                   ? isDarkMode
                     ? alpha(theme.palette.primary.dark, 0.15)
                     : alpha(theme.palette.primary.lighter, 0.3)
                   : 'transparent',
               boxShadow:
-                selectedCitation === (citation.highlight?.id || citation.citationId || citation.metadata?._id || citation.id)
+                selectedCitation ===
+                (citation.highlight?.id ||
+                  citation.citationId ||
+                  citation.metadata?._id ||
+                  citation.id)
                   ? isDarkMode
                     ? `0 0 0 1px ${alpha(theme.palette.primary.main, 0.3)}`
                     : `0 0 0 1px ${alpha(theme.palette.primary.main, 0.3)}`
@@ -366,7 +379,11 @@ const CitationSidebar = ({
               <CitationTitle
                 sx={{
                   color:
-                    selectedCitation === (citation.highlight?.id || citation.citationId || citation.metadata?._id || citation.id)
+                    selectedCitation ===
+                    (citation.highlight?.id ||
+                      citation.citationId ||
+                      citation.metadata?._id ||
+                      citation.id)
                       ? '#0066cc'
                       : isDarkMode
                         ? '#e8eaed'

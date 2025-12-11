@@ -18,12 +18,22 @@ export interface Item {
   type: 'folder' | 'file';
   extension?: string;
   sizeInBytes?: number;
-  webUrl:string;
+  webUrl: string;
   updatedAt: number;
   createdAt: number;
   createdAtTimestamp?: number;
   updatedAtTimestamp?: number;
-  indexingStatus?: 'NOT_STARTED' | 'PAUSED' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'FILE_TYPE_NOT_SUPPORTED' | 'AUTO_INDEX_OFF' | 'EMPTY' | 'ENABLE_MULTIMODAL_MODELS' | 'QUEUED';
+  indexingStatus?:
+    | 'NOT_STARTED'
+    | 'PAUSED'
+    | 'IN_PROGRESS'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'FILE_TYPE_NOT_SUPPORTED'
+    | 'AUTO_INDEX_OFF'
+    | 'EMPTY'
+    | 'ENABLE_MULTIMODAL_MODELS'
+    | 'QUEUED';
   parentFolderId?: string;
   fileRecord?: {
     id: string;

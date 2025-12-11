@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
-import { 
-  useTheme, 
-  alpha, 
-  Box, 
-  Typography, 
-  Card, 
-  CardContent, 
-  Avatar, 
-  Button,
-  Chip,
-  Stack,
-  Tooltip,
-} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Iconify } from 'src/components/iconify';
-import checkCircleIcon from '@iconify-icons/mdi/check-circle';
-import clockCircleIcon from '@iconify-icons/mdi/clock-outline';
+import boltIcon from '@iconify-icons/mdi/bolt';
 import settingsIcon from '@iconify-icons/mdi/settings';
 import plusCircleIcon from '@iconify-icons/mdi/plus-circle';
-import boltIcon from '@iconify-icons/mdi/bolt';
-import { Connector } from '../types/types';
-import ConnectorConfigForm from './connector-config/connector-config-form';
+import checkCircleIcon from '@iconify-icons/mdi/check-circle';
+import clockCircleIcon from '@iconify-icons/mdi/clock-outline';
+
+import {
+  Box,
+  Card,
+  Chip,
+  alpha,
+  Stack,
+  Avatar,
+  Button,
+  Tooltip,
+  useTheme,
+  Typography,
+  CardContent,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { isNoneAuthType } from '../utils/auth';
+import ConnectorConfigForm from './connector-config/connector-config-form';
+
+import type { Connector } from '../types/types';
 
 interface ConnectorCardProps {
   connector: Connector;
@@ -34,17 +38,18 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
   const isDark = theme.palette.mode === 'dark';
 
   const connectorImage = connector.iconPath;
-  
 
-  const isActive = connector.isActive;
-  const isConfigured = connector.isConfigured;
+  const { isActive } = connector;
+  const { isConfigured } = connector;
 
   const getStatusConfig = () => {
     if (isActive) {
       return {
         label: 'Active',
         color: theme.palette.success.main,
-        bgColor:  isDark ? alpha(theme.palette.success.main, 0.8) : alpha(theme.palette.success.main, 0.1),
+        bgColor: isDark
+          ? alpha(theme.palette.success.main, 0.8)
+          : alpha(theme.palette.success.main, 0.1),
         icon: checkCircleIcon,
       };
     }
@@ -52,14 +57,18 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
       return {
         label: 'Configured',
         color: theme.palette.warning.main,
-        bgColor: isDark ? alpha(theme.palette.warning.main, 0.8) : alpha(theme.palette.warning.main, 0.1),
+        bgColor: isDark
+          ? alpha(theme.palette.warning.main, 0.8)
+          : alpha(theme.palette.warning.main, 0.1),
         icon: clockCircleIcon,
       };
     }
     return {
       label: 'Setup Required',
       color: theme.palette.text.secondary,
-      bgColor: isDark ? alpha(theme.palette.text.secondary, 0.8) : alpha(theme.palette.text.secondary, 0.08),
+      bgColor: isDark
+        ? alpha(theme.palette.text.secondary, 0.8)
+        : alpha(theme.palette.text.secondary, 0.08),
       icon: settingsIcon,
     };
   };
@@ -121,13 +130,10 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
         border: `1px solid ${theme.palette.divider}`,
         backgroundColor: theme.palette.background.paper,
         cursor: 'pointer',
-        transition: theme.transitions.create(
-          ['transform', 'box-shadow', 'border-color'],
-          {
-            duration: theme.transitions.duration.shorter,
-            easing: theme.transitions.easing.easeOut,
-          }
-        ),
+        transition: theme.transitions.create(['transform', 'box-shadow', 'border-color'], {
+          duration: theme.transitions.duration.shorter,
+          easing: theme.transitions.easing.easeOut,
+        }),
         position: 'relative',
         '&:hover': {
           transform: 'translateY(-2px)',
@@ -182,10 +188,10 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
               transition: theme.transitions.create('transform'),
             }}
           >
-            <img 
-              src={connectorImage} 
-              alt={connector.name} 
-              width={24} 
+            <img
+              src={connectorImage}
+              alt={connector.name}
+              width={24}
               height={24}
               style={{ objectFit: 'contain' }}
               onError={(e) => {
@@ -240,10 +246,10 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
         </Box>
 
         {/* Features */}
-        <Stack 
-          direction="row" 
-          spacing={0.5} 
-          justifyContent="center" 
+        <Stack
+          direction="row"
+          spacing={0.5}
+          justifyContent="center"
           alignItems="center"
           sx={{ minHeight: 20 }}
         >
@@ -264,7 +270,7 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
               {connector.authType.split('_').join(' ')}
             </Typography>
           )}
-          
+
           {connector.supportsRealtime && (
             <Tooltip title="Real-time sync supported" arrow>
               <Box
@@ -282,11 +288,7 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
                   border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                 }}
               >
-                <Iconify 
-                  icon={boltIcon} 
-                  width={10} 
-                  height={10}
-                />
+                <Iconify icon={boltIcon} width={10} height={10} />
                 <Typography
                   variant="caption"
                   sx={{
@@ -311,8 +313,8 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
             px: 1.5,
             py: 1,
             borderRadius: 1,
-            backgroundColor: isDark 
-              ? alpha(theme.palette.background.default, 0.3) 
+            backgroundColor: isDark
+              ? alpha(theme.palette.background.default, 0.3)
               : alpha(theme.palette.grey[50], 0.8),
             border: `1px solid ${theme.palette.divider}`,
           }}
@@ -323,8 +325,8 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
                 width: 4,
                 height: 4,
                 borderRadius: '50%',
-                backgroundColor: isConfigured 
-                  ? theme.palette.warning.main 
+                backgroundColor: isConfigured
+                  ? theme.palette.warning.main
                   : theme.palette.text.disabled,
               }}
             />
@@ -339,15 +341,15 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
               {isConfigured ? 'Configured' : 'Not configured'}
             </Typography>
           </Stack>
-          
+
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Box
               sx={{
                 width: 4,
                 height: 4,
                 borderRadius: '50%',
-                backgroundColor: isActive 
-                  ? theme.palette.success.main 
+                backgroundColor: isActive
+                  ? theme.palette.success.main
                   : theme.palette.text.disabled,
               }}
             />
@@ -370,25 +372,19 @@ const ConnectorCard = ({ connector }: ConnectorCardProps) => {
             // Prevent clicks inside the dialog from bubbling to the Card
             onClick={(e) => e.stopPropagation()}
           >
-            <ConnectorConfigForm 
-              connector={connector} 
+            <ConnectorConfigForm
+              connector={connector}
               onClose={handleConfigFormClose}
               onSuccess={handleConfigSuccess}
             />
           </Box>
         )}
         <Button
-          fullWidth 
+          fullWidth
           variant={actionConfig.variant}
           color={actionConfig.color}
           size="medium"
-          startIcon={
-            <Iconify
-              icon={actionConfig.icon}
-              width={16}
-              height={16}
-            />
-          }
+          startIcon={<Iconify icon={actionConfig.icon} width={16} height={16} />}
           onClick={(e) => {
             // Avoid re-triggering Card's onClick when clicking the button
             e.stopPropagation();

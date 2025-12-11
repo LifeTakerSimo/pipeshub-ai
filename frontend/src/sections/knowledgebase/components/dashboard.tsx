@@ -1,4 +1,3 @@
-
 import { Icon } from '@iconify/react';
 import addIcon from '@iconify-icons/mdi/plus';
 import clearIcon from '@iconify-icons/mdi/close';
@@ -13,7 +12,9 @@ import {
   Fade,
   Stack,
   alpha,
+  Alert,
   Button,
+  Snackbar,
   Container,
   TextField,
   Typography,
@@ -22,19 +23,17 @@ import {
   LinearProgress,
   CircularProgress,
   ToggleButtonGroup,
-  Alert,
-  Snackbar,
 } from '@mui/material';
 
+import { GridView } from './dashboard-grid-view';
+import { ListView } from './dashboard-list-view';
 import { KnowledgeBaseAPI } from '../services/api';
+import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
+import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
+import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
 
 import type { KnowledgeBase } from '../types/kb';
 import type { RouteParams } from '../hooks/use-router';
-import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
-import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
-import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
-import { GridView } from './dashboard-grid-view';
-import { ListView } from './dashboard-list-view';
 
 interface DashboardProps {
   theme: any;
@@ -44,7 +43,6 @@ interface DashboardProps {
   navigate: (route: RouteParams) => void;
 }
 type ViewMode = 'grid' | 'list';
-
 
 const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -90,11 +88,10 @@ const useIntersectionObserver = (callback: () => void, options: IntersectionObse
     observer.observe(target);
 
     return () => observer.disconnect();
-  }, [options]); 
+  }, [options]);
 
   return targetRef;
 };
-
 
 const DashboardComponent: React.FC<DashboardProps> = ({
   theme,
@@ -322,7 +319,6 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
   // Memoized filtered knowledge bases
   const filteredKnowledgeBases = useMemo(() => knowledgeBases, [knowledgeBases]);
-
 
   // Calculate display counts
   const { displayCount, actualTotalCount } = useMemo(
@@ -605,37 +601,39 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         >
           <Fade in timeout={300}>
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {viewMode === 'grid' ?
-               <GridView 
-                loading={loading}
-                knowledgeBases={knowledgeBases}
-                filteredKnowledgeBases={filteredKnowledgeBases}
-                debouncedSearchQuery={debouncedSearchQuery}
-                hasMore={hasMore}
-                navigateToKB={navigateToKB}
-                onEditKB={onEditKB}
-                onDeleteKB={onDeleteKB}
-                theme={theme}
-                CompactCard={CompactCard}
-                handleLoadMore={handleLoadMore}
-                handleClearSearch={handleClearSearch}
-                loadMoreRef={loadMoreRef}
-                setCreateKBDialog={setCreateKBDialog}
-                loadingMore={loadingMore}
-               /> :
-                <ListView 
-                loading={loading}
-                filteredKnowledgeBases={filteredKnowledgeBases}
-                navigateToKB={navigateToKB}
-                onEditKB={onEditKB}
-                onDeleteKB={onDeleteKB}
-                theme={theme}
-                totalCount={totalCount}
-                page={page}
-                rowsPerPage={rowsPerPage}
-                handlePageChange={handlePageChange}
-                handleRowsPerPageChange={handleRowsPerPageChange}
-                />}
+              {viewMode === 'grid' ? (
+                <GridView
+                  loading={loading}
+                  knowledgeBases={knowledgeBases}
+                  filteredKnowledgeBases={filteredKnowledgeBases}
+                  debouncedSearchQuery={debouncedSearchQuery}
+                  hasMore={hasMore}
+                  navigateToKB={navigateToKB}
+                  onEditKB={onEditKB}
+                  onDeleteKB={onDeleteKB}
+                  theme={theme}
+                  CompactCard={CompactCard}
+                  handleLoadMore={handleLoadMore}
+                  handleClearSearch={handleClearSearch}
+                  loadMoreRef={loadMoreRef}
+                  setCreateKBDialog={setCreateKBDialog}
+                  loadingMore={loadingMore}
+                />
+              ) : (
+                <ListView
+                  loading={loading}
+                  filteredKnowledgeBases={filteredKnowledgeBases}
+                  navigateToKB={navigateToKB}
+                  onEditKB={onEditKB}
+                  onDeleteKB={onDeleteKB}
+                  theme={theme}
+                  totalCount={totalCount}
+                  page={page}
+                  rowsPerPage={rowsPerPage}
+                  handlePageChange={handlePageChange}
+                  handleRowsPerPageChange={handleRowsPerPageChange}
+                />
+              )}
             </Box>
           </Fade>
         </Container>

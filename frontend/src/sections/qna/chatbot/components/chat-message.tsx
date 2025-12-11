@@ -1,4 +1,4 @@
-import type { Metadata, CustomCitation } from 'src/types/chat-bot';
+import type { CustomCitation } from 'src/types/chat-bot';
 import type { Record, ChatMessageProps } from 'src/types/chat-message';
 
 import remarkGfm from 'remark-gfm';
@@ -10,9 +10,9 @@ import React, {
   useRef,
   useMemo,
   useState,
-  useCallback,
   Fragment,
   useContext,
+  useCallback,
   createContext,
 } from 'react';
 
@@ -20,22 +20,22 @@ import {
   Box,
   Paper,
   Stack,
+  alpha,
   Dialog,
   Popper,
   Divider,
+  useTheme,
   Typography,
   IconButton,
   DialogTitle,
   DialogContent,
   ClickAwayListener,
-  alpha,
-  useTheme,
 } from '@mui/material';
 
 import RecordDetails from './record-details';
 import MessageFeedback from './message-feedback';
-import CitationHoverCard from './citations-hover-card';
-import SourcesAndCitations from './sources-citations'; // Import the new unified component
+import SourcesAndCitations from './sources-citations';
+import CitationHoverCard from './citations-hover-card'; // Import the new unified component
 import { extractAndProcessCitations } from '../utils/styles/content-processing';
 
 interface StreamingContextType {
@@ -402,8 +402,7 @@ const StreamingContent = React.memo(
           </Box>
         )} */}
 
-       
-          <ReactMarkdown
+        <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={{
             p: ({ children }) => {
@@ -755,14 +754,17 @@ const ChatMessage = React.memo(
     const [isRecordDialogOpen, setRecordDialogOpen] = useState<boolean>(false);
 
     const isStreamingMessage = message.id.startsWith('streaming-');
-    
+
     // Check if this is a streaming message with no content yet
     // Hide the message box until content starts arriving
-    const isStreamingThisMessage = streamingState.messageId === message.id && streamingState.isActive;
-    const hasContent = 
+    const isStreamingThisMessage =
+      streamingState.messageId === message.id && streamingState.isActive;
+    const hasContent =
       (message.content && message.content.trim().length > 0) ||
-      (isStreamingThisMessage && streamingState.content && streamingState.content.trim().length > 0);
-    
+      (isStreamingThisMessage &&
+        streamingState.content &&
+        streamingState.content.trim().length > 0);
+
     // Hide the message box if it's a streaming message with no content
     const shouldHideMessage = isStreamingMessage && !hasContent;
 
@@ -822,116 +824,118 @@ const ChatMessage = React.memo(
               px: 1,
             }}
           >
-          <Stack
-            direction="row"
-            spacing={1.5}
-            alignItems="center"
-            sx={{
-              px: 1.5,
-              py: 0.5,
-              borderRadius: 1.5,
-              backgroundColor: (themeVal) =>
-                themeVal.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.03)'
-                  : 'rgba(0, 0, 0, 0.03)',
-              border: (themeVal) =>
-                `1px solid ${
-                  themeVal.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.08)'
-                    : 'rgba(0, 0, 0, 0.08)'
-                }`,
-              backdropFilter: 'blur(8px)',
-            }}
-          >
-            <Box
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
               sx={{
-                width: 24,
-                height: 24,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '50%',
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 1.5,
                 backgroundColor: (themeVal) =>
-                  message.type === 'user'
-                    ? themeVal.palette.primary.main
-                    : themeVal.palette.success.main,
-                flexShrink: 0,
-                boxShadow: (themeVal) =>
                   themeVal.palette.mode === 'dark'
-                    ? '0 2px 8px rgba(0, 0, 0, 0.4)'
-                    : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                    ? 'rgba(255, 255, 255, 0.03)'
+                    : 'rgba(0, 0, 0, 0.03)',
+                border: (themeVal) =>
+                  `1px solid ${
+                    themeVal.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.08)'
+                      : 'rgba(0, 0, 0, 0.08)'
+                  }`,
+                backdropFilter: 'blur(8px)',
               }}
             >
-              <Icon
-                icon={message.type === 'user' ? accountIcon : 'lucide:sparkles'}
-                width={12}
-                height={12}
-                color="white"
-              />
-            </Box>
+              <Box
+                sx={{
+                  width: 24,
+                  height: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '50%',
+                  backgroundColor: (themeVal) =>
+                    message.type === 'user'
+                      ? themeVal.palette.primary.main
+                      : themeVal.palette.success.main,
+                  flexShrink: 0,
+                  boxShadow: (themeVal) =>
+                    themeVal.palette.mode === 'dark'
+                      ? '0 2px 8px rgba(0, 0, 0, 0.4)'
+                      : '0 2px 8px rgba(0, 0, 0, 0.15)',
+                }}
+              >
+                <Icon
+                  icon={message.type === 'user' ? accountIcon : 'lucide:sparkles'}
+                  width={12}
+                  height={12}
+                  color="white"
+                />
+              </Box>
 
-            <Typography
-              variant="caption"
-              sx={{
-                color: (themeVal) =>
-                  themeVal.palette.mode === 'dark'
-                    ? theme.palette.text.secondary
-                    : 'rgba(0, 0, 0, 0.7)',
-                fontSize: '0.75rem',
-                fontWeight: 500,
-                lineHeight: 1.2,
-                letterSpacing: '0.2px',
-              }}
-            >
-              {formatDate(message.createdAt)} • {formatTime(message.createdAt)}
-            </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: (themeVal) =>
+                    themeVal.palette.mode === 'dark'
+                      ? theme.palette.text.secondary
+                      : 'rgba(0, 0, 0, 0.7)',
+                  fontSize: '0.75rem',
+                  fontWeight: 500,
+                  lineHeight: 1.2,
+                  letterSpacing: '0.2px',
+                }}
+              >
+                {formatDate(message.createdAt)} • {formatTime(message.createdAt)}
+              </Typography>
 
-            {message.type === 'bot' &&
-              message.confidence &&
-              !isStreamingMessage &&
-              message.confidence.trim() !== '' && (
-                <Box
-                  sx={{
-                    px: 1.25,
-                    py: 0.25,
-                    borderRadius: 1.5,
-                    backgroundColor: (themeVal) => {
-                      const isHighConfidence = message.confidence === 'Very High';
-                      const baseColor = isHighConfidence
-                        ? themeVal.palette.success.main
-                        : themeVal.palette.warning.main;
-                      return themeVal.palette.mode === 'dark' ? `${baseColor}20` : `${baseColor}15`;
-                    },
-                    border: (themeVal) => {
-                      const isHighConfidence = message.confidence === 'Very High';
-                      const baseColor = isHighConfidence
-                        ? themeVal.palette.success.main
-                        : themeVal.palette.warning.main;
-                      return `1px solid ${themeVal.palette.mode === 'dark' ? `${baseColor}40` : `${baseColor}30`}`;
-                    },
-                  }}
-                >
-                  <Typography
-                    variant="caption"
+              {message.type === 'bot' &&
+                message.confidence &&
+                !isStreamingMessage &&
+                message.confidence.trim() !== '' && (
+                  <Box
                     sx={{
-                      color: (themeVal) => {
+                      px: 1.25,
+                      py: 0.25,
+                      borderRadius: 1.5,
+                      backgroundColor: (themeVal) => {
                         const isHighConfidence = message.confidence === 'Very High';
-                        return isHighConfidence
+                        const baseColor = isHighConfidence
                           ? themeVal.palette.success.main
                           : themeVal.palette.warning.main;
+                        return themeVal.palette.mode === 'dark'
+                          ? `${baseColor}20`
+                          : `${baseColor}15`;
                       },
-                      fontSize: '0.65rem',
-                      fontWeight: 500,
-                      lineHeight: 1,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
+                      border: (themeVal) => {
+                        const isHighConfidence = message.confidence === 'Very High';
+                        const baseColor = isHighConfidence
+                          ? themeVal.palette.success.main
+                          : themeVal.palette.warning.main;
+                        return `1px solid ${themeVal.palette.mode === 'dark' ? `${baseColor}40` : `${baseColor}30`}`;
+                      },
                     }}
                   >
-                    {message.confidence}
-                  </Typography>
-                </Box>
-              )}
-          </Stack>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: (themeVal) => {
+                          const isHighConfidence = message.confidence === 'Very High';
+                          return isHighConfidence
+                            ? themeVal.palette.success.main
+                            : themeVal.palette.warning.main;
+                        },
+                        fontSize: '0.65rem',
+                        fontWeight: 500,
+                        lineHeight: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
+                    >
+                      {message.confidence}
+                    </Typography>
+                  </Box>
+                )}
+            </Stack>
           </Box>
         )}
 
@@ -940,152 +944,148 @@ const ChatMessage = React.memo(
           <Box sx={{ position: 'relative' }}>
             <Paper
               elevation={0}
-            sx={{
-              width: '100%',
-              maxWidth: message.type === 'user' ? '70%' : '90%',
-              p: message.type === 'user' ? 1.5 : 2,
-              ml: message.type === 'user' ? 'auto' : 0,
-              bgcolor: (themeVal) => {
-                if (message.type === 'user') {
+              sx={{
+                width: '100%',
+                maxWidth: message.type === 'user' ? '70%' : '90%',
+                p: message.type === 'user' ? 1.5 : 2,
+                ml: message.type === 'user' ? 'auto' : 0,
+                bgcolor: (themeVal) => {
+                  if (message.type === 'user') {
+                    return themeVal.palette.mode === 'dark'
+                      ? 'rgba(33, 150, 243, 0.1)'
+                      : 'rgba(25, 118, 210, 0.08)';
+                  }
                   return themeVal.palette.mode === 'dark'
-                    ? 'rgba(33, 150, 243, 0.1)'
-                    : 'rgba(25, 118, 210, 0.08)';
-                }
-                return themeVal.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.02)'
-                  : 'rgba(0, 0, 0, 0.02)';
-              },
-              color: 'text.primary',
-              borderRadius: 3,
-              border: '1px solid',
-              borderColor: (themeVal) => {
-                if (message.type === 'user') {
-                  return themeVal.palette.mode === 'dark'
-                    ? alpha(themeVal.palette.primary.main, 0.4)
-                    : alpha(themeVal.palette.primary.main, 0.3);
-                }
-                return themeVal.palette.mode === 'dark'
-                  ? 'rgba(255, 255, 255, 0.1)'
-                  : 'rgba(0, 0, 0, 0.1)';
-              },
-              position: 'relative',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              fontFamily:
-                '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-              boxShadow: (themeVal) =>
-                themeVal.palette.mode === 'dark'
-                  ? '0 4px 20px rgba(0, 0, 0, 0.15)'
-                  : '0 2px 12px rgba(0, 0, 0, 0.08)',
-              '&:hover': {
+                    ? 'rgba(255, 255, 255, 0.02)'
+                    : 'rgba(0, 0, 0, 0.02)';
+                },
+                color: 'text.primary',
+                borderRadius: 3,
+                border: '1px solid',
                 borderColor: (themeVal) => {
                   if (message.type === 'user') {
                     return themeVal.palette.mode === 'dark'
-                      ? alpha(themeVal.palette.primary.main, 0.6)
-                      : alpha(themeVal.palette.primary.main, 0.5);
+                      ? alpha(themeVal.palette.primary.main, 0.4)
+                      : alpha(themeVal.palette.primary.main, 0.3);
                   }
                   return themeVal.palette.mode === 'dark'
-                    ? 'rgba(255, 255, 255, 0.15)'
-                    : 'rgba(0, 0, 0, 0.15)';
+                    ? 'rgba(255, 255, 255, 0.1)'
+                    : 'rgba(0, 0, 0, 0.1)';
                 },
+                position: 'relative',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                fontFamily:
+                  '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 boxShadow: (themeVal) =>
                   themeVal.palette.mode === 'dark'
-                    ? '0 8px 32px rgba(0, 0, 0, 0.2)'
-                    : '0 4px 20px rgba(0, 0, 0, 0.12)',
-              },
-            }}
-          >
-            {message.type === 'bot' ? (
-              <StreamingContent
-                messageId={message.id}
-                fallbackContent={message.content}
-                fallbackCitations={message.citations || []}
-                onRecordClick={handleOpenRecordDetails}
-                aggregatedCitations={aggregatedCitations}
-                onViewPdf={handleViewPdf}
-              />
-            ) : (
-              <Box
-                sx={{
-                  fontSize: '14px',
-                  lineHeight: 1.6,
-                  letterSpacing: '0.1px',
-                  wordBreak: 'break-word',
-                  fontFamily:
-                    '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                  color: (themeVal) =>
+                    ? '0 4px 20px rgba(0, 0, 0, 0.15)'
+                    : '0 2px 12px rgba(0, 0, 0, 0.08)',
+                '&:hover': {
+                  borderColor: (themeVal) => {
+                    if (message.type === 'user') {
+                      return themeVal.palette.mode === 'dark'
+                        ? alpha(themeVal.palette.primary.main, 0.6)
+                        : alpha(themeVal.palette.primary.main, 0.5);
+                    }
+                    return themeVal.palette.mode === 'dark'
+                      ? 'rgba(255, 255, 255, 0.15)'
+                      : 'rgba(0, 0, 0, 0.15)';
+                  },
+                  boxShadow: (themeVal) =>
                     themeVal.palette.mode === 'dark'
-                      ? 'rgba(255, 255, 255, 0.95)'
-                      : 'rgba(0, 0, 0, 0.87)',
-                }}
-              >
-                <ReactMarkdown>{message.content}</ReactMarkdown>
-              </Box>
-            )}
-
-            {/* Use the new unified SourcesAndCitations component */}
-            <SourcesAndCitations
-              citations={message.citations || []}
-              aggregatedCitations={aggregatedCitations}
-              onRecordClick={handleOpenRecordDetails}
-              onViewPdf={handleViewPdf}
-              modelInfo={(message as any).modelInfo || null}
-            />
-
-            {message.type === 'bot' && !isStreamingMessage && (
-              <>
-                <Divider
-                  sx={{
-                    my: 2,
-                    borderColor: (themeVal) =>
-                      themeVal.palette.mode === 'dark'
-                        ? 'rgba(255, 255, 255, 0.08)'
-                        : 'rgba(0, 0, 0, 0.08)',
-                  }}
+                      ? '0 8px 32px rgba(0, 0, 0, 0.2)'
+                      : '0 4px 20px rgba(0, 0, 0, 0.12)',
+                },
+              }}
+            >
+              {message.type === 'bot' ? (
+                <StreamingContent
+                  messageId={message.id}
+                  fallbackContent={message.content}
+                  fallbackCitations={message.citations || []}
+                  onRecordClick={handleOpenRecordDetails}
+                  aggregatedCitations={aggregatedCitations}
+                  onViewPdf={handleViewPdf}
                 />
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                  {showRegenerate && (
-                    <>
-                      <IconButton
-                        onClick={() => onRegenerate(message.id)}
-                        size="small"
-                        sx={{
-                          borderRadius: 1.5,
-                          p: 1,
-                          backgroundColor: (themeVal) =>
-                            themeVal.palette.mode === 'dark'
-                              ? 'rgba(255, 255, 255, 0.05)'
-                              : 'rgba(0, 0, 0, 0.04)',
-                          border: (themeVal) =>
-                            `1px solid ${
-                              themeVal.palette.mode === 'dark'
-                                ? 'rgba(255, 255, 255, 0.1)'
-                                : 'rgba(0, 0, 0, 0.08)'
-                            }`,
-                          '&:hover': {
+              ) : (
+                <Box
+                  sx={{
+                    fontSize: '14px',
+                    lineHeight: 1.6,
+                    letterSpacing: '0.1px',
+                    wordBreak: 'break-word',
+                    fontFamily:
+                      '"Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    color: (themeVal) =>
+                      themeVal.palette.mode === 'dark'
+                        ? 'rgba(255, 255, 255, 0.95)'
+                        : 'rgba(0, 0, 0, 0.87)',
+                  }}
+                >
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </Box>
+              )}
+
+              {/* Use the new unified SourcesAndCitations component */}
+              <SourcesAndCitations
+                citations={message.citations || []}
+                aggregatedCitations={aggregatedCitations}
+                onRecordClick={handleOpenRecordDetails}
+                onViewPdf={handleViewPdf}
+                modelInfo={(message as any).modelInfo || null}
+              />
+
+              {message.type === 'bot' && !isStreamingMessage && (
+                <>
+                  <Divider
+                    sx={{
+                      my: 2,
+                      borderColor: (themeVal) =>
+                        themeVal.palette.mode === 'dark'
+                          ? 'rgba(255, 255, 255, 0.08)'
+                          : 'rgba(0, 0, 0, 0.08)',
+                    }}
+                  />
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    {showRegenerate && (
+                      <>
+                        <IconButton
+                          onClick={() => onRegenerate(message.id)}
+                          size="small"
+                          sx={{
+                            borderRadius: 1.5,
+                            p: 1,
                             backgroundColor: (themeVal) =>
                               themeVal.palette.mode === 'dark'
-                                ? 'rgba(255, 255, 255, 0.08)'
-                                : 'rgba(0, 0, 0, 0.06)',
-                          },
-                        }}
-                      >
-                        <Icon
-                          icon={refreshIcon}
-                          width={16}
-                          height={16}
+                                ? 'rgba(255, 255, 255, 0.05)'
+                                : 'rgba(0, 0, 0, 0.04)',
+                            border: (themeVal) =>
+                              `1px solid ${
+                                themeVal.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.1)'
+                                  : 'rgba(0, 0, 0, 0.08)'
+                              }`,
+                            '&:hover': {
+                              backgroundColor: (themeVal) =>
+                                themeVal.palette.mode === 'dark'
+                                  ? 'rgba(255, 255, 255, 0.08)'
+                                  : 'rgba(0, 0, 0, 0.06)',
+                            },
+                          }}
+                        >
+                          <Icon icon={refreshIcon} width={16} height={16} />
+                        </IconButton>
+                        <MessageFeedback
+                          messageId={message.id}
+                          conversationId={conversationId}
+                          onFeedbackSubmit={onFeedbackSubmit}
                         />
-                      </IconButton>
-                      <MessageFeedback
-                        messageId={message.id}
-                        conversationId={conversationId}
-                        onFeedbackSubmit={onFeedbackSubmit}
-                      />
-                    </>
-                  )}
-                </Stack>
-              </>
-            )}
-          </Paper>
+                      </>
+                    )}
+                  </Stack>
+                </>
+              )}
+            </Paper>
           </Box>
         )}
 
@@ -1118,7 +1118,6 @@ const ChatMessage = React.memo(
             {selectedRecord && <RecordDetails recordId={selectedRecord.recordId} />}
           </DialogContent>
         </Dialog>
-
       </Box>
     );
   },

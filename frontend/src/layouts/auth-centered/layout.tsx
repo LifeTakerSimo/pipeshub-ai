@@ -43,7 +43,7 @@ export function AuthCenteredLayout({ sx, children, header }: AuthCenteredLayoutP
             leftArea: (
               <>
                 {/* -- Logo -- */}
-               <Box
+                <Box
                   component="img"
                   src="/logo/logo-blue.svg"
                   alt="Logo"

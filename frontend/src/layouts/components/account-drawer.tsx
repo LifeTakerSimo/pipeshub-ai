@@ -66,9 +66,7 @@ const AccountLabel = styled(Label)(({ theme }) => {
     backgroundColor: isDark
       ? alpha(theme.palette.primary.main, 0.16)
       : alpha(theme.palette.primary.main, 0.08),
-    color: isDark
-      ? alpha(theme.palette.primary.main, 0.9)
-      : theme.palette.primary.main,
+    color: isDark ? alpha(theme.palette.primary.main, 0.9) : theme.palette.primary.main,
   };
 });
 
@@ -174,7 +172,7 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
     user?.accountType === 'business' ||
     user?.accountType === 'organization' ||
     user?.role === 'business';
-    
+
   useEffect(() => {
     const fetchLogo = async () => {
       try {
@@ -257,29 +255,29 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
         open={open}
         onClose={handleCloseDrawer}
         anchor="right"
-        slotProps={{ 
-          backdrop: { 
+        slotProps={{
+          backdrop: {
             invisible: false,
-            sx: { 
+            sx: {
               backdropFilter: 'blur(0.5px)',
-              backgroundColor: isDark 
-                ? alpha(theme.palette.common.black, 0.1) 
-                : alpha(theme.palette.common.white, 0.1)
-            }
-          } 
+              backgroundColor: isDark
+                ? alpha(theme.palette.common.black, 0.1)
+                : alpha(theme.palette.common.white, 0.1),
+            },
+          },
         }}
-        PaperProps={{ 
-          sx: { 
+        PaperProps={{
+          sx: {
             width: 300,
             borderRadius: isDark ? '12px 0 0 12px' : '16px 0 0 16px',
-            boxShadow: isDark 
+            boxShadow: isDark
               ? `0 0 24px ${alpha(theme.palette.common.black, 0.3)}`
               : `0 0 24px ${alpha(theme.palette.common.black, 0.1)}`,
-            backgroundColor: isDark 
-              ? alpha(theme.palette.background.default, 0.95) 
+            backgroundColor: isDark
+              ? alpha(theme.palette.background.default, 0.95)
               : theme.palette.background.default,
             backgroundImage: isDark ? darkModeGradient : 'none',
-          } 
+          },
         }}
       >
         <CloseButton onClick={handleCloseDrawer}>
@@ -290,11 +288,11 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
           <Stack alignItems="center" sx={{ pt: 9, pb: 2 }}>
             {renderAvatar}
 
-            <Typography 
-              variant="subtitle1" 
-              noWrap 
-              sx={{ 
-                mt: 2.5, 
+            <Typography
+              variant="subtitle1"
+              noWrap
+              sx={{
+                mt: 2.5,
                 fontWeight: 600,
                 letterSpacing: '0.01em',
               }}
@@ -302,14 +300,14 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
               {user?.fullName || user?.displayName}
             </Typography>
 
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: 'text.secondary', 
+            <Typography
+              variant="body2"
+              sx={{
+                color: 'text.secondary',
                 mt: 0.5,
                 fontSize: '0.8125rem',
                 opacity: 0.85,
-              }} 
+              }}
               noWrap
             >
               {user?.email}
@@ -332,14 +330,14 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
           </Stack>
 
           <Box sx={{ px: 2, mt: 1 }}>
-            <Divider 
-              sx={{ 
+            <Divider
+              sx={{
                 my: 2,
                 opacity: isDark ? 0.2 : 0.4,
                 borderStyle: 'dashed',
               }}
             />
-            
+
             <Stack spacing={0.25}>
               {menuItems.map((option) => {
                 const rootLabel = pathname.includes('/dashboard') ? 'Home' : 'Dashboard';
@@ -349,7 +347,9 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
                 return (
                   <MenuItemStyled
                     key={option.label}
-                    onClick={() => handleClickItem(option.label === 'Home' ? rootHref : option.href)}
+                    onClick={() =>
+                      handleClickItem(option.label === 'Home' ? rootHref : option.href)
+                    }
                     isActive={isActive}
                     isDark={isDark}
                   >
@@ -368,9 +368,9 @@ export function AccountDrawer({ data = [], sx, ...other }: AccountDrawerProps) {
                     </Typography>
 
                     {option.info && (
-                      <Label 
-                        color="error" 
-                        sx={{ 
+                      <Label
+                        color="error"
+                        sx={{
                           ml: 1,
                           fontSize: '0.65rem',
                           height: 18,

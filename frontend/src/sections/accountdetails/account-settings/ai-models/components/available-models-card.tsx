@@ -1,29 +1,32 @@
-import React, { useState, useMemo } from 'react';
+import addIcon from '@iconify-icons/mdi/plus';
+import React, { useMemo, useState } from 'react';
+import robotIcon from '@iconify-icons/mdi/robot';
+import clearIcon from '@iconify-icons/mdi/close';
+import searchIcon from '@iconify-icons/mdi/magnify';
+import settingsIcon from '@iconify-icons/mdi/settings';
+import checkCircleIcon from '@iconify-icons/mdi/check-circle';
+
 import {
   Box,
   Grid,
   Card,
-  CardContent,
+  Chip,
+  alpha,
+  Stack,
   Avatar,
   Button,
-  Typography,
-  alpha,
   useTheme,
-  Chip,
   TextField,
+  Typography,
+  CardContent,
   InputAdornment,
-  Stack,
-  Tooltip,
 } from '@mui/material';
-import addIcon from '@iconify-icons/mdi/plus';
-import robotIcon from '@iconify-icons/mdi/robot';
-import searchIcon from '@iconify-icons/mdi/magnify';
-import clearIcon from '@iconify-icons/mdi/close';
-import checkCircleIcon from '@iconify-icons/mdi/check-circle';
-import settingsIcon from '@iconify-icons/mdi/settings';
-import boltIcon from '@iconify-icons/mdi/bolt';
+
 import { Iconify } from 'src/components/iconify';
-import { AVAILABLE_MODEL_PROVIDERS, ModelProvider, ModelType } from '../types';
+
+import { AVAILABLE_MODEL_PROVIDERS } from '../types';
+
+import type { ModelType, ModelProvider } from '../types';
 
 interface ProviderCardsProps {
   onProviderSelect: (provider: ModelProvider, modelType?: ModelType) => void;
@@ -106,14 +109,18 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
       return {
         label: 'Configured',
         color: theme.palette.success.main,
-        bgColor: isDark ? alpha(theme.palette.success.main, 0.8) : alpha(theme.palette.success.main, 0.1),
+        bgColor: isDark
+          ? alpha(theme.palette.success.main, 0.8)
+          : alpha(theme.palette.success.main, 0.1),
         icon: checkCircleIcon,
       };
     }
     return {
       label: 'Setup Required',
       color: theme.palette.text.secondary,
-      bgColor: isDark ? alpha(theme.palette.text.secondary, 0.8) : alpha(theme.palette.text.secondary, 0.08),
+      bgColor: isDark
+        ? alpha(theme.palette.text.secondary, 0.8)
+        : alpha(theme.palette.text.secondary, 0.08),
       icon: settingsIcon,
     };
   };
@@ -315,10 +322,10 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                         }}
                       >
                         {provider.src ? (
-                          <img 
-                            src={provider.src} 
-                            alt={provider.name} 
-                            width={24} 
+                          <img
+                            src={provider.src}
+                            alt={provider.name}
+                            width={24}
                             height={24}
                             style={{ objectFit: 'contain' }}
                           />
@@ -372,10 +379,10 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                     </Box>
 
                     {/* Capabilities */}
-                    <Stack 
-                      direction="row" 
-                      spacing={0.5} 
-                      justifyContent="center" 
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      justifyContent="center"
                       alignItems="center"
                       sx={{ minHeight: 20, flexWrap: 'wrap', gap: 0.5 }}
                     >
@@ -397,7 +404,6 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                           {capability}
                         </Typography>
                       ))}
-                      
                     </Stack>
 
                     {/* Model Count Status */}
@@ -409,8 +415,8 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                         px: 1.5,
                         py: 1,
                         borderRadius: 1,
-                        backgroundColor: isDark 
-                          ? alpha(theme.palette.background.default, 0.3) 
+                        backgroundColor: isDark
+                          ? alpha(theme.palette.background.default, 0.3)
                           : alpha(theme.palette.grey[50], 0.8),
                         border: `1px solid ${theme.palette.divider}`,
                       }}
@@ -421,9 +427,10 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                             width: 4,
                             height: 4,
                             borderRadius: '50%',
-                            backgroundColor: llmCount > 0 
-                              ? theme.palette.success.main 
-                              : theme.palette.text.disabled,
+                            backgroundColor:
+                              llmCount > 0
+                                ? theme.palette.success.main
+                                : theme.palette.text.disabled,
                           }}
                         />
                         <Typography
@@ -437,16 +444,17 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                           {llmCount > 0 ? `${llmCount} LLM` : 'No LLM'}
                         </Typography>
                       </Stack>
-                      
+
                       <Stack direction="row" spacing={0.5} alignItems="center">
                         <Box
                           sx={{
                             width: 4,
                             height: 4,
                             borderRadius: '50%',
-                            backgroundColor: embeddingCount > 0 
-                              ? theme.palette.warning.main 
-                              : theme.palette.text.disabled,
+                            backgroundColor:
+                              embeddingCount > 0
+                                ? theme.palette.warning.main
+                                : theme.palette.text.disabled,
                           }}
                         />
                         <Typography
@@ -466,7 +474,7 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                     <Stack spacing={1} sx={{ mt: 'auto' }}>
                       {hasLlm && (
                         <Button
-                          fullWidth 
+                          fullWidth
                           variant="outlined"
                           size="medium"
                           startIcon={<Iconify icon={addIcon} width={16} height={16} />}
@@ -490,10 +498,10 @@ const ProviderCards: React.FC<ProviderCardsProps> = ({ onProviderSelect, configu
                           Add LLM
                         </Button>
                       )}
-                      
+
                       {hasEmbedding && (
                         <Button
-                          fullWidth 
+                          fullWidth
                           variant="outlined"
                           size="medium"
                           startIcon={<Iconify icon={addIcon} width={16} height={16} />}

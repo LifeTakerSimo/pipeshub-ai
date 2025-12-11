@@ -23,13 +23,7 @@ import { useAdmin } from 'src/context/AdminContext';
 
 import { Form, Field } from 'src/components/hook-form';
 
-import {
-  updateUser,
-  getUserById,
-  deleteUserLogo,
-  uploadUserLogo,
-  changePassword,
-} from './utils';
+import { updateUser, getUserById, deleteUserLogo, uploadUserLogo, changePassword } from './utils';
 
 import type { SnackbarState } from './types/organization-data';
 

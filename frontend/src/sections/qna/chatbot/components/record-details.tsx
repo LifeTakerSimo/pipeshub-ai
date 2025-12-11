@@ -1,4 +1,3 @@
-import type { CustomCitation } from 'src/types/chat-bot';
 import type {
   Permissions,
   RecordDetailsResponse,
@@ -139,7 +138,7 @@ interface RecordDetailsProps {
   onExternalLink?: string;
 }
 
-const RecordDetails = ({ recordId, onExternalLink}: RecordDetailsProps) => {
+const RecordDetails = ({ recordId, onExternalLink }: RecordDetailsProps) => {
   const theme = useTheme();
   const isDarkMode = theme.palette.mode === 'dark';
 

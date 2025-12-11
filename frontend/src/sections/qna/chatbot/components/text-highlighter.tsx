@@ -158,7 +158,7 @@ const TextViewer: React.FC<TextViewerProps> = ({
   const [documentText, setDocumentText] = useState<string>('');
   const [processedCitations, setProcessedCitations] = useState<ProcessedCitation[]>([]);
   const [highlightedCitationId, setHighlightedCitationId] = useState<string | null>(null); // NEW: Added like MarkdownViewer
-  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  // fullscreen state removed (unused in this component)
   const fullScreenContainerRef = useRef<HTMLDivElement>(null);
 
   const styleAddedRef = useRef<boolean>(false);
@@ -877,7 +877,6 @@ const TextViewer: React.FC<TextViewerProps> = ({
           }
 
           const candidateElements = Array.from(containerRef.current.querySelectorAll('.text-line'));
-          let highlightApplied = false;
           const newCleanups = new Map<string, () => void>();
 
           processedCitations.forEach((citation) => {
@@ -900,9 +899,6 @@ const TextViewer: React.FC<TextViewerProps> = ({
               );
               if (result.success) {
                 if (result.cleanup) newCleanups.set(citationId, result.cleanup);
-                if (citationId === highlightedCitationId) {
-                  highlightApplied = true;
-                }
               }
             } else {
               const fuzzyMatches = candidateElements
@@ -922,9 +918,6 @@ const TextViewer: React.FC<TextViewerProps> = ({
                 );
                 if (result.success) {
                   if (result.cleanup) newCleanups.set(citationId, result.cleanup);
-                  if (citationId === highlightedCitationId) {
-                    highlightApplied = true;
-                  }
                 }
               }
             }
@@ -1208,7 +1201,7 @@ const TextViewer: React.FC<TextViewerProps> = ({
   );
 
   const handleFullscreenChange = useCallback((): void => {
-    setIsFullscreen(!!document.fullscreenElement);
+    // no-op: fullscreen state tracked elsewhere when needed
   }, []);
 
   useEffect(() => {

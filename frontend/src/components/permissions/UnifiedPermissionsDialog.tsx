@@ -1,12 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import addIcon from '@iconify-icons/mdi/plus';
 import closeIcon from '@iconify-icons/mdi/close';
 import peopleIcon from '@iconify-icons/eva/people-fill';
+import teamIcon from '@iconify-icons/mdi/account-group';
 import editIcon from '@iconify-icons/mdi/pencil-outline';
 import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import searchIcon from '@iconify-icons/eva/search-outline';
-import teamIcon from '@iconify-icons/mdi/account-group';
+import React, { useMemo, useState, useEffect } from 'react';
 import warningIcon from '@iconify-icons/eva/alert-triangle-outline';
 
 import {
@@ -217,7 +217,7 @@ const UnifiedPermissionsDialog: React.FC<UnifiedPermissionsDialogProps> = ({
   const [teamUsers, setTeamUsers] = useState<User[]>([]);
   const [teamRole, setTeamRole] = useState<UnifiedRole>('READER');
   const [creatingTeam, setCreatingTeam] = useState(false);
-  
+
   // Team validation state
   const [showTeamNameError, setShowTeamNameError] = useState(false);
   const [showTeamDescriptionError, setShowTeamDescriptionError] = useState(false);
@@ -379,14 +379,14 @@ const UnifiedPermissionsDialog: React.FC<UnifiedPermissionsDialogProps> = ({
     // Validate fields before submission
     const hasNameError = !newTeamName.trim();
     const hasDescriptionError = !newTeamDescription.trim();
-    
+
     setShowTeamNameError(hasNameError);
     setShowTeamDescriptionError(hasDescriptionError);
-    
+
     if (hasNameError || hasDescriptionError) {
       return; // Don't proceed if validation fails
     }
-    
+
     setCreatingTeam(true);
     setError(null);
     try {
@@ -1508,7 +1508,11 @@ const UnifiedPermissionsDialog: React.FC<UnifiedPermissionsDialogProps> = ({
               rows={3}
               required
               error={showTeamDescriptionError && !newTeamDescription.trim()}
-              helperText={showTeamDescriptionError && !newTeamDescription.trim() ? 'Team description is required' : ''}
+              helperText={
+                showTeamDescriptionError && !newTeamDescription.trim()
+                  ? 'Team description is required'
+                  : ''
+              }
               placeholder="Describe the team's purpose..."
               sx={{
                 '& .MuiOutlinedInput-root': {

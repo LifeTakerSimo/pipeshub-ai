@@ -1,43 +1,45 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Container,
-  Box,
-  Alert,
-  AlertTitle,
-  Typography,
-  Snackbar,
-  alpha,
-  useTheme,
-  Stack,
-  Grid,
-  Button,
-  Paper,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
+import refreshIcon from '@iconify-icons/mdi/refresh';
 import infoIcon from '@iconify-icons/eva/info-outline';
 import lockIcon from '@iconify-icons/mdi/lock-outline';
-import errorOutlineIcon from '@iconify-icons/mdi/error-outline';
 import settingsIcon from '@iconify-icons/mdi/settings';
-import refreshIcon from '@iconify-icons/mdi/refresh';
 import arrowBackIcon from '@iconify-icons/mdi/arrow-left';
+import errorOutlineIcon from '@iconify-icons/mdi/error-outline';
+
+import {
+  Box,
+  Grid,
+  Alert,
+  alpha,
+  Stack,
+  Paper,
+  Button,
+  Snackbar,
+  useTheme,
+  Container,
+  AlertTitle,
+  Typography,
+} from '@mui/material';
+
 import { useAccountType } from 'src/hooks/use-account-type';
-import ConnectorStatistics from '../connector-stats';
-import ConnectorConfigForm from '../connector-config/connector-config-form';
-import FilterSelectionDialog from '../filter-selection-dialog';
-import { useConnectorManager } from '../../hooks/use-connector-manager';
+
+import { Iconify } from 'src/components/iconify';
+
 import ConnectorHeader from './connector-header';
+import ConnectorStatistics from '../connector-stats';
 import ConnectorStatusCard from './connector-status-card';
+import FilterSelectionDialog from '../filter-selection-dialog';
 import ConnectorActionsSidebar from './connector-actions-sidebar';
 import ConnectorLoadingSkeleton from './connector-loading-skeleton';
+import { useConnectorManager } from '../../hooks/use-connector-manager';
+import ConnectorConfigForm from '../connector-config/connector-config-form';
 
 interface ConnectorManagerProps {
   showStats?: boolean;
 }
 
-const ConnectorManager: React.FC<ConnectorManagerProps> = ({ 
-  showStats = true 
-}) => {
+const ConnectorManager: React.FC<ConnectorManagerProps> = ({ showStats = true }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -79,11 +81,11 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
   // Error state - Unified with connector manager design
   if (error || !connector) {
     // Determine error type
-    const isBetaAccessError = 
-      error?.includes('Beta connectors are not enabled') || 
+    const isBetaAccessError =
+      error?.includes('Beta connectors are not enabled') ||
       error?.includes('beta connector') ||
       error?.toLowerCase()?.includes('beta');
-    
+
     const isNotFoundError = !connector || error?.toLowerCase()?.includes('not found');
 
     // Navigation helpers
@@ -122,7 +124,7 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                     width: 48,
                     height: 48,
                     borderRadius: 1.5,
-                    bgcolor: isBetaAccessError 
+                    bgcolor: isBetaAccessError
                       ? alpha(theme.palette.warning.main, 0.08)
                       : alpha(theme.palette.error.main, 0.08),
                     display: 'flex',
@@ -130,13 +132,13 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                     justifyContent: 'center',
                   }}
                 >
-                  <Iconify 
+                  <Iconify
                     icon={isBetaAccessError ? lockIcon : errorOutlineIcon}
                     width={28}
-                    sx={{ 
-                      color: isBetaAccessError 
-                        ? theme.palette.warning.main 
-                        : theme.palette.error.main 
+                    sx={{
+                      color: isBetaAccessError
+                        ? theme.palette.warning.main
+                        : theme.palette.error.main,
                     }}
                   />
                 </Box>
@@ -145,15 +147,15 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                     {isBetaAccessError
                       ? 'Beta Connector Access Required'
                       : isNotFoundError
-                      ? 'Connector Not Found'
-                      : 'Unable to Load Connector'}
+                        ? 'Connector Not Found'
+                        : 'Unable to Load Connector'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     {isBetaAccessError
                       ? 'Enable beta features to access this connector'
                       : isNotFoundError
-                      ? 'This connector is not available'
-                      : 'An error occurred while loading'}
+                        ? 'This connector is not available'
+                        : 'An error occurred while loading'}
                   </Typography>
                 </Box>
               </Stack>
@@ -180,8 +182,9 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                   {isBetaAccessError
                     ? 'This connector is currently in beta and requires special access. Enable beta connectors in your platform settings to use this feature.'
                     : isNotFoundError
-                    ? 'The requested connector could not be found. It may have been removed or you may not have access to it.'
-                    : error || 'An unexpected error occurred while loading the connector configuration. Please try again or contact support if the issue persists.'}
+                      ? 'The requested connector could not be found. It may have been removed or you may not have access to it.'
+                      : error ||
+                        'An unexpected error occurred while loading the connector configuration. Please try again or contact support if the issue persists.'}
                 </Typography>
 
                 {/* Technical Error Details (only for non-beta errors) */}
@@ -197,9 +200,9 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                       border: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                     }}
                   >
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
+                    <Typography
+                      variant="caption"
+                      sx={{
                         fontFamily: 'monospace',
                         fontSize: '0.75rem',
                         wordBreak: 'break-word',
@@ -225,25 +228,25 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
                   }}
                 >
                   <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                    <Iconify 
-                      icon={infoIcon} 
-                      width={20} 
-                      sx={{ 
+                    <Iconify
+                      icon={infoIcon}
+                      width={20}
+                      sx={{
                         color: theme.palette.info.main,
                         mt: 0.25,
-                      }} 
+                      }}
                     />
                     <Box>
-                      <Typography 
-                        variant="body2" 
-                        fontWeight={600}
-                        sx={{ mb: 0.5 }}
-                      >
+                      <Typography variant="body2" fontWeight={600} sx={{ mb: 0.5 }}>
                         About Beta Connectors
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8125rem' }}>
-                        Beta connectors are new integrations currently being tested and refined. 
-                        They may have limited features or occasional issues. Enable them in platform 
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ fontSize: '0.8125rem' }}
+                      >
+                        Beta connectors are new integrations currently being tested and refined.
+                        They may have limited features or occasional issues. Enable them in platform
                         settings to access early features and help us improve them.
                       </Typography>
                     </Box>
@@ -306,13 +309,12 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
   const isActive = connector.isActive || false;
   const authType = (connector.authType || '').toUpperCase();
   const isOauth = authType === 'OAUTH';
-  const canEnable = isActive ? true : (isOauth ? isAuthenticated : isConfigured);
+  const canEnable = isActive ? true : isOauth ? isAuthenticated : isConfigured;
 
   // Determine whether to show Authenticate button
   const isGoogleWorkspace = connector.appGroup === 'Google Workspace';
   const hideAuthenticate =
-    authType === 'OAUTH_ADMIN_CONSENT' ||
-    (isOauth && isBusiness && isGoogleWorkspace);
+    authType === 'OAUTH_ADMIN_CONSENT' || (isOauth && isBusiness && isGoogleWorkspace);
 
   return (
     <Container maxWidth="xl" sx={{ py: 2 }}>
@@ -326,11 +328,7 @@ const ConnectorManager: React.FC<ConnectorManagerProps> = ({
         }}
       >
         {/* Header */}
-        <ConnectorHeader
-          connector={connector}
-          loading={loading}
-          onRefresh={handleRefresh}
-        />
+        <ConnectorHeader connector={connector} loading={loading} onRefresh={handleRefresh} />
 
         {/* Content */}
         <Box sx={{ p: 2 }}>

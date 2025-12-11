@@ -1,25 +1,27 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
+  Chip,
   Paper,
   Stack,
-  Typography,
-  TextField,
+  Alert,
   Button,
   Switch,
-  FormControlLabel,
-  Container,
-  CircularProgress,
-  Alert,
-  Snackbar,
-  Link,
   Tooltip,
+  Snackbar,
+  TextField,
+  Container,
+  Typography,
   InputAdornment,
-  Chip,
+  FormControlLabel,
+  CircularProgress,
 } from '@mui/material';
-import { Iconify } from 'src/components/iconify';
+
 import axios from 'src/utils/axios';
+
+import { Iconify } from 'src/components/iconify';
 
 type PlatformSettingsData = {
   fileUploadMaxSizeBytes: number;
@@ -145,7 +147,9 @@ export default function PlatformSettings() {
     const currentKeys = Object.keys(settings.featureFlags);
     const originalKeys = Object.keys(originalSettings.featureFlags);
     if (currentKeys.length !== originalKeys.length) return true;
-    return currentKeys.some((k) => !!settings.featureFlags[k] !== !!originalSettings.featureFlags[k]);
+    return currentKeys.some(
+      (k) => !!settings.featureFlags[k] !== !!originalSettings.featureFlags[k]
+    );
   }, [settings, originalSettings]);
 
   // Basic client-side validation for file size; backend still enforces constraints
@@ -482,7 +486,7 @@ export default function PlatformSettings() {
               ) : (
                 <Stack spacing={1.5}>
                   {availableFlags.map((f) => {
-                    const key = f.key;
+                    const { key } = f;
                     const value = !!settings.featureFlags[key];
                     return (
                       <Box

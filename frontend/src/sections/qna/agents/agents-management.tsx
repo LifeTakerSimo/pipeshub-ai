@@ -1,60 +1,62 @@
 // Enhanced AgentsManagement component with template edit/delete management
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import type { Agent, AgentTemplate, AgentFilterOptions } from 'src/types/agent';
+
+import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
+import plusIcon from '@iconify-icons/mdi/plus';
+import chatIcon from '@iconify-icons/mdi/chat';
+import flowIcon from '@iconify-icons/mdi/graph';
+import editIcon from '@iconify-icons/mdi/pencil';
+import clearIcon from '@iconify-icons/mdi/close';
+import deleteIcon from '@iconify-icons/mdi/delete';
+import searchIcon from '@iconify-icons/mdi/magnify';
+import databaseIcon from '@iconify-icons/mdi/database';
+import timeIcon from '@iconify-icons/mdi/clock-outline';
+import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
+import moreVertIcon from '@iconify-icons/mdi/dots-vertical';
+import folderIcon from '@iconify-icons/mdi/folder-multiple';
+import permissionsIcon from '@iconify-icons/mdi/account-key';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+
 import {
   Box,
   Grid,
   Card,
-  CardContent,
-  Typography,
-  Button,
-  TextField,
-  InputAdornment,
   Chip,
-  IconButton,
   Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Fade,
   Alert,
-  CircularProgress,
-  useTheme,
   alpha,
+  Stack,
+  Paper,
+  Button,
+  Dialog,
   Avatar,
   Tooltip,
-  Stack,
   Divider,
-  Paper,
+  MenuItem,
+  useTheme,
+  TextField,
   Container,
+  Typography,
+  IconButton,
+  CardContent,
+  DialogTitle,
+  ListItemIcon,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
   LinearProgress,
-  Fade,
+  CircularProgress,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import searchIcon from '@iconify-icons/mdi/magnify';
-import plusIcon from '@iconify-icons/mdi/plus';
-import moreVertIcon from '@iconify-icons/mdi/dots-vertical';
-import editIcon from '@iconify-icons/mdi/pencil';
-import deleteIcon from '@iconify-icons/mdi/delete';
-import chatIcon from '@iconify-icons/mdi/chat';
-import templateIcon from '@iconify-icons/mdi/file-document';
-import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
-import timeIcon from '@iconify-icons/mdi/clock-outline';
-import clearIcon from '@iconify-icons/mdi/close';
-import folderIcon from '@iconify-icons/mdi/folder-multiple';
-import databaseIcon from '@iconify-icons/mdi/database';
-import flowIcon from '@iconify-icons/mdi/graph';
-import permissionsIcon from '@iconify-icons/mdi/account-key';
 
-import type { Agent, AgentTemplate, AgentFilterOptions } from 'src/types/agent';
 import { paths } from 'src/routes/paths';
+
 import AgentApiService from './services/api';
-import { filterAgents, sortAgents, formatTimestamp } from './utils/agent';
 import TemplateBuilder from './components/template-builder';
 import TemplateSelector from './components/template-selector';
+import { sortAgents, filterAgents, formatTimestamp } from './utils/agent';
 import AgentPermissionsDialog from './components/agent-builder/agent-permissions-dialog';
 
 interface AgentsManagementProps {
@@ -103,7 +105,10 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
   });
 
   // Permissions dialog state
-  const [permissionsDialog, setPermissionsDialog] = useState<{ open: boolean; agent: Agent | null }>({
+  const [permissionsDialog, setPermissionsDialog] = useState<{
+    open: boolean;
+    agent: Agent | null;
+  }>({
     open: false,
     agent: null,
   });
@@ -942,7 +947,7 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
                           fontWeight: 500,
                         }}
                       >
-                         Create New Agent
+                        Create New Agent
                       </Button>
                     </Stack>
                   )}
@@ -1006,10 +1011,10 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
           <ListItemIcon sx={{ minWidth: 36 }}>
             <Icon icon={editIcon} width={18} height={18} />
           </ListItemIcon>
-          <ListItemText 
+          <ListItemText
             primary="Edit Agent"
             primaryTypographyProps={{
-              sx: { fontSize: '0.875rem', fontWeight: 500 }
+              sx: { fontSize: '0.875rem', fontWeight: 500 },
             }}
           />
         </MenuItem>
@@ -1033,10 +1038,10 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
           <ListItemIcon sx={{ minWidth: 36 }}>
             <Icon icon={chatIcon} width={18} height={18} />
           </ListItemIcon>
-          <ListItemText 
+          <ListItemText
             primary="Start Chat"
             primaryTypographyProps={{
-              sx: { fontSize: '0.875rem', fontWeight: 500 }
+              sx: { fontSize: '0.875rem', fontWeight: 500 },
             }}
           />
         </MenuItem>
@@ -1061,10 +1066,10 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
           <ListItemIcon sx={{ minWidth: 36 }}>
             <Icon icon={permissionsIcon} width={18} height={18} />
           </ListItemIcon>
-          <ListItemText 
+          <ListItemText
             primary="Manage Permissions"
             primaryTypographyProps={{
-              sx: { fontSize: '0.875rem', fontWeight: 500 }
+              sx: { fontSize: '0.875rem', fontWeight: 500 },
             }}
           />
         </MenuItem>
@@ -1074,7 +1079,7 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
             if (activeAgent) setDeleteDialog({ open: true, agent: activeAgent });
             handleMenuClose();
           }}
-          sx={{ 
+          sx={{
             color: 'error.main',
             py: 1.5,
             px: 2,
@@ -1090,10 +1095,10 @@ const AgentsManagement: React.FC<AgentsManagementProps> = ({ onAgentSelect }) =>
           <ListItemIcon sx={{ minWidth: 36 }}>
             <Icon icon={deleteIcon} width={18} height={18} color={theme.palette.error.main} />
           </ListItemIcon>
-          <ListItemText 
+          <ListItemText
             primary="Delete Agent"
             primaryTypographyProps={{
-              sx: { fontSize: '0.875rem', fontWeight: 500 }
+              sx: { fontSize: '0.875rem', fontWeight: 500 },
             }}
           />
         </MenuItem>

@@ -1,5 +1,15 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import React, {
+  useRef,
+  useMemo,
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  createContext,
+} from 'react';
+
 import { CONFIG } from 'src/config-global';
+
 import { toast } from 'src/components/snackbar';
 
 type HealthState = {
@@ -41,10 +51,12 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
   const checkHealth = useCallback(async () => {
     try {
       console.log('Checking services health...');
-      const resp = await fetch(`${CONFIG.backendUrl}/api/v1/health/services`, { credentials: 'include' });
+      const resp = await fetch(`${CONFIG.backendUrl}/api/v1/health/services`, {
+        credentials: 'include',
+      });
       const data = await resp.json();
       const ok = resp.ok && data?.status === 'healthy';
-      
+
       setHealthy(ok);
       setServices(data?.services ?? null);
       setLoading(false);
@@ -63,7 +75,9 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
       } else if (!ok) {
         // Keep showing loading toast while polling
         if (toastIdRef.current == null) {
-          toastIdRef.current = toast.loading('Waiting for services to become ready...', { duration: Infinity });
+          toastIdRef.current = toast.loading('Waiting for services to become ready...', {
+            duration: Infinity,
+          });
         }
       }
     } catch (err) {
@@ -71,7 +85,7 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
       setHealthy(false);
       setServices(null);
       setLoading(false);
-      
+
       // Show error toast and keep polling
       if (toastIdRef.current != null) {
         toast.error('Failed to connect to services. Retrying...', { id: toastIdRef.current });
@@ -84,13 +98,15 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     // Check if health is already cached
     const cachedHealthy = checkLocalStorageHealth();
-    
+
     if (!cachedHealthy) {
       // Show loading toast only if we need to check health
       const timer = setTimeout(() => {
-        toastIdRef.current = toast.loading('Checking services health. Please wait...', { duration: Infinity });
+        toastIdRef.current = toast.loading('Checking services health. Please wait...', {
+          duration: Infinity,
+        });
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
 
@@ -105,15 +121,15 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
   useEffect(() => {
     // Check if health is already cached
     const cachedHealthy = checkLocalStorageHealth();
-    
+
     if (!cachedHealthy) {
       // Initial check
       checkHealth();
-      
+
       // Start polling every 5 seconds
       pollIntervalRef.current = setInterval(checkHealth, 5000);
     }
-    
+
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
@@ -126,7 +142,10 @@ export function ServicesHealthProvider({ children }: { children: React.ReactNode
     };
   }, [checkHealth]);
 
-  const value = useMemo<HealthState>(() => ({ loading, healthy, services }), [loading, healthy, services]);
+  const value = useMemo<HealthState>(
+    () => ({ loading, healthy, services }),
+    [loading, healthy, services]
+  );
 
   return <ServicesHealthContext.Provider value={value}>{children}</ServicesHealthContext.Provider>;
 }

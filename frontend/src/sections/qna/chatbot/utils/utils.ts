@@ -1,4 +1,4 @@
-import { ChatMode } from '../types';
+import type { ChatMode } from '../types';
 
 // Define chat modes locally in the frontend
 export const CHAT_MODES: ChatMode[] = [

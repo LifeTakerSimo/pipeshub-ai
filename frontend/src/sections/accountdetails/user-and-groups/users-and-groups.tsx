@@ -51,8 +51,8 @@ export default function UsersAndGroups() {
       try {
         const response: GroupUser[] = await getAllUsersWithGroups();
         const groups: AppUserGroup[] = await allGroups();
-        const loggedInUsers = response.filter((user) => user.hasLoggedIn===true);
-        const pendingUsers = response.filter((user) => user.hasLoggedIn===false);
+        const loggedInUsers = response.filter((user) => user.hasLoggedIn === true);
+        const pendingUsers = response.filter((user) => user.hasLoggedIn === false);
         dispatch(
           setCounts({
             usersCount: loggedInUsers.length,

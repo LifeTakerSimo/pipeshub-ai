@@ -1,5 +1,6 @@
 import axios from 'src/utils/axios';
-import { ModelType, ConfiguredModel, ModelData } from '../types';
+
+import type { ModelType, ModelData, ConfiguredModel } from '../types';
 
 export const modelService = {
   // Get all models for a type
@@ -115,9 +116,7 @@ export const modelService = {
       throw new Error(response.data.message || 'Failed to set default model');
     } catch (err: any) {
       console.error(`Error setting default model:`, err);
-      throw new Error(
-        err.response?.data?.message || err.message || 'Failed to set default model'
-      );
+      throw new Error(err.response?.data?.message || err.message || 'Failed to set default model');
     }
   },
 
@@ -157,9 +156,10 @@ export const modelService = {
   },
 
   async updateLlmConfig(config: any): Promise<any> {
-    const { modelType, providerType, _provider, isMultimodal, isReasoning, ...cleanConfig } = config;
-    console.log("isMultimodal", isMultimodal);
-    console.log("cleanConfig", cleanConfig);
+    const { modelType, providerType, _provider, isMultimodal, isReasoning, ...cleanConfig } =
+      config;
+    console.log('isMultimodal', isMultimodal);
+    console.log('cleanConfig', cleanConfig);
     const provider = providerType || modelType || _provider;
 
     // Update or create model
@@ -218,7 +218,7 @@ export const modelService = {
 // Export legacy functions for compatibility
 export const { getAllModels, addModel, updateModel, deleteModel, setDefaultModel } = modelService;
 
-export const getLlmConfig = modelService.getLlmConfig;
-export const getEmbeddingConfig = modelService.getEmbeddingConfig;
-export const updateLlmConfig = modelService.updateLlmConfig;
-export const updateEmbeddingConfig = modelService.updateEmbeddingConfig;
+export const { getLlmConfig } = modelService;
+export const { getEmbeddingConfig } = modelService;
+export const { updateLlmConfig } = modelService;
+export const { updateEmbeddingConfig } = modelService;

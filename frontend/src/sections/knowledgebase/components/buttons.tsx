@@ -1,19 +1,12 @@
-import { Icon } from '@iconify/react';
 import React from 'react';
+import { Icon } from '@iconify/react';
 import pencilIcon from '@iconify-icons/mdi/pencil';
 import refreshIcon from '@iconify-icons/mdi/refresh';
+import linkIcon from '@iconify-icons/mdi/open-in-new';
 import trashCanIcon from '@iconify-icons/mdi/trash-can-outline';
 import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
-import linkIcon from '@iconify-icons/mdi/open-in-new';
 
-import {
-  alpha,
-  Button,
-  Tooltip,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-} from '@mui/material';
+import { alpha, Button, Tooltip, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 
 const getReindexButtonText = (status: string): string => {
   switch (status) {

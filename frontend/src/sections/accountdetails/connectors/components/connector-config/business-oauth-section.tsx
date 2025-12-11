@@ -1,17 +1,11 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  alpha,
-  useTheme,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
 import keyIcon from '@iconify-icons/mdi/key';
-import checkIcon from '@iconify-icons/mdi/check';
 import codeIcon from '@iconify-icons/mdi/code';
+import checkIcon from '@iconify-icons/mdi/check';
+
+import { Box, Paper, alpha, Button, useTheme, TextField, Typography } from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 interface BusinessOAuthSectionProps {
   adminEmail: string;
@@ -62,12 +56,7 @@ const BusinessOAuthSection: React.FC<BusinessOAuthSectionProps> = ({
             justifyContent: 'center',
           }}
         >
-          <Iconify
-            icon={keyIcon}
-            width={20}
-            height={20}
-            color={theme.palette.primary.main}
-          />
+          <Iconify icon={keyIcon} width={20} height={20} color={theme.palette.primary.main} />
         </Box>
         <Typography variant="h6" sx={{ fontSize: '1rem', fontWeight: 600 }}>
           Business OAuth Configuration
@@ -75,8 +64,8 @@ const BusinessOAuthSection: React.FC<BusinessOAuthSectionProps> = ({
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: '0.8125rem' }}>
-        For business accounts, upload your Google Cloud Service Account JSON credentials file
-        and provide the admin email address.
+        For business accounts, upload your Google Cloud Service Account JSON credentials file and
+        provide the admin email address.
       </Typography>
 
       {/* Admin Email Field */}
@@ -98,19 +87,21 @@ const BusinessOAuthSection: React.FC<BusinessOAuthSectionProps> = ({
         <Typography variant="subtitle2" sx={{ mb: 1.5, fontSize: '0.875rem' }}>
           Google Cloud Service Account JSON
         </Typography>
-        
+
         <Paper
           variant="outlined"
           sx={{
             p: 2,
             borderRadius: 1,
-            borderStyle: (selectedFile || jsonData) ? 'solid' : 'dashed',
-            borderColor: (selectedFile || jsonData)
-              ? alpha(theme.palette.success.main, 0.3)
-              : alpha(theme.palette.primary.main, 0.3),
-            bgcolor: (selectedFile || jsonData)
-              ? alpha(theme.palette.success.main, 0.02)
-              : alpha(theme.palette.primary.main, 0.02),
+            borderStyle: selectedFile || jsonData ? 'solid' : 'dashed',
+            borderColor:
+              selectedFile || jsonData
+                ? alpha(theme.palette.success.main, 0.3)
+                : alpha(theme.palette.primary.main, 0.3),
+            bgcolor:
+              selectedFile || jsonData
+                ? alpha(theme.palette.success.main, 0.02)
+                : alpha(theme.palette.primary.main, 0.02),
             cursor: 'pointer',
             transition: 'all 0.2s ease-in-out',
             '&:hover': {
@@ -125,34 +116,36 @@ const BusinessOAuthSection: React.FC<BusinessOAuthSectionProps> = ({
               sx={{
                 p: 1,
                 borderRadius: 1,
-                bgcolor: (selectedFile || jsonData)
-                  ? alpha(theme.palette.success.main, 0.1)
-                  : alpha(theme.palette.primary.main, 0.1),
+                bgcolor:
+                  selectedFile || jsonData
+                    ? alpha(theme.palette.success.main, 0.1)
+                    : alpha(theme.palette.primary.main, 0.1),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
             >
               <Iconify
-                icon={(selectedFile || jsonData) ? checkIcon : codeIcon}
+                icon={selectedFile || jsonData ? checkIcon : codeIcon}
                 width={24}
                 height={24}
-                color={(selectedFile || jsonData) ? theme.palette.success.main : theme.palette.primary.main}
+                color={
+                  selectedFile || jsonData ? theme.palette.success.main : theme.palette.primary.main
+                }
               />
             </Box>
-            
+
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                 {fileName || 'Click to upload JSON file'}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {(selectedFile || jsonData)
+                {selectedFile || jsonData
                   ? 'Google Cloud Service Account credentials loaded'
-                  : 'Upload your Google Cloud Service Account JSON file'
-                }
+                  : 'Upload your Google Cloud Service Account JSON file'}
               </Typography>
             </Box>
-            
+
             <Button
               variant="outlined"
               size="small"
@@ -198,9 +191,12 @@ const BusinessOAuthSection: React.FC<BusinessOAuthSectionProps> = ({
             }}
           >
             <Typography variant="caption" color="text.secondary" sx={{ fontFamily: 'monospace' }}>
-              Project ID: {jsonData.project_id}<br/>
-              Client ID: {jsonData.client_id}<br/>
-              Type: {jsonData.type}<br/>
+              Project ID: {jsonData.project_id}
+              <br />
+              Client ID: {jsonData.client_id}
+              <br />
+              Type: {jsonData.type}
+              <br />
               {jsonData.client_email && `Service Account: ${jsonData.client_email}`}
             </Typography>
           </Paper>

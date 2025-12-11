@@ -19,7 +19,7 @@ export default function Page() {
       </Helmet>
       <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', zIndex: 0 }}>
         <Sidebar />
-        <AiModelsSettings/>
+        <AiModelsSettings />
       </Box>
     </>
   );

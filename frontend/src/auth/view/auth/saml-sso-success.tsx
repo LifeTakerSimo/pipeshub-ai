@@ -7,7 +7,7 @@ import { setSession } from 'src/auth/context/jwt';
 
 export default function SamlSsoSuccess() {
   const navigate = useNavigate();
-  const {checkUserSession} = useAuthContext();
+  const { checkUserSession } = useAuthContext();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -18,9 +18,9 @@ export default function SamlSsoSuccess() {
       await checkUserSession?.();
       navigate('/');
     };
- 
+
     initAuth();
-  }, [navigate,checkUserSession]);
+  }, [navigate, checkUserSession]);
 
   return <div />;
 }

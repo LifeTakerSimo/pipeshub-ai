@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { FIELD_TEMPLATES, FieldTemplate, FieldTemplateName } from './field-templates';
+
+import { FIELD_TEMPLATES } from './field-templates';
+
+import type { FieldTemplate, FieldTemplateName } from './field-templates';
 
 export interface FieldConfig {
   name: FieldTemplateName;
@@ -88,7 +91,8 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
   {
     id: 'azureAI',
     label: 'Azure AI',
-    description: 'Access Azure AI Foundry models including GPT-4o, DeepSeek R1, Cohere, Phi and Mistral.',
+    description:
+      'Access Azure AI Foundry models including GPT-4o, DeepSeek R1, Cohere, Phi and Mistral.',
     modelPlaceholder: 'e.g., gpt-5.1, claude-sonnet-4-5, DeepSeek-V3.1',
     fields: [
       'endpoint',
@@ -100,7 +104,8 @@ export const LLM_PROVIDERS: readonly ProviderConfig[] = [
     ],
     customFields: {
       endpoint: {
-        placeholder: 'e.g., For Claude models: https://<your-resource-name>.inference.ai.azure.com/anthropic, For other models (OpenAI, DeepSeek): https://<your-resource-name>.cognitiveservices.azure.com/openai/v1/',
+        placeholder:
+          'e.g., For Claude models: https://<your-resource-name>.inference.ai.azure.com/anthropic, For other models (OpenAI, DeepSeek): https://<your-resource-name>.cognitiveservices.azure.com/openai/v1/',
       },
       maxTokens: {
         placeholder: 'e.g., 16000',

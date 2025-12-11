@@ -40,7 +40,7 @@ export default function OAuthCallback() {
         }
 
         const { email, provider } = stateData;
-        
+
         if (!email || !provider || typeof email !== 'string' || typeof provider !== 'string') {
           throw new Error('Invalid state data');
         }
@@ -63,32 +63,39 @@ export default function OAuthCallback() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Failed to exchange authorization code for tokens: ${response.status} - ${errorText}`);
+          throw new Error(
+            `Failed to exchange authorization code for tokens: ${response.status} - ${errorText}`
+          );
         }
 
         const tokens = await response.json();
 
         // Send tokens to parent window
         if (window.opener) {
-          window.opener.postMessage({
-            type: 'OAUTH_SUCCESS',
-            accessToken: tokens.access_token,
-          }, window.location.origin);
+          window.opener.postMessage(
+            {
+              type: 'OAUTH_SUCCESS',
+              accessToken: tokens.access_token,
+            },
+            window.location.origin
+          );
         }
 
         // Close the popup
         window.close();
-
       } catch (err) {
         setError(err instanceof Error ? err.message : 'OAuth authentication failed');
         setProcessing(false);
-        
+
         // Send error to parent window
         if (window.opener) {
-          window.opener.postMessage({
-            type: 'OAUTH_ERROR',
-            error: err instanceof Error ? err.message : 'OAuth authentication failed',
-          }, window.location.origin);
+          window.opener.postMessage(
+            {
+              type: 'OAUTH_ERROR',
+              error: err instanceof Error ? err.message : 'OAuth authentication failed',
+            },
+            window.location.origin
+          );
         }
       }
     };
@@ -98,14 +105,14 @@ export default function OAuthCallback() {
 
   if (error) {
     return (
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
           minHeight: '100vh',
-          p: 3 
+          p: 3,
         }}
       >
         <Alert severity="error" sx={{ mb: 2, maxWidth: 400 }}>
@@ -119,19 +126,17 @@ export default function OAuthCallback() {
   }
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        minHeight: '100vh' 
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
       }}
     >
       <CircularProgress size={40} sx={{ mb: 2 }} />
-      <Typography variant="body1">
-        Processing OAuth authentication...
-      </Typography>
+      <Typography variant="body1">Processing OAuth authentication...</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         Please wait while we complete your sign-in
       </Typography>

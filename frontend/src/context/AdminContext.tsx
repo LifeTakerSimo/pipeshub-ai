@@ -46,7 +46,7 @@ export const AdminProvider: React.FC<AdminProviderProps> = ({ children }) => {
         const response = await axios.get(`${CONFIG.backendUrl}/api/v1/userGroups/users/${userId}`);
         const groups = response.data;
         const isAdminTypeGroup = groups.some((group: any) => group.type === 'admin');
-        setIsAdmin(isAdminTypeGroup );
+        setIsAdmin(isAdminTypeGroup);
       } catch (error) {
         setIsAdmin(false);
       }

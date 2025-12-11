@@ -16,9 +16,6 @@ export type AuthContextValue = {
   checkUserSession?: () => Promise<void>;
 };
 
-
-
-
 export interface AuthResponse {
   currentStep: number;
   allowedMethods: AuthMethod[];
@@ -26,13 +23,7 @@ export interface AuthResponse {
   authProviders: Record<string, any>;
 }
 
-export type AuthMethod = 
-  | 'password' 
-  | 'otp' 
-  | 'samlSso' 
-  | 'google' 
-  | 'microsoft' 
-  | 'azureAd';
+export type AuthMethod = 'password' | 'otp' | 'samlSso' | 'google' | 'microsoft' | 'azureAd';
 
 export interface TabPanelProps {
   children?: ReactNode;

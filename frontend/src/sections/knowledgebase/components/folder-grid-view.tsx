@@ -1,32 +1,32 @@
 // GridView.tsx
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router';
-import React, { useRef, useEffect, useCallback } from 'react';
 import databaseIcon from '@iconify-icons/mdi/database';
 import codeJsonIcon from '@iconify-icons/mdi/code-json';
 // Import specific icons for better performance and type safety
 import folderIcon from '@iconify-icons/mdi/folder-outline';
 import languageGoIcon from '@iconify-icons/mdi/language-go';
 import moreVertIcon from '@iconify-icons/mdi/dots-vertical';
-import filePdfBoxIcon from '@iconify-icons/vscode-icons/file-type-pdf2';
+import React, { useRef, useEffect, useCallback } from 'react';
 import languagePhpIcon from '@iconify-icons/mdi/language-php';
-import fileWordBoxIcon from '@iconify-icons/vscode-icons/file-type-word';
 import languageCss3Icon from '@iconify-icons/mdi/language-css3';
 import languageJavaIcon from '@iconify-icons/mdi/language-java';
 import languageRubyIcon from '@iconify-icons/mdi/language-ruby';
 import emailOutlineIcon from '@iconify-icons/mdi/email-outline';
-import fileExcelBoxIcon from '@iconify-icons/vscode-icons/file-type-excel';
-import fileImageBoxIcon from '@iconify-icons/vscode-icons/file-type-image';
 import languageHtml5Icon from '@iconify-icons/mdi/language-html5';
 import fileArchiveBoxIcon from '@iconify-icons/mdi/archive-outline';
 import languagePythonIcon from '@iconify-icons/mdi/language-python';
 import noteTextOutlineIcon from '@iconify-icons/mdi/note-text-outline';
-import languageMarkdownIcon from '@iconify-icons/vscode-icons/file-type-markdown';
+import filePdfBoxIcon from '@iconify-icons/vscode-icons/file-type-pdf2';
+import fileWordBoxIcon from '@iconify-icons/vscode-icons/file-type-word';
 import fileMusicOutlineIcon from '@iconify-icons/mdi/file-music-outline';
 import fileVideoOutlineIcon from '@iconify-icons/mdi/file-video-outline';
-import filePowerpointBoxIcon from '@iconify-icons/vscode-icons/file-type-powerpoint';
+import fileExcelBoxIcon from '@iconify-icons/vscode-icons/file-type-excel';
+import fileImageBoxIcon from '@iconify-icons/vscode-icons/file-type-image';
 import languageJavascriptIcon from '@iconify-icons/mdi/language-javascript';
 import fileDocumentOutlineIcon from '@iconify-icons/mdi/file-document-outline';
+import languageMarkdownIcon from '@iconify-icons/vscode-icons/file-type-markdown';
+import filePowerpointBoxIcon from '@iconify-icons/vscode-icons/file-type-powerpoint';
 
 import {
   Box,
@@ -40,10 +40,10 @@ import {
   Skeleton,
   Typography,
   CardActionArea,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 
-import {createScrollableContainerStyle} from 'src/sections/qna/chatbot/utils/styles/scrollbar';
+import { createScrollableContainerStyle } from 'src/sections/qna/chatbot/utils/styles/scrollbar';
 
 interface GridViewProps {
   items: any[];
@@ -61,7 +61,7 @@ interface GridViewProps {
 // Helper hook for infinite scroll
 const useIntersectionObserver = (callback: () => void, options: IntersectionObserverInit = {}) => {
   const targetRef = useRef<HTMLDivElement>(null);
-  
+
   // Use useCallback to memoize the callback and prevent unnecessary re-renders
   const memoizedCallback = useCallback(callback, [callback]);
 
@@ -471,7 +471,7 @@ export const GridView: React.FC<GridViewProps> = ({
               const isFolder = itemData.type === 'folder';
 
               return (
-                <Grid item xs={12} sm={6} md={4} lg={3} xl={3} key={itemData.id} sx={{mt:2,}}>
+                <Grid item xs={12} sm={6} md={4} lg={3} xl={3} key={itemData.id} sx={{ mt: 2 }}>
                   <CompactCard
                     sx={{
                       height: 120,
@@ -484,7 +484,11 @@ export const GridView: React.FC<GridViewProps> = ({
                     }}
                   >
                     <CardActionArea
-                      onClick={() => isFolder ? navigateToFolder(item) :   window.open(`/record/${item.id}`, '_blank')}
+                      onClick={() =>
+                        isFolder
+                          ? navigateToFolder(item)
+                          : window.open(`/record/${item.id}`, '_blank')
+                      }
                       disabled={!isFolder}
                       sx={{
                         p: 2,

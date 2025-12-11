@@ -7,7 +7,6 @@ import { SplashScreen } from 'src/components/loading-screen';
 
 import { GuestGuard } from 'src/auth/guard';
 
-
 // ----------------------------------------------------------------------
 
 /** **************************************
@@ -20,7 +19,6 @@ const Jwt = {
   SamlSsoSuccess: lazy(() => import('src/auth/view/auth/saml-sso-success')),
   OAuthCallback: lazy(() => import('src/auth/view/auth/oauth-callback')),
 };
-
 
 const authJwt = {
   children: [
@@ -35,11 +33,11 @@ const authJwt = {
       ),
     },
     {
-      path: 'sign-in/samlSso/success',  
+      path: 'sign-in/samlSso/success',
       element: (
         <GuestGuard>
           <AuthSplitLayout section={{ title: 'Processing authentication...' }}>
-          <Jwt.SamlSsoSuccess />
+            <Jwt.SamlSsoSuccess />
           </AuthSplitLayout>
         </GuestGuard>
       ),

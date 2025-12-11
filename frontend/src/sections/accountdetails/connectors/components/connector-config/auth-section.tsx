@@ -1,30 +1,33 @@
 import React from 'react';
-import {
-  Paper,
-  Box,
-  Typography,
-  Alert,
-  Link,
-  Grid,
-  CircularProgress,
-  alpha,
-  useTheme,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
+import keyIcon from '@iconify-icons/mdi/key';
+import codeIcon from '@iconify-icons/mdi/code';
+import personIcon from '@iconify-icons/mdi/person';
 import infoIcon from '@iconify-icons/eva/info-outline';
 import bookIcon from '@iconify-icons/mdi/book-outline';
 import settingsIcon from '@iconify-icons/mdi/settings';
-import keyIcon from '@iconify-icons/mdi/key';
-import personIcon from '@iconify-icons/mdi/person';
 import shieldIcon from '@iconify-icons/mdi/shield-outline';
-import codeIcon from '@iconify-icons/mdi/code';
-import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
 import openInNewIcon from '@iconify-icons/mdi/open-in-new';
+import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
+
+import {
+  Box,
+  Link,
+  Grid,
+  Paper,
+  Alert,
+  alpha,
+  useTheme,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { FieldRenderer } from '../field-renderers';
-import { shouldShowElement } from '../../utils/conditional-display';
 import BusinessOAuthSection from './business-oauth-section';
-import SharePointOAuthSection from './sharepoint-oauth-section'; // NEW IMPORT
-import { Connector, ConnectorConfig } from '../../types/types';
+import SharePointOAuthSection from './sharepoint-oauth-section';
+import { shouldShowElement } from '../../utils/conditional-display'; // NEW IMPORT
+import type { Connector, ConnectorConfig } from '../../types/types';
 
 interface AuthSectionProps {
   connector: Connector;
@@ -34,7 +37,7 @@ interface AuthSectionProps {
   conditionalDisplay: Record<string, boolean>;
   accountTypeLoading: boolean;
   isBusiness: boolean;
-  
+
   // Business OAuth props (Google Workspace)
   adminEmail: string;
   adminEmailError: string | null;
@@ -46,7 +49,7 @@ interface AuthSectionProps {
   onFileUpload: () => void;
   onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
-  
+
   // NEW: SharePoint Certificate OAuth props
   certificateFile: File | null;
   certificateFileName: string | null;
@@ -62,7 +65,7 @@ interface AuthSectionProps {
   onPrivateKeyChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   certificateInputRef: React.RefObject<HTMLInputElement>;
   privateKeyInputRef: React.RefObject<HTMLInputElement>;
-  
+
   onFieldChange: (section: string, fieldName: string, value: any) => void;
 }
 
@@ -106,22 +109,25 @@ const AuthSection: React.FC<AuthSectionProps> = ({
   if (!connectorConfig) return null;
   const { auth } = connectorConfig.config;
   let { documentationLinks } = connectorConfig.config;
-  
+
   // Simplified helper function for business OAuth support (Google Workspace)
-  const customGoogleBusinessOAuth = (connectorParam: Connector, accountType: string): boolean => 
-    accountType === 'business' && 
-    (connectorParam.appGroup === 'Google Workspace') && 
+  const customGoogleBusinessOAuth = (connectorParam: Connector, accountType: string): boolean =>
+    accountType === 'business' &&
+    connectorParam.appGroup === 'Google Workspace' &&
     connectorParam.authType === 'OAUTH';
-  
+
   // NEW: Helper function for SharePoint certificate authentication
-  const isSharePointCertificateAuth = (connectorParam: Connector): boolean => 
-    connectorParam.name === 'SharePoint Online' && 
-    (connectorParam.authType === 'OAUTH_CERTIFICATE' || connectorParam.authType === 'OAUTH_ADMIN_CONSENT');
-  
-  const pipeshubDocumentationUrl = documentationLinks?.find((link) => link.type === 'pipeshub')?.url || `https://docs.pipeshub.com/connectors/overview`;
+  const isSharePointCertificateAuth = (connectorParam: Connector): boolean =>
+    connectorParam.name === 'SharePoint Online' &&
+    (connectorParam.authType === 'OAUTH_CERTIFICATE' ||
+      connectorParam.authType === 'OAUTH_ADMIN_CONSENT');
+
+  const pipeshubDocumentationUrl =
+    documentationLinks?.find((link) => link.type === 'pipeshub')?.url ||
+    `https://docs.pipeshub.com/connectors/overview`;
 
   documentationLinks = documentationLinks?.filter((link) => link.type !== 'pipeshub');
-  
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Documentation Alert */}
@@ -152,8 +158,9 @@ const AuthSection: React.FC<AuthSectionProps> = ({
       </Alert>
 
       {/* Redirect URI Info - Conditionally displayed */}
-      {((auth.displayRedirectUri && auth.redirectUri!=="") ||
-        (auth.conditionalDisplay && Object.keys(auth.conditionalDisplay).length>0 &&
+      {((auth.displayRedirectUri && auth.redirectUri !== '') ||
+        (auth.conditionalDisplay &&
+          Object.keys(auth.conditionalDisplay).length > 0 &&
           shouldShowElement(auth.conditionalDisplay, 'redirectUri', formData))) && (
         <Paper
           variant="outlined"
@@ -176,12 +183,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
                 mt: 0.25,
               }}
             >
-              <Iconify
-                icon={infoIcon}
-                width={14}
-                height={14}
-                color={theme.palette.primary.main}
-              />
+              <Iconify icon={infoIcon} width={14} height={14} color={theme.palette.primary.main} />
             </Box>
             <Box sx={{ flex: 1 }}>
               <Typography
@@ -277,12 +279,7 @@ const AuthSection: React.FC<AuthSectionProps> = ({
                 mt: 0.125,
               }}
             >
-              <Iconify
-                icon={bookIcon}
-                width={12}
-                height={12}
-                color={theme.palette.info.main}
-              />
+              <Iconify icon={bookIcon} width={12} height={12} color={theme.palette.info.main} />
             </Box>
 
             <Box sx={{ flex: 1 }}>
@@ -414,20 +411,21 @@ const AuthSection: React.FC<AuthSectionProps> = ({
       )}
 
       {/* Business OAuth Section (Google Workspace) */}
-      {!accountTypeLoading && customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') && (
-        <BusinessOAuthSection
-          adminEmail={adminEmail}
-          adminEmailError={adminEmailError}
-          selectedFile={selectedFile}
-          fileName={fileName}
-          fileError={fileError}
-          jsonData={jsonData}
-          onAdminEmailChange={onAdminEmailChange}
-          onFileUpload={onFileUpload}
-          onFileChange={onFileChange}
-          fileInputRef={fileInputRef}
-        />
-      )}
+      {!accountTypeLoading &&
+        customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') && (
+          <BusinessOAuthSection
+            adminEmail={adminEmail}
+            adminEmailError={adminEmailError}
+            selectedFile={selectedFile}
+            fileName={fileName}
+            fileError={fileError}
+            jsonData={jsonData}
+            onAdminEmailChange={onAdminEmailChange}
+            onFileUpload={onFileUpload}
+            onFileChange={onFileChange}
+            fileInputRef={fileInputRef}
+          />
+        )}
 
       {/* NEW: SharePoint Certificate OAuth Section */}
       {!accountTypeLoading && isSharePointCertificateAuth(connector) && (
@@ -531,24 +529,26 @@ const AuthSection: React.FC<AuthSectionProps> = ({
           {auth.schema.fields.map((field) => {
             // Check if field should be displayed based on conditional display rules
             let shouldShow = true; // Default to showing the field
-            
+
             // If there's a conditional display rule for this field, evaluate it
             if (auth.conditionalDisplay && auth.conditionalDisplay[field.name]) {
               shouldShow = shouldShowElement(auth.conditionalDisplay, field.name, formData);
             }
 
             // Hide client_id and client_secret fields for business OAuth (Google)
-            const isBusinessOAuthField = customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') &&
+            const isBusinessOAuthField =
+              customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') &&
               (field.name === 'clientId' || field.name === 'clientSecret');
 
             // NEW: Hide SharePoint certificate fields as they're handled by SharePointOAuthSection
-            const isSharePointCertField = isSharePointCertificateAuth(connector) &&
-              (field.name === 'clientId' || 
-               field.name === 'tenantId' || 
-               field.name === 'sharepointDomain' || 
-               field.name === 'hasAdminConsent' ||
-               field.name === 'certificate' || 
-               field.name === 'privateKey');
+            const isSharePointCertField =
+              isSharePointCertificateAuth(connector) &&
+              (field.name === 'clientId' ||
+                field.name === 'tenantId' ||
+                field.name === 'sharepointDomain' ||
+                field.name === 'hasAdminConsent' ||
+                field.name === 'certificate' ||
+                field.name === 'privateKey');
 
             if (!shouldShow || isBusinessOAuthField || isSharePointCertField) return null;
 
@@ -572,17 +572,19 @@ const AuthSection: React.FC<AuthSectionProps> = ({
               shouldShowElement(auth.conditionalDisplay, field.name, formData);
 
             // Hide client_id and client_secret fields for business OAuth (Google)
-            const isBusinessOAuthField = customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') &&
+            const isBusinessOAuthField =
+              customGoogleBusinessOAuth(connector, isBusiness ? 'business' : 'individual') &&
               (field.name === 'clientId' || field.name === 'clientSecret');
 
             // NEW: Hide SharePoint certificate fields
-            const isSharePointCertField = isSharePointCertificateAuth(connector) &&
-              (field.name === 'clientId' || 
-               field.name === 'tenantId' || 
-               field.name === 'sharepointDomain' || 
-               field.name === 'hasAdminConsent' ||
-               field.name === 'certificate' || 
-               field.name === 'privateKey');
+            const isSharePointCertField =
+              isSharePointCertificateAuth(connector) &&
+              (field.name === 'clientId' ||
+                field.name === 'tenantId' ||
+                field.name === 'sharepointDomain' ||
+                field.name === 'hasAdminConsent' ||
+                field.name === 'certificate' ||
+                field.name === 'privateKey');
 
             if (!shouldShow || isBusinessOAuthField || isSharePointCertField) return null;
 
@@ -608,19 +610,14 @@ const AuthSection: React.FC<AuthSectionProps> = ({
               if (isInSchema || isInCustomFields) return null;
 
               // Check if this conditional field should be shown
-              const shouldShow = shouldShowElement(
-                auth.conditionalDisplay,
-                fieldName,
-                formData
-              );
+              const shouldShow = shouldShowElement(auth.conditionalDisplay, fieldName, formData);
               if (!shouldShow) return null;
 
               // Create a basic field definition for conditional fields
               const conditionalField = {
                 name: fieldName,
                 displayName:
-                  fieldName.charAt(0).toUpperCase() +
-                  fieldName.slice(1).replace(/([A-Z])/g, ' $1'),
+                  fieldName.charAt(0).toUpperCase() + fieldName.slice(1).replace(/([A-Z])/g, ' $1'),
                 fieldType: 'TEXT' as const,
                 required: false,
                 placeholder: `Enter ${fieldName}`,

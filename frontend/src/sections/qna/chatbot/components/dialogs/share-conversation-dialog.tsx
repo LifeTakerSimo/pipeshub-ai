@@ -7,7 +7,7 @@ import closeIcon from '@iconify-icons/mdi/close';
 import magnifyIcon from '@iconify-icons/mdi/magnify';
 import shareIcon from '@iconify-icons/mdi/share-variant-outline';
 
-import { 
+import {
   Box,
   Fade,
   Paper,
@@ -47,7 +47,7 @@ const ShareConversationDialog = ({
   const users = useUsers();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
-  
+
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [shareLink, setShareLink] = useState<string>('');
   const [isShared, setIsShared] = useState<boolean>(false);
@@ -58,10 +58,10 @@ const ShareConversationDialog = ({
     message: '',
     severity: 'success',
   });
-  
+
   const handleShareConversation = async () => {
     if (selectedUsers.length === 0) return;
-    
+
     setIsLoading(true);
     try {
       const response = await axiosInstance.post(`/api/v1/conversations/${conversationId}/share`, {
@@ -129,56 +129,56 @@ const ShareConversationDialog = ({
         }}
         PaperProps={{
           elevation: isDark ? 6 : 2,
-          sx: { 
+          sx: {
             borderRadius: 1.5,
             overflow: 'hidden',
           },
         }}
       >
         <DialogTitle
-          sx={{ 
-            px: 3, 
-            py: 2, 
-            borderBottom: '1px solid', 
+          sx={{
+            px: 3,
+            py: 2,
+            borderBottom: '1px solid',
             borderColor: alpha(theme.palette.divider, 0.08),
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Icon 
-              icon={shareIcon} 
+            <Icon
+              icon={shareIcon}
               style={{
-                fontSize: "18px",
-                color: theme.palette.primary.main
+                fontSize: '18px',
+                color: theme.palette.primary.main,
               }}
             />
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: 500, 
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 500,
                 fontSize: '1rem',
               }}
             >
               Share Conversation
             </Typography>
           </Box>
-          <IconButton 
-            onClick={handleDialogClose} 
+          <IconButton
+            onClick={handleDialogClose}
             size="small"
             sx={{
               color: theme.palette.text.secondary,
               '&:hover': {
                 color: theme.palette.text.primary,
                 bgcolor: alpha(theme.palette.action.hover, isDark ? 0.2 : 0.1),
-              }
+              },
             }}
           >
-            <Icon icon={closeIcon} style={{ fontSize: "18px" }} />
+            <Icon icon={closeIcon} style={{ fontSize: '18px' }} />
           </IconButton>
         </DialogTitle>
-        
+
         <DialogContent sx={{ px: 3, py: 2.5 }}>
           {/* Share Link Section */}
           {/* {(isShared || shareLink) && (
@@ -253,9 +253,9 @@ const ShareConversationDialog = ({
 
           {/* User Selection Section */}
           <Box>
-            <Typography 
-              variant="subtitle2" 
-              sx={{ 
+            <Typography
+              variant="subtitle2"
+              sx={{
                 my: 1.5,
                 fontWeight: 500,
               }}
@@ -272,7 +272,7 @@ const ShareConversationDialog = ({
                 setSelectedUsers(newValue);
               }}
               renderOption={(props, user, { selected }) => (
-                <MenuItem 
+                <MenuItem
                   {...props}
                   sx={{
                     py: 1,
@@ -283,15 +283,10 @@ const ShareConversationDialog = ({
                       bgcolor: isDark
                         ? alpha(theme.palette.action.hover, 0.1)
                         : theme.palette.action.hover,
-                    }
+                    },
                   }}
                 >
-                  <Checkbox 
-                    checked={selected} 
-                    color="primary" 
-                    size="small"
-                    sx={{ mr: 1 }}
-                  />
+                  <Checkbox checked={selected} color="primary" size="small" sx={{ mr: 1 }} />
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
                       {user.fullName}
@@ -311,7 +306,7 @@ const ShareConversationDialog = ({
                   sx={{
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 1,
-                      backgroundColor: isDark 
+                      backgroundColor: isDark
                         ? alpha(theme.palette.background.paper, 0.6)
                         : theme.palette.background.paper,
                       '& fieldset': {
@@ -327,11 +322,11 @@ const ShareConversationDialog = ({
                         borderRadius: 0.75,
                         height: 24,
                         fontSize: '0.75rem',
-                        bgcolor: isDark 
+                        bgcolor: isDark
                           ? alpha(theme.palette.primary.dark, 0.15)
                           : alpha(theme.palette.primary.light, 0.1),
                         color: theme.palette.primary.main,
-                      }
+                      },
                     },
                   }}
                   InputProps={{
@@ -339,11 +334,11 @@ const ShareConversationDialog = ({
                     startAdornment: (
                       <>
                         <Box mr={1} display="flex" alignItems="center">
-                          <Icon 
-                            icon={magnifyIcon} 
+                          <Icon
+                            icon={magnifyIcon}
                             style={{
-                              fontSize: "18px",
-                              color: theme.palette.text.secondary
+                              fontSize: '18px',
+                              color: theme.palette.text.secondary,
                             }}
                           />
                         </Box>
@@ -372,9 +367,13 @@ const ShareConversationDialog = ({
             />
           </Box>
 
-          <Box mt={3} pt={1.5} sx={{ borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}>
-            <Typography 
-              variant="caption" 
+          <Box
+            mt={3}
+            pt={1.5}
+            sx={{ borderTop: `1px solid ${alpha(theme.palette.divider, 0.08)}` }}
+          >
+            <Typography
+              variant="caption"
               color="text.secondary"
               sx={{
                 display: 'flex',
@@ -396,14 +395,14 @@ const ShareConversationDialog = ({
             </Typography>
           </Box>
         </DialogContent>
-        
+
         <DialogActions
-          sx={{ 
-            px: 3, 
-            py: 2, 
-            borderTop: '1px solid', 
+          sx={{
+            px: 3,
+            py: 2,
+            borderTop: '1px solid',
             borderColor: alpha(theme.palette.divider, 0.08),
-            bgcolor: isDark 
+            bgcolor: isDark
               ? alpha(theme.palette.background.default, 0.3)
               : alpha(theme.palette.background.default, 0.2),
             gap: 1.5,
@@ -413,7 +412,7 @@ const ShareConversationDialog = ({
             onClick={handleDialogClose}
             variant="text"
             color="inherit"
-            sx={{ 
+            sx={{
               borderRadius: 1,
               textTransform: 'none',
               fontWeight: 500,
@@ -422,12 +421,12 @@ const ShareConversationDialog = ({
               '&:hover': {
                 backgroundColor: alpha(theme.palette.action.hover, isDark ? 0.1 : 0.05),
                 color: theme.palette.text.primary,
-              }
+              },
             }}
           >
             Cancel
           </Button>
-          
+
           {(!isShared || !shareLink) && (
             <Button
               onClick={handleShareConversation}
@@ -438,13 +437,10 @@ const ShareConversationDialog = ({
                 isLoading ? (
                   <CircularProgress size={16} color="inherit" />
                 ) : (
-                  <Icon 
-                    icon={shareIcon} 
-                    style={{ fontSize: "18px" }} 
-                  />
+                  <Icon icon={shareIcon} style={{ fontSize: '18px' }} />
                 )
               }
-              sx={{ 
+              sx={{
                 borderRadius: 1,
                 textTransform: 'none',
                 fontWeight: 500,
@@ -454,7 +450,7 @@ const ShareConversationDialog = ({
                 py: 0.75,
                 '&:hover': {
                   boxShadow: 'none',
-                  bgcolor: isDark 
+                  bgcolor: isDark
                     ? alpha(theme.palette.primary.main, 0.8)
                     : alpha(theme.palette.primary.main, 0.9),
                 },
@@ -478,7 +474,7 @@ const ShareConversationDialog = ({
           severity={snackbarState.severity}
           variant="filled"
           elevation={2}
-          sx={{ 
+          sx={{
             borderRadius: 1,
             boxShadow: isDark
               ? `0 4px 16px ${alpha(theme.palette.common.black, 0.4)}`
@@ -490,6 +486,6 @@ const ShareConversationDialog = ({
       </Snackbar>
     </>
   );
-}
+};
 
 export default ShareConversationDialog;

@@ -28,7 +28,6 @@ export const ForgotPasswordSchema = zod.object({
 
 type ForgotPasswordSchemaType = zod.infer<typeof ForgotPasswordSchema>;
 
-
 interface ForgotPasswordProps {
   sx?: SxProps<Theme>;
   onBackToSignIn: () => void;
@@ -36,7 +35,7 @@ interface ForgotPasswordProps {
 
 // ----------------------------------------------------------------------
 
-export default function ForgotPassword({ onBackToSignIn, sx } : ForgotPasswordProps) {
+export default function ForgotPassword({ onBackToSignIn, sx }: ForgotPasswordProps) {
   const router = useRouter();
 
   const [errorMsg, setErrorMsg] = useState<string>('');
@@ -52,7 +51,7 @@ export default function ForgotPassword({ onBackToSignIn, sx } : ForgotPasswordPr
     formState: { isSubmitting },
   } = methods;
 
-  const onSubmit = handleSubmit(async (data : ForgotPasswordSchemaType) : Promise<void> => {
+  const onSubmit = handleSubmit(async (data: ForgotPasswordSchemaType): Promise<void> => {
     try {
       await forgotPassword({ email: data.email });
       setSuccessMsg('Reset Password email sent successfully');

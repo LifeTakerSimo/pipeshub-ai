@@ -25,23 +25,26 @@ export function SettingsProvider({ children, settings }: SettingsProviderProps) 
   }, [values]);
 
   // Override setField to prevent changing primaryColor
-  const setFieldWithBlueTheme = useCallback((
-    name: keyof SettingsState,
-    updateValue: SettingsState[keyof SettingsState]
-  ) => {
-    // Prevent changing primary color from blue
-    if (name === 'primaryColor') {
-      return;
-    }
-    values.setField(name, updateValue);
-  }, [values]);
+  const setFieldWithBlueTheme = useCallback(
+    (name: keyof SettingsState, updateValue: SettingsState[keyof SettingsState]) => {
+      // Prevent changing primary color from blue
+      if (name === 'primaryColor') {
+        return;
+      }
+      values.setField(name, updateValue);
+    },
+    [values]
+  );
 
   // Override setState to prevent changing primaryColor
-  const setStateWithBlueTheme = useCallback((updateValue: Partial<SettingsState>) => {
-    const { primaryColor, ...rest } = updateValue;
-    // Always keep primaryColor as blue
-    values.setState({ ...rest, primaryColor: 'blue' });
-  }, [values]);
+  const setStateWithBlueTheme = useCallback(
+    (updateValue: Partial<SettingsState>) => {
+      const { primaryColor, ...rest } = updateValue;
+      // Always keep primaryColor as blue
+      values.setState({ ...rest, primaryColor: 'blue' });
+    },
+    [values]
+  );
 
   const memoizedValue = useMemo(
     () => ({
@@ -56,11 +59,7 @@ export function SettingsProvider({ children, settings }: SettingsProviderProps) 
       onCloseDrawer: () => {},
       onToggleDrawer: () => {},
     }),
-    [
-      values.state,
-      setFieldWithBlueTheme,
-      setStateWithBlueTheme,
-    ]
+    [values.state, setFieldWithBlueTheme, setStateWithBlueTheme]
   );
 
   return <SettingsContext.Provider value={memoizedValue}>{children}</SettingsContext.Provider>;

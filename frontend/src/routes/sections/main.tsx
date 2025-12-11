@@ -8,6 +8,8 @@ import { SplashScreen } from 'src/components/loading-screen';
 // ----------------------------------------------------------------------
 
 const MaintenancePage = lazy(() => import('src/pages/maintenance'));
+const PricingPage = lazy(() => import('src/pages/public/pricing'));
+const FeaturesPage = lazy(() => import('src/pages/public/features'));
 
 // Error
 const Page500 = lazy(() => import('src/pages/error/500'));
@@ -29,6 +31,22 @@ export const mainRoutes = [
         element: (
           <SimpleLayout content={{ compact: true }}>
             <MaintenancePage />
+          </SimpleLayout>
+        ),
+      },
+      {
+        path: 'pricing',
+        element: (
+          <SimpleLayout>
+            <PricingPage />
+          </SimpleLayout>
+        ),
+      },
+      {
+        path: 'features',
+        element: (
+          <SimpleLayout>
+            <FeaturesPage />
           </SimpleLayout>
         ),
       },

@@ -1,26 +1,27 @@
 import React from 'react';
+import eyeIcon from '@iconify-icons/mdi/eye';
+import eyeOffIcon from '@iconify-icons/mdi/eye-off';
+
+import { alpha, useTheme } from '@mui/material/styles';
 import {
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-  FormGroup,
-  Chip,
   Box,
+  Chip,
+  Select,
+  Button,
+  MenuItem,
+  Checkbox,
+  TextField,
+  InputLabel,
   Typography,
+  IconButton,
+  FormControl,
   Autocomplete,
   FormHelperText,
   InputAdornment,
-  IconButton,
-  Button,
+  FormControlLabel,
 } from '@mui/material';
+
 import { Iconify } from 'src/components/iconify';
-import { useTheme, alpha } from '@mui/material/styles';
-import eyeIcon from '@iconify-icons/mdi/eye';
-import eyeOffIcon from '@iconify-icons/mdi/eye-off';
 
 interface BaseFieldProps {
   field: any;
@@ -61,20 +62,20 @@ const getBaseFieldStyles = (theme: any) => ({
   },
 });
 
-const FieldDescription: React.FC<{ description: string; error?: string; marginLeft?: number }> = ({ 
-  description, 
-  error, 
-  marginLeft = 0.5 
+const FieldDescription: React.FC<{ description: string; error?: string; marginLeft?: number }> = ({
+  description,
+  error,
+  marginLeft = 0.5,
 }) => {
   if (!description || error) return null;
-  
+
   return (
-    <Typography 
-      variant="caption" 
-      color="text.secondary" 
-      sx={{ 
-        display: 'block', 
-        mt: 0.5, 
+    <Typography
+      variant="caption"
+      color="text.secondary"
+      sx={{
+        display: 'block',
+        mt: 0.5,
         ml: marginLeft,
         fontSize: '0.75rem',
         lineHeight: 1.4,
@@ -329,7 +330,9 @@ export const SelectFieldRenderer: React.FC<BaseFieldProps> = ({
             </MenuItem>
           ))}
         </Select>
-        {error && <FormHelperText sx={{ fontSize: '0.75rem', mt: 0.5, ml: 1 }}>{error}</FormHelperText>}
+        {error && (
+          <FormHelperText sx={{ fontSize: '0.75rem', mt: 0.5, ml: 1 }}>{error}</FormHelperText>
+        )}
       </FormControl>
       <FieldDescription description={field.description} error={error} />
     </Box>
@@ -807,7 +810,7 @@ export const FileFieldRenderer: React.FC<BaseFieldProps> = ({
         accept={field.validation?.format || '*'}
         disabled={disabled}
       />
-      
+
       {value ? (
         <Box
           sx={{
@@ -844,7 +847,10 @@ export const FileFieldRenderer: React.FC<BaseFieldProps> = ({
               />
             </Box>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.8125rem', wordBreak: 'break-all' }}>
+              <Typography
+                variant="body2"
+                sx={{ fontWeight: 500, fontSize: '0.8125rem', wordBreak: 'break-all' }}
+              >
                 {value.name}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
@@ -895,13 +901,13 @@ export const FileFieldRenderer: React.FC<BaseFieldProps> = ({
           </Box>
         </Button>
       )}
-      
+
       {error && (
         <FormHelperText error sx={{ mt: 0.5, ml: 1, fontSize: '0.75rem' }}>
           {error}
         </FormHelperText>
       )}
-      
+
       <FieldDescription description={field.description} error={error} />
     </Box>
   );

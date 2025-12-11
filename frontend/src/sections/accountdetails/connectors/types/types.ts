@@ -116,7 +116,15 @@ interface DocumentationLink {
 // Conditional display rule interface
 interface ConditionalDisplayRule {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'is_empty' | 'is_not_empty';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'greater_than'
+    | 'less_than'
+    | 'is_empty'
+    | 'is_not_empty';
   value?: any;
 }
 
@@ -237,23 +245,23 @@ interface Connector {
 }
 
 // Export all types
-export type { 
-  Connector, 
-  ConnectorConfig, 
-  ConnectorAuthConfig,
-  ConnectorSyncConfig,
-  ConnectorFiltersConfig,
-  ScheduledConfig,
+export type {
+  Connector,
+  BaseField,
   WebhookConfig,
   RealtimeConfig,
-  DocumentationLink,
+  ConnectorConfig,
+  ScheduledConfig,
   AuthSchemaField,
   AuthCustomField,
   SyncCustomField,
+  FieldValidation,
+  DocumentationLink,
   FilterSchemaField,
   FilterCustomField,
-  FieldValidation,
-  BaseField,
+  ConnectorAuthConfig,
+  ConnectorSyncConfig,
+  ConnectorFiltersConfig,
   ConditionalDisplayRule,
-  ConditionalDisplayConfig
+  ConditionalDisplayConfig,
 };

@@ -6,23 +6,23 @@ import axios from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
 
-import { KnowledgeBaseAPI } from './services/api';
 import KnowledgeSearch from './knowledge-search';
+import { KnowledgeBaseAPI } from './services/api';
 import { ORIGIN } from './constants/knowledge-search';
 import KnowledgeSearchSideBar from './knowledge-search-sidebar';
 import DocxViewer from '../qna/chatbot/components/docx-highlighter';
 import HtmlViewer from '../qna/chatbot/components/html-highlighter';
 import TextViewer from '../qna/chatbot/components/text-highlighter';
+import { useConnectors } from '../accountdetails/connectors/context';
 import ExcelViewer from '../qna/chatbot/components/excel-highlighter';
 import PdfHighlighterComp from '../qna/chatbot/components/pdf-highlighter';
+import ImageHighlighter from '../qna/chatbot/components/image-highlighter';
 import MarkdownViewer from '../qna/chatbot/components/markdown-highlighter';
 import { createScrollableContainerStyle } from '../qna/chatbot/utils/styles/scrollbar';
 import { getConnectorPublicUrl } from '../accountdetails/account-settings/services/utils/services-configuration-service';
-import { useConnectors } from '../accountdetails/connectors/context';
 
 import type { Filters } from './types/knowledge-base';
 import type { PipesHub, SearchResult, AggregatedDocument } from './types/search-response';
-import ImageHighlighter from '../qna/chatbot/components/image-highlighter';
 
 // Constants for sidebar widths - must match with the sidebar component
 const SIDEBAR_EXPANDED_WIDTH = 320;
@@ -70,14 +70,14 @@ export default function KnowledgeBaseSearch() {
     moduleId: [],
     appSpecificRecordType: [],
     app: [],
-    kb: [] 
+    kb: [],
   });
   const scrollableStyles = createScrollableContainerStyle(theme);
 
   // Get connector data from the hook at parent level for optimal performance
   const { activeConnectors, inactiveConnectors } = useConnectors();
   const allConnectors = [...activeConnectors, ...inactiveConnectors];
-  
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [topK, setTopK] = useState<number>(INITIAL_TOP_K);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -98,7 +98,7 @@ export default function KnowledgeBaseSearch() {
   const [recordsMap, setRecordsMap] = useState<Record<string, PipesHub.Record>>({});
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [highlightedCitation, setHighlightedCitation] = useState<SearchResult | null>();
-  
+
   // Prevent rapid filter changes
   const isFilterChanging = useRef(false);
 
@@ -110,7 +110,8 @@ export default function KnowledgeBaseSearch() {
   });
 
   // Add a state to track if citation viewer is open
-  const isCitationViewerOpen = isPdf || isExcel || isDocx || isHtml || isTextFile || isMarkdown || isImage;
+  const isCitationViewerOpen =
+    isPdf || isExcel || isDocx || isHtml || isTextFile || isMarkdown || isImage;
 
   const handleFilterChange = (newFilters: Filters) => {
     // If a filter operation is already in progress, return
@@ -186,7 +187,7 @@ export default function KnowledgeBaseSearch() {
 
       const results = data.searchResults || [];
       const recordResult = data.records || [];
-      
+
       setSearchResults(results);
 
       // Check if we can load more: if results length is less than topK, no more results available
@@ -195,7 +196,7 @@ export default function KnowledgeBaseSearch() {
 
       const recordsLookupMap = aggregateRecordsByRecordId(recordResult);
       setRecordsMap(recordsLookupMap);
-      
+
       const citations = aggregateCitationsByRecordId(results);
       setAggregatedCitations(citations);
     } catch (error) {
@@ -217,13 +218,13 @@ export default function KnowledgeBaseSearch() {
 
   const handleSearchQueryChange = (query: string): void => {
     setSearchQuery(query);
-    
+
     // Reset topK and canLoadMore when query changes
     if (query.trim() !== searchQuery.trim()) {
       setTopK(INITIAL_TOP_K);
       setCanLoadMore(true);
     }
-    
+
     if (!query.trim()) {
       setHasSearched(false);
       setCanLoadMore(false);
@@ -261,7 +262,7 @@ export default function KnowledgeBaseSearch() {
     setRecordCitations(null);
     setFileUrl('');
     setHighlightedCitation(recordCitation);
-    
+
     const documentContainer = document.querySelector('#document-container');
     if (documentContainer) {
       documentContainer.innerHTML = '';
@@ -282,7 +283,7 @@ export default function KnowledgeBaseSearch() {
         });
         return;
       }
-      
+
       // Find the correct citation from the aggregated data
       const citation = aggregatedCitations.find((item) => item.recordId === recordId);
       if (citation) {
@@ -332,7 +333,7 @@ export default function KnowledgeBaseSearch() {
                 console.error('Failed to decode UTF-8 filename', e);
               }
             }
-            
+
             // Fallback to basic filename="..." format if filename* not found
             if (!filename) {
               const filenameMatch = contentDisposition.match(/filename="?([^";\n]*)"?/i);
@@ -374,14 +375,14 @@ export default function KnowledgeBaseSearch() {
             message: 'Failed to load preview. Redirecting to the original document shortly...',
             severity: 'info',
           });
-          
+
           let webUrl = record?.webUrl;
 
           if (record.origin === 'UPLOAD' && webUrl && !webUrl.startsWith('http')) {
             const baseUrl = `${window.location.protocol}//${window.location.host}`;
             webUrl = baseUrl + webUrl;
           }
-          
+
           setTimeout(() => {
             if (webUrl) {
               try {
@@ -390,7 +391,8 @@ export default function KnowledgeBaseSearch() {
                 console.error('Error opening new tab:', openError);
                 setSnackbar({
                   open: true,
-                  message: 'Failed to automatically open the document. Please check your browser pop-up settings.',
+                  message:
+                    'Failed to automatically open the document. Please check your browser pop-up settings.',
                   severity: 'error',
                 });
               }
@@ -414,10 +416,10 @@ export default function KnowledgeBaseSearch() {
             };
             handleLargePPTFile(record);
           }
-          
+
           const publicConnectorUrlResponse = await getConnectorPublicUrl();
           let response;
-          
+
           if (publicConnectorUrlResponse && publicConnectorUrlResponse.url) {
             const CONNECTOR_URL = publicConnectorUrlResponse.url;
             response = await axios.get(`${CONNECTOR_URL}/api/v1/stream/record/${recordId}`, {
@@ -433,7 +435,7 @@ export default function KnowledgeBaseSearch() {
               }
             );
           }
-          
+
           if (!response) return;
 
           let filename;
@@ -450,7 +452,7 @@ export default function KnowledgeBaseSearch() {
                 console.error('Failed to decode UTF-8 filename', e);
               }
             }
-            
+
             // Fallback to basic filename="..." format if filename* not found
             if (!filename) {
               const filenameMatch = contentDisposition.match(/filename="?([^";\n]*)"?/i);
@@ -460,7 +462,7 @@ export default function KnowledgeBaseSearch() {
             }
           }
 
-          if(!filename && record.recordName) {
+          if (!filename && record.recordName) {
             filename = record.recordName;
           }
 
@@ -491,9 +493,9 @@ export default function KnowledgeBaseSearch() {
             message: 'Failed to load preview. Redirecting to the original document shortly...',
             severity: 'info',
           });
-          
+
           let webUrl = record?.webUrl;
-          
+
           if (record.origin === 'UPLOAD' && webUrl && !webUrl.startsWith('http')) {
             const baseUrl = `${window.location.protocol}//${window.location.host}`;
             webUrl = baseUrl + webUrl;
@@ -507,7 +509,8 @@ export default function KnowledgeBaseSearch() {
                 console.error('Error opening new tab:', openError);
                 setSnackbar({
                   open: true,
-                  message: 'Failed to automatically open the document. Please check your browser pop-up settings.',
+                  message:
+                    'Failed to automatically open the document. Please check your browser pop-up settings.',
                   severity: 'error',
                 });
               }
@@ -663,7 +666,7 @@ export default function KnowledgeBaseSearch() {
         />
       );
     }
-    
+
     if (isMarkdown && (fileUrl || fileBuffer)) {
       return (
         <MarkdownViewer
@@ -753,7 +756,7 @@ export default function KnowledgeBaseSearch() {
             allConnectors={allConnectors}
           />
         </Box>
-        
+
         {isCitationViewerOpen && (
           <Divider orientation="vertical" flexItem sx={{ borderRightWidth: 3 }} />
         )}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import axios from 'src/utils/axios';
 
 interface OrgData {
@@ -64,13 +65,13 @@ export function useAccountType() {
         setLoading(true);
         setError(null);
         const response = await axios.get('/api/v1/org');
-        const data = response.data;
-        
+        const { data } = response;
+
         // Update cache
         cachedOrgData = data;
         cacheTimestamp = Date.now();
         fetchPromise = null;
-        
+
         setOrgData(data);
         return data;
       } catch (err) {
@@ -89,13 +90,13 @@ export function useAccountType() {
 
   const isBusiness = orgData?.accountType === 'business' || orgData?.accountType === 'organization';
   const isIndividual = !isBusiness;
-  
+
   return {
     accountType: isBusiness ? 'business' : 'individual',
     isBusiness,
     isIndividual,
     orgData,
     loading,
-    error
+    error,
   };
 }

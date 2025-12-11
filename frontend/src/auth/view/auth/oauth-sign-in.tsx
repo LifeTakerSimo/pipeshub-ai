@@ -20,12 +20,7 @@ interface OAuthSignInProps {
   onError?: (error: string) => void;
 }
 
-export default function OAuthSignIn({ 
-  email, 
-  authConfig, 
-  onSuccess, 
-  onError 
-}: OAuthSignInProps) {
+export default function OAuthSignIn({ email, authConfig, onSuccess, onError }: OAuthSignInProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -83,7 +78,7 @@ export default function OAuthSignIn({
           const { accessToken, idToken } = event.data;
           window.removeEventListener('message', handleMessage);
           popup.close();
-          
+
           if (onSuccess) {
             onSuccess({ accessToken, idToken });
           }
@@ -112,7 +107,6 @@ export default function OAuthSignIn({
           }
         }
       }, 1000);
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to initialize OAuth sign-in');
       if (onError) {

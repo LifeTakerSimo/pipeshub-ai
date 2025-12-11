@@ -121,14 +121,11 @@ export const CreateKnowledgeBaseDialog: React.FC<CreateKnowledgeBaseDialogProps>
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ mb: 2 }}
-          >
-            Create a new knowledge base to organize and store your documents, information, and data for AI-powered search and retrieval.
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create a new knowledge base to organize and store your documents, information, and data
+            for AI-powered search and retrieval.
           </Typography>
-          
+
           <TextField
             autoFocus
             fullWidth

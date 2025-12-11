@@ -35,10 +35,10 @@ globalThis.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
   try {
     postProgress('Reading Excel file...', 10);
-    
+
     const workbook = XLSX.read(buffer, options);
     const totalSheets = workbook.SheetNames.length;
-    
+
     postProgress(`Processing ${totalSheets} sheet(s)...`, 20);
 
     const processedWorkbook: any = {};
@@ -46,8 +46,8 @@ globalThis.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
     for (let sheetIndex = 0; sheetIndex < totalSheets; sheetIndex += 1) {
       const sheetName = workbook.SheetNames[sheetIndex];
-      const progress = 20 + ((sheetIndex / totalSheets) * 70);
-      
+      const progress = 20 + (sheetIndex / totalSheets) * 70;
+
       postProgress(`Processing sheet ${sheetIndex + 1}/${totalSheets}...`, progress);
 
       const worksheet = workbook.Sheets[sheetName];
@@ -140,7 +140,6 @@ globalThis.onmessage = async (e: MessageEvent<WorkerMessage>) => {
 
     postProgress('Complete!', 100);
     globalThis.postMessage(result);
-
   } catch (error: any) {
     const errorMsg: ErrorMessage = {
       type: 'ERROR',

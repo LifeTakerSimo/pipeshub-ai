@@ -108,7 +108,7 @@ export interface SearchFilters {
   moduleId?: string[];
   appSpecificRecordType?: string[];
   app?: string[];
-  kb?:string[];
+  kb?: string[];
 }
 
 export interface KnowledgeSearchProps {
@@ -117,7 +117,11 @@ export interface KnowledgeSearchProps {
   canLoadMore: boolean;
   onSearchQueryChange: (query: string) => void;
   onTopKChange: (callback: (prevTopK: number) => number) => void;
-  onViewCitations: (recordId: string, extension: string, recordCitation?: SearchResult) => Promise<void>;
+  onViewCitations: (
+    recordId: string,
+    extension: string,
+    recordCitation?: SearchResult
+  ) => Promise<void>;
   recordsMap: Record<string, PipesHub.Record>;
   allConnectors: any[];
 }

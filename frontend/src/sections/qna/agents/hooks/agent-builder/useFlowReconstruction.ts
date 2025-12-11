@@ -1,22 +1,26 @@
 // src/sections/qna/agents/hooks/useFlowReconstruction.ts
-import { useCallback } from 'react';
-import { useTheme } from '@mui/material';
-import { Node, Edge } from '@xyflow/react';
 import type { Agent } from 'src/types/agent';
-import brainIcon from '@iconify-icons/mdi/brain';
+import type { Node, Edge } from '@xyflow/react';
+
+import { useCallback } from 'react';
 import chatIcon from '@iconify-icons/mdi/chat';
+import brainIcon from '@iconify-icons/mdi/brain';
+import replyIcon from '@iconify-icons/mdi/reply';
 import databaseIcon from '@iconify-icons/mdi/database';
 import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
-import replyIcon from '@iconify-icons/mdi/reply';
+
+import { useTheme } from '@mui/material';
+
 import {
-  truncateText,
   getAppIcon,
-  getAppKnowledgeIcon,
+  truncateText,
   normalizeAppName,
-  normalizeDisplayName,
   formattedProvider,
+  getAppKnowledgeIcon,
+  normalizeDisplayName,
 } from '../../utils/agent';
-import type { UseAgentBuilderReconstructionReturn, NodeData } from '../../types/agent';
+
+import type { NodeData, UseAgentBuilderReconstructionReturn } from '../../types/agent';
 
 export const useAgentBuilderReconstruction = (): UseAgentBuilderReconstructionReturn => {
   const theme = useTheme();
@@ -254,7 +258,10 @@ export const useAgentBuilderReconstruction = (): UseAgentBuilderReconstructionRe
       // App Knowledge nodes
       if (agent.apps && agent.apps.length > 0) {
         agent.apps.forEach((appType) => {
-          const normalizedAppName = appType.toLowerCase().replace(/[^a-zA-Z0-9]/g, '-').replace(/\s+/g, '-');
+          const normalizedAppName = appType
+            .toLowerCase()
+            .replace(/[^a-zA-Z0-9]/g, '-')
+            .replace(/\s+/g, '-');
           const appKnowledgeNode: Node<NodeData> = {
             id: `app-${(nodeCounter += 1)}`,
             type: 'flowNode',

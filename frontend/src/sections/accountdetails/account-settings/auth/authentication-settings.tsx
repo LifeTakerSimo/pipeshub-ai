@@ -237,9 +237,10 @@ const AuthenticationSettings: React.FC = () => {
           borderRadius: 1,
           border: '1px solid',
           borderColor: theme.palette.divider,
-          backgroundColor: theme.palette.mode === 'dark' 
-            ? alpha(theme.palette.background.paper, 0.6)
-            : theme.palette.background.paper,
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.background.paper, 0.6)
+              : theme.palette.background.paper,
         }}
       >
         {/* Loading overlay */}
@@ -287,12 +288,12 @@ const AuthenticationSettings: React.FC = () => {
             >
               Authentication Settings
             </Typography>
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
                 maxWidth: 500,
-                lineHeight: 1.5 
+                lineHeight: 1.5,
               }}
             >
               Configure how users sign in to your application
@@ -345,9 +346,10 @@ const AuthenticationSettings: React.FC = () => {
             mt: 3,
             p: 2.5,
             borderRadius: 1,
-            bgcolor: theme.palette.mode === 'dark' 
-              ? alpha(theme.palette.info.main, 0.08)
-              : alpha(theme.palette.info.main, 0.04),
+            bgcolor:
+              theme.palette.mode === 'dark'
+                ? alpha(theme.palette.info.main, 0.08)
+                : alpha(theme.palette.info.main, 0.04),
             border: `1px solid ${alpha(theme.palette.info.main, theme.palette.mode === 'dark' ? 0.2 : 0.1)}`,
             display: 'flex',
             alignItems: 'flex-start',
@@ -386,23 +388,23 @@ const AuthenticationSettings: React.FC = () => {
             </svg>
           </Box>
           <Box>
-            <Typography 
-              variant="subtitle2" 
-              color="text.primary" 
-              sx={{ 
-                mb: 0.5, 
+            <Typography
+              variant="subtitle2"
+              color="text.primary"
+              sx={{
+                mb: 0.5,
                 fontWeight: 600,
-                fontSize: '0.875rem' 
+                fontSize: '0.875rem',
               }}
             >
               Authentication Method Policy
             </Typography>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               color="text.secondary"
               sx={{
                 fontSize: '0.8125rem',
-                lineHeight: 1.5
+                lineHeight: 1.5,
               }}
             >
               Only one authentication method can be active at a time. To change the method, please
@@ -415,9 +417,15 @@ const AuthenticationSettings: React.FC = () => {
                     mt: 1.5,
                     p: 1.5,
                     borderRadius: 1,
-                    bgcolor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.08 : 0.05),
+                    bgcolor: alpha(
+                      theme.palette.warning.main,
+                      theme.palette.mode === 'dark' ? 0.08 : 0.05
+                    ),
                     border: `1px solid ${alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.2 : 0.1)}`,
-                    color: theme.palette.mode === 'dark' ? theme.palette.warning.light : theme.palette.warning.dark,
+                    color:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.warning.light
+                        : theme.palette.warning.dark,
                     fontWeight: 500,
                     fontSize: '0.8125rem',
                   }}
@@ -453,9 +461,10 @@ const AuthenticationSettings: React.FC = () => {
           variant="filled"
           sx={{
             width: '100%',
-            boxShadow: theme.palette.mode === 'dark'
-              ? '0px 3px 8px rgba(0, 0, 0, 0.3)'
-              : '0px 3px 8px rgba(0, 0, 0, 0.12)',
+            boxShadow:
+              theme.palette.mode === 'dark'
+                ? '0px 3px 8px rgba(0, 0, 0, 0.3)'
+                : '0px 3px 8px rgba(0, 0, 0, 0.12)',
             '& .MuiAlert-icon': {
               opacity: 0.8,
             },
@@ -465,11 +474,11 @@ const AuthenticationSettings: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-      
-      <Alert 
-        variant="outlined" 
-        severity="info" 
-        sx={{ 
+
+      <Alert
+        variant="outlined"
+        severity="info"
+        sx={{
           mt: 3,
           mb: 1,
           borderRadius: 1,
@@ -481,9 +490,9 @@ const AuthenticationSettings: React.FC = () => {
       >
         <Typography variant="body2">
           Refer to{' '}
-          <Link 
-            href="https://docs.pipeshub.com/auth" 
-            target="_blank" 
+          <Link
+            href="https://docs.pipeshub.com/auth"
+            target="_blank"
             rel="noopener"
             sx={{
               color: theme.palette.primary.main,

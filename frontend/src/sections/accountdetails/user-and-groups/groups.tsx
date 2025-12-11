@@ -291,7 +291,7 @@ export default function Groups() {
         </Paper>
 
         <Button
-          variant='outlined'
+          variant="outlined"
           color="primary"
           onClick={handleCreateGroup}
           startIcon={<Iconify icon={accountGroupIcon} width={18} height={18} />}
@@ -398,7 +398,7 @@ export default function Groups() {
                     }}
                     onClick={() => navigate(`/account/company-settings/groups/${group._id}`)}
                   >
-                  <TableCell component="th" scope="row" sx={{ py: 1.5 }}>
+                    <TableCell component="th" scope="row" sx={{ py: 1.5 }}>
                       <Stack direction="row" alignItems="center" spacing={2}>
                         <Avatar
                           sx={{

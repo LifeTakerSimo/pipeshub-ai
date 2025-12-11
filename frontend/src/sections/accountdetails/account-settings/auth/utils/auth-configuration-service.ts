@@ -1,6 +1,5 @@
 import axios from 'src/utils/axios';
 
-
 export interface GoogleAuthConfig {
   clientId: string;
 }
@@ -16,11 +15,11 @@ export interface MicrosoftAuthConfig {
 }
 
 export interface SamlSsoConfig {
-  entryPoint?: string;     
-  certificate?: string;    
-  emailKey?: string;        
-  logoutUrl?: string;       
-  entityId?: string;       
+  entryPoint?: string;
+  certificate?: string;
+  emailKey?: string;
+  logoutUrl?: string;
+  entityId?: string;
 }
 
 export interface OAuthConfig {
@@ -107,8 +106,6 @@ export const getOAuthConfig = async (): Promise<OAuthConfig> => {
   }
 };
 
-
-
 /**
  * Update Google auth configuration
  * @param {GoogleAuthConfig} googleConfig - Google auth configuration
@@ -144,7 +141,9 @@ export const updateAzureAuthConfig = async (azureConfig: AzureAuthConfig): Promi
  * @param {MicrosoftAuthConfig} microsoftConfig - Microsoft auth configuration
  * @returns {Promise<any>} The API response
  */
-export const updateMicrosoftAuthConfig = async (microsoftConfig: MicrosoftAuthConfig): Promise<any> => {
+export const updateMicrosoftAuthConfig = async (
+  microsoftConfig: MicrosoftAuthConfig
+): Promise<any> => {
   try {
     const response = await axios.post(`${API_BASE_URL}/microsoft`, microsoftConfig);
     return response.data;
@@ -194,5 +193,5 @@ export default {
   updateAzureAuthConfig,
   updateMicrosoftAuthConfig,
   updateSamlSsoConfig,
-  updateOAuthConfig
+  updateOAuthConfig,
 };

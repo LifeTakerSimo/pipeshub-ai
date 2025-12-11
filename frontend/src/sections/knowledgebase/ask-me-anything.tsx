@@ -11,8 +11,8 @@ import type {
 import { Icon } from '@iconify/react';
 import menuIcon from '@iconify-icons/mdi/menu';
 import closeIcon from '@iconify-icons/mdi/close';
-import React, { useState, useCallback, useEffect } from 'react';
 import chatOutlineIcon from '@iconify-icons/mdi/chat-outline';
+import React, { useState, useEffect, useCallback } from 'react';
 import fileDocumentOutlineIcon from '@iconify-icons/mdi/file-document-outline';
 
 import { Box, Button, styled, useTheme, Typography, IconButton } from '@mui/material';
@@ -21,9 +21,9 @@ import axiosInstance from 'src/utils/axios';
 
 import RecordSidebar from './ask-me-anything-sidebar';
 import ChatInput from '../qna/chatbot/components/chat-input';
-import { Model, ChatMode } from '../qna/chatbot/types';
 import PdfHighlighterComp from '../qna/chatbot/components/pdf-highlighter';
 
+import type { Model, ChatMode } from '../qna/chatbot/types';
 import type {
   Record,
   RecordHeaderProps,
@@ -235,7 +235,9 @@ const RecordSalesAgent = ({ initialContext, recordId }: RecordSalesAgentProps) =
   useEffect(() => {
     const fetchAvailableModels = async () => {
       try {
-        const response = await axiosInstance.get('/api/v1/configurationManager/ai-models/available/llm');
+        const response = await axiosInstance.get(
+          '/api/v1/configurationManager/ai-models/available/llm'
+        );
 
         if (response.data.status === 'success') {
           // Handle both response formats: response.data.models or response.data.data
@@ -387,117 +389,113 @@ const RecordSalesAgent = ({ initialContext, recordId }: RecordSalesAgentProps) =
   }, [initialContext]);
 
   // Update handleSendMessage to include recordIds and sourceRecordId
-  const handleSendMessage = useCallback(async (
-    message: string,
-    modelKey?: string,
-    modelName?: string,
-    chatMode?: string,
-    filters?: { apps: string[]; kb: string[] }
-  ) => {
-    const trimmedInput = message.trim();
-    if (!trimmedInput || isLoading || !selectedRecord) return;
+  const handleSendMessage = useCallback(
+    async (
+      message: string,
+      modelKey?: string,
+      modelName?: string,
+      chatMode?: string,
+      filters?: { apps: string[]; kb: string[] }
+    ) => {
+      const trimmedInput = message.trim();
+      if (!trimmedInput || isLoading || !selectedRecord) return;
 
-    const tempUserMessage = {
-      id: `temp-${Date.now()}`,
-      timestamp: new Date(),
-      content: trimmedInput,
-      type: 'user',
-      contentFormat: 'MARKDOWN',
-      followUpQuestions: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      feedback: [],
-      citations: [],
-      messageType: 'user_query',
-    };
+      const tempUserMessage = {
+        id: `temp-${Date.now()}`,
+        timestamp: new Date(),
+        content: trimmedInput,
+        type: 'user',
+        contentFormat: 'MARKDOWN',
+        followUpQuestions: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        feedback: [],
+        citations: [],
+        messageType: 'user_query',
+      };
 
-    try {
-      setIsLoading(true);
+      try {
+        setIsLoading(true);
 
-      let response;
-      if (!currentConversationId) {
-        // Create new conversation
-        response = await axiosInstance.post('/api/v1/conversations/create', {
-          query: trimmedInput,
-          conversationSource: 'records',
-          recordIds: [selectedRecord._id],
-          conversationSourceRecordId: selectedRecord._id,
-        });
-
-        if (!response?.data?.conversation) {
-          throw new Error('Invalid response format');
-        }
-
-        const { conversation } = response.data;
-        setCurrentConversationId(conversation._id);
-        const formattedMessages = conversation.messages.map(formatMessage).filter(Boolean);
-        setMessages(formattedMessages);
-
-        // Trigger sidebar refresh after creating new conversation
-        setShouldRefreshSidebar(true);
-      } else {
-        // Continue existing conversation
-        setMessages((prev) => [...prev, tempUserMessage]);
-
-        response = await axiosInstance.post(
-          `/api/v1/conversations/${currentConversationId}/messages`,
-          {
+        let response;
+        if (!currentConversationId) {
+          // Create new conversation
+          response = await axiosInstance.post('/api/v1/conversations/create', {
             query: trimmedInput,
-            recordIds: [recordId],
-            conversationSourceRecordId: recordId,
+            conversationSource: 'records',
+            recordIds: [selectedRecord._id],
+            conversationSourceRecordId: selectedRecord._id,
+          });
+
+          if (!response?.data?.conversation) {
+            throw new Error('Invalid response format');
           }
-        );
 
-        if (!response?.data?.conversation?.messages) {
-          throw new Error('Invalid response format');
+          const { conversation } = response.data;
+          setCurrentConversationId(conversation._id);
+          const formattedMessages = conversation.messages.map(formatMessage).filter(Boolean);
+          setMessages(formattedMessages);
+
+          // Trigger sidebar refresh after creating new conversation
+          setShouldRefreshSidebar(true);
+        } else {
+          // Continue existing conversation
+          setMessages((prev) => [...prev, tempUserMessage]);
+
+          response = await axiosInstance.post(
+            `/api/v1/conversations/${currentConversationId}/messages`,
+            {
+              query: trimmedInput,
+              recordIds: [recordId],
+              conversationSourceRecordId: recordId,
+            }
+          );
+
+          if (!response?.data?.conversation?.messages) {
+            throw new Error('Invalid response format');
+          }
+
+          const botMessage = response.data.conversation.messages
+            .filter((msg: any) => msg.messageType === 'bot_response')
+            .map(formatMessage)
+            .pop();
+
+          if (botMessage) {
+            setMessages((prev) => [...prev, botMessage]);
+          }
         }
 
-        const botMessage = response.data.conversation.messages
-          .filter((msg: any) => msg.messageType === 'bot_response')
-          .map(formatMessage)
-          .pop();
-
-        if (botMessage) {
-          setMessages((prev) => [...prev, botMessage]);
+        const lastMessage =
+          response.data.conversation.messages[response.data.conversation.messages.length - 1];
+        if (lastMessage?.citations?.length > 0) {
+          setExpandedCitations((prev) => ({
+            ...prev,
+            [messages.length]: false,
+          }));
         }
-      }
-
-      const lastMessage =
-        response.data.conversation.messages[response.data.conversation.messages.length - 1];
-      if (lastMessage?.citations?.length > 0) {
-        setExpandedCitations((prev) => ({
+      } catch (error) {
+        setMessages((prev) => [
           ...prev,
-          [messages.length]: false,
-        }));
+          {
+            type: 'bot',
+            content: 'Sorry, I encountered an error processing your request.',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            id: `error-${Date.now()}`,
+            contentFormat: 'MARKDOWN',
+            followUpQuestions: [],
+            citations: [],
+            confidence: '',
+            messageType: 'bot_response',
+            timestamp: new Date(),
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          type: 'bot',
-          content: 'Sorry, I encountered an error processing your request.',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          id: `error-${Date.now()}`,
-          contentFormat: 'MARKDOWN',
-          followUpQuestions: [],
-          citations: [],
-          confidence: '',
-          messageType: 'bot_response',
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [
-    isLoading,
-    currentConversationId,
-    selectedRecord,
-    messages,
-    formatMessage,
-    recordId,
-  ]);
+    },
+    [isLoading, currentConversationId, selectedRecord, messages, formatMessage, recordId]
+  );
 
   const handleRegenerateMessage = useCallback(
     async (messageId: string) => {
@@ -720,7 +718,11 @@ const RecordSalesAgent = ({ initialContext, recordId }: RecordSalesAgentProps) =
               },
             }}
           >
-            <PdfHighlighterComp pdfUrl={pdfUrl} citations={aggregatedCitations}  onClosePdf={onClosePdf}/>
+            <PdfHighlighterComp
+              pdfUrl={pdfUrl}
+              citations={aggregatedCitations}
+              onClosePdf={onClosePdf}
+            />
             <StyledCloseButton
               onClick={onClosePdf}
               startIcon={<Icon icon={closeIcon} />}

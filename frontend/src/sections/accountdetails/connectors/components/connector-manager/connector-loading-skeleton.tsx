@@ -1,21 +1,13 @@
 import React from 'react';
-import {
-  Container,
-  Box,
-  Stack,
-  Skeleton,
-  Grid,
-  Paper,
-  alpha,
-  useTheme,
-} from '@mui/material';
+
+import { Box, Grid, Stack, Paper, alpha, Skeleton, useTheme, Container } from '@mui/material';
 
 interface ConnectorLoadingSkeletonProps {
   showStats?: boolean;
 }
 
-const ConnectorLoadingSkeleton: React.FC<ConnectorLoadingSkeletonProps> = ({ 
-  showStats = true 
+const ConnectorLoadingSkeleton: React.FC<ConnectorLoadingSkeletonProps> = ({
+  showStats = true,
 }) => {
   const theme = useTheme();
 
@@ -76,9 +68,19 @@ const ConnectorLoadingSkeleton: React.FC<ConnectorLoadingSkeletonProps> = ({
                       <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
                         <Skeleton variant="text" width="25%" height={20} />
                         <Skeleton variant="circular" width={3} height={3} />
-                        <Skeleton variant="rectangular" width={60} height={20} sx={{ borderRadius: 1 }} />
+                        <Skeleton
+                          variant="rectangular"
+                          width={60}
+                          height={20}
+                          sx={{ borderRadius: 1 }}
+                        />
                         <Skeleton variant="circular" width={3} height={3} />
-                        <Skeleton variant="rectangular" width={70} height={20} sx={{ borderRadius: 1 }} />
+                        <Skeleton
+                          variant="rectangular"
+                          width={70}
+                          height={20}
+                          sx={{ borderRadius: 1 }}
+                        />
                       </Stack>
                     </Box>
                   </Stack>
@@ -97,7 +99,12 @@ const ConnectorLoadingSkeleton: React.FC<ConnectorLoadingSkeletonProps> = ({
                         <Skeleton variant="text" width="40%" height={20} sx={{ mb: 0.5 }} />
                         <Skeleton variant="text" width="60%" height={16} />
                       </Box>
-                      <Skeleton variant="rectangular" width={58} height={34} sx={{ borderRadius: 17 }} />
+                      <Skeleton
+                        variant="rectangular"
+                        width={58}
+                        height={34}
+                        sx={{ borderRadius: 17 }}
+                      />
                     </Stack>
                   </Box>
                 </Paper>
@@ -119,9 +126,24 @@ const ConnectorLoadingSkeleton: React.FC<ConnectorLoadingSkeletonProps> = ({
                   >
                     <Skeleton variant="text" width="50%" height={20} sx={{ mb: 1.5 }} />
                     <Stack spacing={1}>
-                      <Skeleton variant="rectangular" width="100%" height={32} sx={{ borderRadius: 1 }} />
-                      <Skeleton variant="rectangular" width="100%" height={32} sx={{ borderRadius: 1 }} />
-                      <Skeleton variant="rectangular" width="100%" height={32} sx={{ borderRadius: 1 }} />
+                      <Skeleton
+                        variant="rectangular"
+                        width="100%"
+                        height={32}
+                        sx={{ borderRadius: 1 }}
+                      />
+                      <Skeleton
+                        variant="rectangular"
+                        width="100%"
+                        height={32}
+                        sx={{ borderRadius: 1 }}
+                      />
+                      <Skeleton
+                        variant="rectangular"
+                        width="100%"
+                        height={32}
+                        sx={{ borderRadius: 1 }}
+                      />
                     </Stack>
                   </Paper>
 

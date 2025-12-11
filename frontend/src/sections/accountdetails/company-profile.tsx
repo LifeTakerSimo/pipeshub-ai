@@ -58,17 +58,11 @@ const ProfileSchema = zod.object({
     city: zod
       .string()
       .optional()
-      .refine(
-        (val) => !val || /^[A-Za-z\s]+$/.test(val),
-        'City must contain only letters'
-      ),
+      .refine((val) => !val || /^[A-Za-z\s]+$/.test(val), 'City must contain only letters'),
     state: zod
       .string()
       .optional()
-      .refine(
-        (val) => !val || /^[A-Za-z\s]+$/.test(val),
-        'State must contain only letters'
-      ),
+      .refine((val) => !val || /^[A-Za-z\s]+$/.test(val), 'State must contain only letters'),
     postCode: zod.string().optional(),
     country: zod.string().optional(),
   }),

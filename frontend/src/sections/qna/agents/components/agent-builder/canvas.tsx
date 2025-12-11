@@ -1,41 +1,29 @@
 // src/sections/agents/components/flow-builder-canvas.tsx
-import React, { useRef, useCallback } from 'react';
-import {
-  ReactFlow,
-  MiniMap,
-  Controls,
-  Background,
-  BackgroundVariant,
-  Node,
-  Edge,
-  Connection,
-  NodeTypes,
-  Panel,
-  useReactFlow,
-} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import {
-  Box,
-  Paper,
-  Typography,
-  Stack,
-  useTheme,
-  alpha,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
+
+import type { Node, Edge, NodeTypes, Connection } from '@xyflow/react';
+
 import { Icon } from '@iconify/react';
-import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
-import fitScreenIcon from '@iconify-icons/mdi/fit-to-screen';
-import centerFocusIcon from '@iconify-icons/mdi/focus-auto';
 import zoomInIcon from '@iconify-icons/mdi/plus';
+import React, { useRef, useCallback } from 'react';
 import zoomOutIcon from '@iconify-icons/mdi/minus';
-import playIcon from '@iconify-icons/mdi/play';
+import centerFocusIcon from '@iconify-icons/mdi/focus-auto';
+import fitScreenIcon from '@iconify-icons/mdi/fit-to-screen';
+import {
+  Panel,
+  Controls,
+  ReactFlow,
+  Background,
+  useReactFlow,
+  BackgroundVariant,
+} from '@xyflow/react';
+
+import { Box, Paper, alpha, Tooltip, useTheme, Typography, IconButton } from '@mui/material';
 
 // Import the enhanced FlowNode component
 import FlowNode from './flow-node';
 import { normalizeDisplayName } from '../../utils/agent';
- 
+
 interface FlowNodeData extends Record<string, unknown> {
   id: string;
   type: string;
@@ -87,7 +75,7 @@ const EnhancedControls: React.FC<{ colors: any }> = ({ colors }) => {
         background: colors.background.paper,
         border: `1px solid ${colors.border.main}`,
         borderRadius: 12,
-        boxShadow: colors.isDark 
+        boxShadow: colors.isDark
           ? `0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2)`
           : `0 8px 32px rgba(15, 23, 42, 0.08), 0 4px 16px rgba(15, 23, 42, 0.04)`,
         backdropFilter: 'blur(10px)',
@@ -119,7 +107,7 @@ const EnhancedControls: React.FC<{ colors: any }> = ({ colors }) => {
           <Icon icon={zoomInIcon} width={16} height={16} />
         </IconButton>
       </Tooltip>
-      
+
       <Tooltip title="Zoom Out" placement="top">
         <IconButton
           size="small"
@@ -270,14 +258,15 @@ const AgentBuilderCanvas: React.FC<FlowBuilderCanvasProps> = ({
           config: {
             ...template.defaultConfig,
             // Add default approval config for tool nodes
-            ...(template.type.startsWith('tool-') && !template.type.startsWith('tool-group-') && {
-              approvalConfig: {
-                requiresApproval: false,
-                approvers: { users: [], groups: [] },
-                approvalThreshold: 'single',
-                autoApprove: false,
-              }
-            })
+            ...(template.type.startsWith('tool-') &&
+              !template.type.startsWith('tool-group-') && {
+                approvalConfig: {
+                  requiresApproval: false,
+                  approvers: { users: [], groups: [] },
+                  approvalThreshold: 'single',
+                  autoApprove: false,
+                },
+              }),
           },
           inputs: template.inputs,
           outputs: template.outputs,
@@ -399,15 +388,14 @@ const AgentBuilderCanvas: React.FC<FlowBuilderCanvasProps> = ({
           <EnhancedControls colors={colors} />
 
           {/* Enhanced Background */}
-          <Background 
-            variant={BackgroundVariant.Dots} 
+          <Background
+            variant={BackgroundVariant.Dots}
             size={2}
             gap={20}
             style={{
               opacity: isDark ? 0.3 : 0.5,
             }}
           />
-
 
           {/* Status Panel */}
           <Panel position="top-left">
@@ -418,7 +406,7 @@ const AgentBuilderCanvas: React.FC<FlowBuilderCanvasProps> = ({
                 backdropFilter: 'blur(10px)',
                 border: `1px solid ${colors.border.main}`,
                 borderRadius: 2,
-                boxShadow: isDark 
+                boxShadow: isDark
                   ? `0 4px 16px rgba(0, 0, 0, 0.3)`
                   : `0 4px 16px rgba(15, 23, 42, 0.06)`,
                 display: 'flex',

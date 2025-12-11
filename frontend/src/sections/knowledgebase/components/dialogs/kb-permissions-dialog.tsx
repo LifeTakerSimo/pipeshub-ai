@@ -1,10 +1,15 @@
-import React from 'react';
-import axios from 'src/utils/axios';
-import UnifiedPermissionsDialog, {
-  UnifiedPermissionsApi,
+import type {
   Team,
   User,
+  UnifiedPermissionsApi,
 } from 'src/components/permissions/UnifiedPermissionsDialog';
+
+import React from 'react';
+
+import axios from 'src/utils/axios';
+
+import UnifiedPermissionsDialog from 'src/components/permissions/UnifiedPermissionsDialog';
+
 import { KnowledgeBaseAPI } from '../../services/api';
 
 interface KbPermissionsDialogProps {
@@ -22,13 +27,13 @@ const makeKbApi = (kbId: string): UnifiedPermissionsApi => ({
   loadUsers: async () => {
     const { data } = await axios.get(`/api/v1/users/graph/list`);
     const items = (data?.users || []) as any[];
-    const users :User[] = items;
+    const users: User[] = items;
     return users;
   },
   loadTeams: async () => {
     const { data } = await axios.get(`/api/v1/teams/list?limit=100`);
     const items = data?.teams || [];
-    const teams :Team[] = items;
+    const teams: Team[] = items;
     return teams;
   },
   createTeam: async ({ name, description, userIds, role }) => {
@@ -46,7 +51,7 @@ const makeKbApi = (kbId: string): UnifiedPermissionsApi => ({
     } as Team;
   },
   createPermissions: async ({ userIds, teamIds, role }) => {
-    const payload = {   
+    const payload = {
       userIds: userIds || [],
       teamIds: teamIds || [],
       role,
@@ -70,7 +75,12 @@ const makeKbApi = (kbId: string): UnifiedPermissionsApi => ({
   },
 });
 
-const KbPermissionsDialog: React.FC<KbPermissionsDialogProps> = ({ open, onClose, kbId, kbName }) => {
+const KbPermissionsDialog: React.FC<KbPermissionsDialogProps> = ({
+  open,
+  onClose,
+  kbId,
+  kbName,
+}) => {
   const api = React.useMemo(() => makeKbApi(kbId), [kbId]);
   return (
     <UnifiedPermissionsDialog
@@ -85,5 +95,3 @@ const KbPermissionsDialog: React.FC<KbPermissionsDialogProps> = ({ open, onClose
 };
 
 export default KbPermissionsDialog;
-
-

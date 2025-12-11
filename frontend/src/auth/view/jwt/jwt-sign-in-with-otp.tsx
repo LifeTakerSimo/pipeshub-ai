@@ -38,7 +38,6 @@
 
 // type SignInSchemaType = zod.infer<typeof SignInSchema>;
 
-
 // interface OtpSignInProps {
 //   sx?: SxProps<Theme>;
 // }

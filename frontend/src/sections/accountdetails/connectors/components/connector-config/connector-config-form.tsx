@@ -1,30 +1,35 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogActions,
-  Typography,
-  Box,
-  Button,
-  Alert,
-  AlertTitle,
-  CircularProgress,
-  alpha,
-  useTheme,
-  IconButton,
-  Chip,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
-import { useAccountType } from 'src/hooks/use-account-type';
 import closeIcon from '@iconify-icons/mdi/close';
 import saveIcon from '@iconify-icons/eva/save-outline';
-import { useConnectorConfig } from '../../hooks/use-connector-config';
+
+import {
+  Box,
+  Chip,
+  Alert,
+  alpha,
+  Dialog,
+  Button,
+  useTheme,
+  Typography,
+  AlertTitle,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
+} from '@mui/material';
+
+import { useAccountType } from 'src/hooks/use-account-type';
+
+import { Iconify } from 'src/components/iconify';
+
 import AuthSection from './auth-section';
 import SyncSection from './sync-section';
 import ConfigStepper from './config-stepper';
-import { Connector } from '../../types/types';
 import { isNoneAuthType } from '../../utils/auth';
+import { useConnectorConfig } from '../../hooks/use-connector-config';
+
+import type { Connector } from '../../types/types';
 
 interface ConnectorConfigFormProps {
   connector: Connector;
@@ -120,7 +125,6 @@ const ConnectorConfigForm: React.FC<ConnectorConfigFormProps> = ({
             conditionalDisplay={conditionalDisplay}
             accountTypeLoading={accountTypeLoading}
             isBusiness={isBusiness}
-            
             // Google Workspace Business OAuth props
             adminEmail={adminEmail}
             adminEmailError={adminEmailError}
@@ -132,7 +136,6 @@ const ConnectorConfigForm: React.FC<ConnectorConfigFormProps> = ({
             onFileUpload={handleFileUpload}
             onFileChange={handleFileChange}
             fileInputRef={fileInputRef}
-            
             // NEW: SharePoint Certificate OAuth props
             certificateFile={certificateFile}
             certificateFileName={certificateFileName}
@@ -148,7 +151,6 @@ const ConnectorConfigForm: React.FC<ConnectorConfigFormProps> = ({
             onPrivateKeyChange={handlePrivateKeyChange}
             certificateInputRef={certificateInputRef}
             privateKeyInputRef={privateKeyInputRef}
-            
             onFieldChange={handleFieldChange}
           />
         );
@@ -222,13 +224,14 @@ const ConnectorConfigForm: React.FC<ConnectorConfigFormProps> = ({
             sx={{
               p: 1,
               borderRadius: 1.5,
-              bgcolor: isDark ? alpha(theme.palette.common.white, 0.9) : alpha(theme.palette.grey[100], 0.8),
+              bgcolor: isDark
+                ? alpha(theme.palette.common.white, 0.9)
+                : alpha(theme.palette.grey[100], 0.8),
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}
           >
-
             <img
               src={connector.iconPath}
               alt={connector.name}

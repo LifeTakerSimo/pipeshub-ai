@@ -121,14 +121,10 @@ export const CreateFolderDialog: React.FC<CreateFolderDialogProps> = ({
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Typography 
-            variant="body2" 
-            color="text.secondary" 
-            sx={{ mb: 2 }}
-          >
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Enter a name for your new folder. This will help you organize your files and content.
           </Typography>
-          
+
           <TextField
             autoFocus
             fullWidth

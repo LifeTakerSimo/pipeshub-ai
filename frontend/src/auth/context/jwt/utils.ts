@@ -28,7 +28,7 @@ export function jwtDecode(token: string | null) {
 
     return decoded;
   } catch (error) {
-    throw new Error('Error decoding jwt token',error);
+    throw new Error('Error decoding jwt token', error);
   }
 }
 

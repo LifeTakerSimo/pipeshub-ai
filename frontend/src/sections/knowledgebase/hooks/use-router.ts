@@ -49,7 +49,7 @@ export const useRouter = () => {
 
     // Listen for browser back/forward navigation
     window.addEventListener('popstate', handleLocationChange);
-    
+
     // Listen for custom programmatic navigation events
     window.addEventListener(LOCATION_CHANGE_EVENT, handleLocationChange);
 
@@ -68,10 +68,10 @@ export const useRouter = () => {
     if (newRoute.folderId) searchParams.set('folderId', newRoute.folderId);
 
     const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
-    
+
     // Update browser URL without triggering page reload
     window.history.pushState(null, '', newUrl);
-    
+
     // Dispatch custom event to notify our hook of the programmatic change
     window.dispatchEvent(new Event(LOCATION_CHANGE_EVENT));
   }, []);

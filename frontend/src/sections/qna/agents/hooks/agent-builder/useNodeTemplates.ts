@@ -1,21 +1,22 @@
 // src/sections/qna/agents/hooks/useNodeTemplates.ts
 import { useMemo } from 'react';
-import brainIcon from '@iconify-icons/mdi/brain';
-import chatIcon from '@iconify-icons/mdi/chat';
-import databaseIcon from '@iconify-icons/mdi/database';
-import emailIcon from '@iconify-icons/mdi/email';
 import apiIcon from '@iconify-icons/mdi/api';
-import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
+import chatIcon from '@iconify-icons/mdi/chat';
+import brainIcon from '@iconify-icons/mdi/brain';
 import replyIcon from '@iconify-icons/mdi/reply';
+import databaseIcon from '@iconify-icons/mdi/database';
+import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
+
 import { useConnectors } from '../../../../accountdetails/connectors/context';
 import {
-  groupToolsByApp,
-  getAppDisplayName,
   getAppIcon,
   truncateText,
+  groupToolsByApp,
+  getAppDisplayName,
   normalizeDisplayName,
 } from '../../utils/agent';
-import type { UseAgentBuilderNodeTemplatesReturn, NodeTemplate } from '../../types/agent';
+
+import type { NodeTemplate, UseAgentBuilderNodeTemplatesReturn } from '../../types/agent';
 
 export const useAgentBuilderNodeTemplates = (
   availableTools: any[],
@@ -24,13 +25,13 @@ export const useAgentBuilderNodeTemplates = (
 ): UseAgentBuilderNodeTemplatesReturn => {
   // Get connector data from the hook
   const { activeConnectors } = useConnectors();
-  
+
   const nodeTemplates: NodeTemplate[] = useMemo(() => {
     const groupedTools = groupToolsByApp(availableTools);
     const allConnectors = [...activeConnectors];
-    
+
     // Create dynamic app memory nodes from connector data
-    const dynamicAppKnowledgeNodes = allConnectors.map(connector => ({
+    const dynamicAppKnowledgeNodes = allConnectors.map((connector) => ({
       type: `app-${connector.name.toLowerCase().replace(/\s+/g, '-')}`,
       label: normalizeDisplayName(connector.name),
       description: `Connect to ${connector.name} data and content`,
@@ -44,7 +45,7 @@ export const useAgentBuilderNodeTemplates = (
       outputs: ['context'],
       category: 'knowledge' as const,
     }));
-    
+
     const templates: NodeTemplate[] = [
       // Agent Node (central orchestrator)
       {
@@ -80,10 +81,12 @@ export const useAgentBuilderNodeTemplates = (
           .replace(/[^a-zA-Z0-9]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
-        
+
         // Create unique type identifier using provider and modelName to avoid conflicts
-        const uniqueTypeId = `${model.provider}-${modelName}`.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-        
+        const uniqueTypeId = `${model.provider}-${modelName}`
+          .replace(/[^a-zA-Z0-9]/g, '-')
+          .toLowerCase();
+
         return {
           type: `llm-${uniqueTypeId}`,
           label: normalizeDisplayName(normalizedName),
@@ -153,12 +156,12 @@ export const useAgentBuilderNodeTemplates = (
         description: `Connect to data from integrated applications (${allConnectors.length} apps)`,
         icon: apiIcon,
         defaultConfig: {
-          apps: allConnectors.map(connector => ({
+          apps: allConnectors.map((connector) => ({
             name: connector.name,
             type: connector.name.toUpperCase(),
             displayName: connector.name,
           })),
-          selectedApps: allConnectors.slice(0, 3).map(connector => connector.name.toUpperCase()), // Default to first 3 apps
+          selectedApps: allConnectors.slice(0, 3).map((connector) => connector.name.toUpperCase()), // Default to first 3 apps
         },
         inputs: ['query'],
         outputs: ['context'],

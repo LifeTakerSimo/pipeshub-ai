@@ -1,17 +1,18 @@
+import type React from 'react';
 import type { Icon as IconifyIcon } from '@iconify/react';
-import React from 'react';
-import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
+
+import databaseIcon from '@iconify-icons/mdi/database';
+import zipIcon from '@iconify-icons/vscode-icons/file-type-zip';
 import pdfIcon from '@iconify-icons/vscode-icons/file-type-pdf2';
 import docIcon from '@iconify-icons/vscode-icons/file-type-word';
-import xlsIcon from '@iconify-icons/vscode-icons/file-type-excel';
-import pptIcon from '@iconify-icons/vscode-icons/file-type-powerpoint';
 import txtIcon from '@iconify-icons/vscode-icons/file-type-text';
-import mdIcon from '@iconify-icons/vscode-icons/file-type-markdown';
+import xlsIcon from '@iconify-icons/vscode-icons/file-type-excel';
 import htmlIcon from '@iconify-icons/vscode-icons/file-type-html';
 import jsonIcon from '@iconify-icons/vscode-icons/file-type-json';
-import zipIcon from '@iconify-icons/vscode-icons/file-type-zip';
+import mdIcon from '@iconify-icons/vscode-icons/file-type-markdown';
 import imageIcon from '@iconify-icons/vscode-icons/file-type-image';
-import databaseIcon from '@iconify-icons/mdi/database';
+import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
+import pptIcon from '@iconify-icons/vscode-icons/file-type-powerpoint';
 
 export const getIndexingStatusColor = (
   status: string
@@ -41,7 +42,6 @@ export const getIndexingStatusColor = (
       return 'warning';
   }
 };
-
 
 // Helper function to format file size
 export const formatFileSize = (bytes: number): string => {

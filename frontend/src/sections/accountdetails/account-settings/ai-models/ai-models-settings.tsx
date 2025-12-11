@@ -1,55 +1,58 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Container,
-  Paper,
-  Typography,
-  Alert,
-  Snackbar,
-  Divider,
-  alpha,
-  useTheme,
-  Fade,
-  Skeleton,
-  Stack,
-  Chip,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
-
-import { Iconify } from 'src/components/iconify';
-import robotIcon from '@iconify-icons/mdi/robot';
 import llmIcon from '@iconify-icons/mdi/chat';
-import embeddingIcon from '@iconify-icons/mdi/vector-polygon';
+import robotIcon from '@iconify-icons/mdi/robot';
+import checkIcon from '@iconify-icons/mdi/check';
+import closeIcon from '@iconify-icons/mdi/close';
+import React, { useState, useEffect } from 'react';
 import refreshIcon from '@iconify-icons/mdi/refresh';
 import infoIcon from '@iconify-icons/mdi/info-circle';
 import arrowRightIcon from '@iconify-icons/mdi/arrow-right';
-import checkIcon from '@iconify-icons/mdi/check';
-import closeIcon from '@iconify-icons/mdi/close';
+import embeddingIcon from '@iconify-icons/mdi/vector-polygon';
+
+import {
+  Box,
+  Fade,
+  Chip,
+  Alert,
+  alpha,
+  Stack,
+  Divider,
+  Tooltip,
+  Snackbar,
+  useTheme,
+  Skeleton,
+  Container,
+  Typography,
+  IconButton,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
+import { AVAILABLE_MODEL_PROVIDERS } from './types';
 import { modelService } from './services/universal-config';
 import ProviderCards from './components/available-models-card';
 import ModelConfigurationDialog from './components/configure-model-dialog';
 import ConfiguredModelsDisplay from './components/configured-models-display';
-import { 
-  AVAILABLE_MODEL_PROVIDERS, 
-  ConfiguredModel, 
-  ModelProvider, 
-  ModelType 
-} from './types';
+
+import type { ModelType, ModelProvider, ConfiguredModel } from './types';
 
 const AiModelsSettings: React.FC = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
-  
+
   const [configuredModels, setConfiguredModels] = useState<{ [key: string]: ConfiguredModel[] }>({
     llm: [],
-    embedding: []
+    embedding: [],
   });
-  const [configuredProviders, setConfiguredProviders] = useState<{ [key: string]: { llm: number; embedding: number } }>({});
-  const [selectedProvider, setSelectedProvider] = useState<(ModelProvider & { 
-    editingModel?: ConfiguredModel;
-    targetModelType?: ModelType;
-  }) | null>(null);
+  const [configuredProviders, setConfiguredProviders] = useState<{
+    [key: string]: { llm: number; embedding: number };
+  }>({});
+  const [selectedProvider, setSelectedProvider] = useState<
+    | (ModelProvider & {
+        editingModel?: ConfiguredModel;
+        targetModelType?: ModelType;
+      })
+    | null
+  >(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,30 +66,30 @@ const AiModelsSettings: React.FC = () => {
     } else {
       setIsLoading(true);
     }
-    
+
     try {
       const [llmModels, embeddingModels] = await Promise.all([
         modelService.getAllModels('llm'),
-        modelService.getAllModels('embedding')
+        modelService.getAllModels('embedding'),
       ]);
 
       setConfiguredModels({
         llm: llmModels,
-        embedding: embeddingModels
+        embedding: embeddingModels,
       });
 
       // Calculate provider counts
       const providerCounts: { [key: string]: { llm: number; embedding: number } } = {};
-      
-      [...llmModels, ...embeddingModels].forEach(model => {
+
+      [...llmModels, ...embeddingModels].forEach((model) => {
         if (!providerCounts[model.provider]) {
           providerCounts[model.provider] = { llm: 0, embedding: 0 };
         }
-        providerCounts[model.provider][model.modelType]+=1;
+        providerCounts[model.provider][model.modelType] += 1;
       });
 
       setConfiguredProviders(providerCounts);
-      
+
       // Clear any previous errors on successful load
       setError(null);
     } catch (err: any) {
@@ -108,9 +111,9 @@ const AiModelsSettings: React.FC = () => {
     const enhancedProvider = {
       ...provider,
       targetModelType: modelType,
-      supportedTypes: modelType ? [modelType] : provider.supportedTypes
+      supportedTypes: modelType ? [modelType] : provider.supportedTypes,
     };
-    
+
     setSelectedProvider(enhancedProvider);
     setDialogOpen(true);
   };
@@ -121,28 +124,28 @@ const AiModelsSettings: React.FC = () => {
   };
 
   const handleDialogSuccess = () => {
-    const modelTypeText = selectedProvider?.targetModelType 
-      ? selectedProvider.targetModelType.toUpperCase() 
+    const modelTypeText = selectedProvider?.targetModelType
+      ? selectedProvider.targetModelType.toUpperCase()
       : '';
     const successMessage = selectedProvider?.targetModelType
       ? `${selectedProvider.name} ${modelTypeText} model configured successfully`
       : `${selectedProvider?.name} models configured successfully`;
-      
+
     setSuccess(successMessage);
     setDialogOpen(false);
     setSelectedProvider(null);
-    
+
     loadConfiguredModels(true);
   };
 
   const handleEdit = (model: ConfiguredModel) => {
-    const provider = AVAILABLE_MODEL_PROVIDERS.find(p => p.id === model.provider);
+    const provider = AVAILABLE_MODEL_PROVIDERS.find((p) => p.id === model.provider);
     if (provider) {
-      setSelectedProvider({ 
-        ...provider, 
+      setSelectedProvider({
+        ...provider,
         editingModel: model,
         targetModelType: model.modelType,
-        supportedTypes: [model.modelType]
+        supportedTypes: [model.modelType],
       });
       setDialogOpen(true);
     } else {
@@ -178,7 +181,10 @@ const AiModelsSettings: React.FC = () => {
   };
 
   // Calculate totals for better UX messaging
-  const totalModels = Object.values(configuredModels).reduce((sum, models) => sum + models.length, 0);
+  const totalModels = Object.values(configuredModels).reduce(
+    (sum, models) => sum + models.length,
+    0
+  );
   const totalLLM = configuredModels.llm?.length || 0;
   const totalEmbedding = configuredModels.embedding?.length || 0;
 
@@ -226,7 +232,7 @@ const AiModelsSettings: React.FC = () => {
           sx={{
             p: 3,
             borderBottom: `1px solid ${theme.palette.divider}`,
-            backgroundColor: isDark 
+            backgroundColor: isDark
               ? alpha(theme.palette.background.default, 0.3)
               : alpha(theme.palette.grey[50], 0.5),
           }}
@@ -290,7 +296,9 @@ const AiModelsSettings: React.FC = () => {
                           height: 28,
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          backgroundColor: isDark ? alpha(theme.palette.primary.main, 0.8) : alpha(theme.palette.primary.main, 0.1),
+                          backgroundColor: isDark
+                            ? alpha(theme.palette.primary.main, 0.8)
+                            : alpha(theme.palette.primary.main, 0.1),
                           color: isDark ? theme.palette.common.white : theme.palette.primary.main,
                           border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                         }}
@@ -305,7 +313,9 @@ const AiModelsSettings: React.FC = () => {
                           height: 28,
                           fontSize: '0.75rem',
                           fontWeight: 600,
-                          backgroundColor: isDark ? alpha(theme.palette.info.main, 0.8) : alpha(theme.palette.info.main, 0.1),
+                          backgroundColor: isDark
+                            ? alpha(theme.palette.info.main, 0.8)
+                            : alpha(theme.palette.info.main, 0.1),
                           color: isDark ? theme.palette.info.contrastText : theme.palette.info.main,
                           border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
                         }}
@@ -319,7 +329,7 @@ const AiModelsSettings: React.FC = () => {
                         sx={{
                           width: 32,
                           height: 32,
-                          backgroundColor: isDark 
+                          backgroundColor: isDark
                             ? alpha(theme.palette.background.default, 0.4)
                             : theme.palette.background.paper,
                           border: `1px solid ${theme.palette.divider}`,
@@ -333,7 +343,7 @@ const AiModelsSettings: React.FC = () => {
                           icon={refreshIcon}
                           width={16}
                           height={16}
-                          sx={{ 
+                          sx={{
                             color: theme.palette.text.secondary,
                             ...(isRefreshing && {
                               animation: 'spin 1s linear infinite',
@@ -362,19 +372,35 @@ const AiModelsSettings: React.FC = () => {
                 <Skeleton variant="text" height={32} width={200} sx={{ mb: 2 }} />
                 <Stack spacing={2}>
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} variant="rectangular" height={120} sx={{ borderRadius: 1.5 }} />
+                    <Skeleton
+                      key={i}
+                      variant="rectangular"
+                      height={120}
+                      sx={{ borderRadius: 1.5 }}
+                    />
                   ))}
                 </Stack>
               </Box>
-              
+
               <Divider />
-              
+
               {/* Loading Provider Cards */}
               <Box>
                 <Skeleton variant="text" height={32} width={250} sx={{ mb: 2 }} />
-                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 2 }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                    gap: 2,
+                  }}
+                >
                   {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} variant="rectangular" height={160} sx={{ borderRadius: 1.5 }} />
+                    <Skeleton
+                      key={i}
+                      variant="rectangular"
+                      height={160}
+                      sx={{ borderRadius: 1.5 }}
+                    />
                   ))}
                 </Box>
               </Box>
@@ -393,11 +419,11 @@ const AiModelsSettings: React.FC = () => {
                 />
 
                 {totalModels > 0 && (
-                  <Divider 
-                    sx={{ 
-                      mx: -3, 
-                      borderColor: alpha(theme.palette.divider, 0.6) 
-                    }} 
+                  <Divider
+                    sx={{
+                      mx: -3,
+                      borderColor: alpha(theme.palette.divider, 0.6),
+                    }}
                   />
                 )}
 
@@ -408,11 +434,11 @@ const AiModelsSettings: React.FC = () => {
                 />
 
                 {/* Info Alert */}
-                <Alert 
-                  variant="outlined" 
+                <Alert
+                  variant="outlined"
                   severity="info"
                   icon={<Iconify icon={infoIcon} width={20} height={20} />}
-                  sx={{ 
+                  sx={{
                     borderRadius: 1.5,
                     borderColor: alpha(theme.palette.info.main, 0.2),
                     backgroundColor: alpha(theme.palette.info.main, 0.04),
@@ -423,12 +449,13 @@ const AiModelsSettings: React.FC = () => {
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Click the specific model type (LLM or Embedding) for each provider to configure exactly what you need.
+                      Click the specific model type (LLM or Embedding) for each provider to
+                      configure exactly what you need.
                     </Typography>
                     <Box
                       component="a"
-                      href="https://docs.pipeshub.com/ai-models/overview" 
-                      target="_blank" 
+                      href="https://docs.pipeshub.com/ai-models/overview"
+                      target="_blank"
                       rel="noopener"
                       sx={{
                         display: 'flex',
@@ -438,7 +465,7 @@ const AiModelsSettings: React.FC = () => {
                         textDecoration: 'none',
                         fontWeight: 600,
                         fontSize: '0.875rem',
-                        '&:hover': { 
+                        '&:hover': {
                           textDecoration: 'underline',
                           color: theme.palette.info.dark,
                         },
@@ -474,11 +501,11 @@ const AiModelsSettings: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         sx={{ mt: 8 }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity="success" 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
           variant="filled"
-          sx={{ 
+          sx={{
             borderRadius: 1.5,
             fontWeight: 600,
           }}
@@ -495,11 +522,11 @@ const AiModelsSettings: React.FC = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         sx={{ mt: 8 }}
       >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity="error" 
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="error"
           variant="filled"
-          sx={{ 
+          sx={{
             borderRadius: 1.5,
             fontWeight: 600,
           }}

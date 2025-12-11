@@ -1,22 +1,24 @@
 // services/api.ts
+import type { UnifiedPermission } from 'src/components/permissions/UnifiedPermissionsDialog';
+
 import axios from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
-import { UnifiedPermission } from 'src/components/permissions/UnifiedPermissionsDialog';
 
 import { getConnectorPublicUrl } from 'src/sections/accountdetails/account-settings/services/utils/services-configuration-service';
+
+import { ORIGIN } from '../constants/knowledge-search';
+
+import type { RecordDetailsResponse } from '../types/record-details';
+import type { SearchFilters, SearchResponse } from '../types/search-response';
 import type {
   Item,
-  KBPermission,
   KnowledgeBase,
   FolderContents,
   CreatePermissionRequest,
   UpdatePermissionRequest,
   RemovePermissionRequest,
 } from '../types/kb';
-import { ORIGIN } from '../constants/knowledge-search';
-import { RecordDetailsResponse } from '../types/record-details';
-import { SearchFilters, SearchResponse } from '../types/search-response';
 
 const API_BASE = '/api/v1/knowledgeBase';
 
@@ -55,7 +57,7 @@ export class KnowledgeBaseAPI {
           console.error('Failed to decode UTF-8 filename', e);
         }
       }
-      
+
       // Fallback to basic filename="..." format if filename* not found
       if (!filename) {
         const filenameMatch = contentDisposition.match(/filename="?([^";\n]*)"?/i);
@@ -143,7 +145,7 @@ export class KnowledgeBaseAPI {
         }
       }
 
-      if(!filename && fileName) {
+      if (!filename && fileName) {
         filename = fileName;
       }
 

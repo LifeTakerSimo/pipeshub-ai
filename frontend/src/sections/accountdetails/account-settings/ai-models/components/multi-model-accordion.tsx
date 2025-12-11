@@ -1,32 +1,34 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import robotIcon from '@iconify-icons/mdi/robot';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
-  alpha,
-  Button,
-  IconButton,
-  Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Chip,
+  Card,
+  alpha,
+  Stack,
+  Alert,
+  Button,
   Tooltip,
+  Divider,
   Snackbar,
   useTheme,
-  Card,
+  Accordion,
+  IconButton,
+  Typography,
   CardContent,
-  Stack,
-  Divider,
-  Alert,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
-import robotIcon from '@iconify-icons/mdi/robot';
-import { ModelProvider, AVAILABLE_MODEL_PROVIDERS, ConfiguredModel } from '../types';
-import ProviderCards from './available-models-card';
-import ModelConfigurationDialog from './configure-model-dialog';
-import { getAllModels, deleteModel, setDefaultModel } from '../services/universal-config';
 
+import ProviderCards from './available-models-card';
+import { AVAILABLE_MODEL_PROVIDERS } from '../types';
+import ModelConfigurationDialog from './configure-model-dialog';
+import { deleteModel, getAllModels, setDefaultModel } from '../services/universal-config';
+
+import type { ModelProvider, ConfiguredModel } from '../types';
 
 interface MultiModelAccordionProps {
   modelType: 'llm' | 'embedding';
@@ -83,28 +85,34 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
   }, [loadModels, editingModel]);
 
   // Delete model
-  const handleDeleteModel = useCallback(async (model: ConfiguredModel) => {
-    try {
-      await deleteModel(modelType, model.modelKey || model.id!);
-      await loadModels();
-      setSuccess(`${model.name} deleted successfully`);
-    } catch (err) {
-      console.error('Error deleting model:', err);
-      setError(`Failed to delete ${model.name}`);
-    }
-  }, [modelType, loadModels]);
+  const handleDeleteModel = useCallback(
+    async (model: ConfiguredModel) => {
+      try {
+        await deleteModel(modelType, model.modelKey || model.id!);
+        await loadModels();
+        setSuccess(`${model.name} deleted successfully`);
+      } catch (err) {
+        console.error('Error deleting model:', err);
+        setError(`Failed to delete ${model.name}`);
+      }
+    },
+    [modelType, loadModels]
+  );
 
   // Set active model
-  const handleSetActiveModel = useCallback(async (model: ConfiguredModel) => {
-    try {
-      await setDefaultModel(modelType, model.modelKey || model.id!);
-      await loadModels();
-      setSuccess(`${model.name} is now active`);
-    } catch (err) {
-      console.error('Error setting active model:', err);
-      setError(`Failed to activate ${model.name}`);
-    }
-  }, [modelType, loadModels]);
+  const handleSetActiveModel = useCallback(
+    async (model: ConfiguredModel) => {
+      try {
+        await setDefaultModel(modelType, model.modelKey || model.id!);
+        await loadModels();
+        setSuccess(`${model.name} is now active`);
+      } catch (err) {
+        console.error('Error setting active model:', err);
+        setError(`Failed to activate ${model.name}`);
+      }
+    },
+    [modelType, loadModels]
+  );
 
   // Handle provider card click
   const handleProviderCardClick = (provider: ModelProvider) => {
@@ -115,7 +123,7 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
 
   // Handle edit model
   const handleEditModel = (model: ConfiguredModel) => {
-    const provider = AVAILABLE_MODEL_PROVIDERS.find(p => p.id === model.provider);
+    const provider = AVAILABLE_MODEL_PROVIDERS.find((p) => p.id === model.provider);
     setSelectedProvider(provider || null);
     setEditingModel(model);
     setConfigDialogOpen(true);
@@ -129,15 +137,18 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
   }, [expanded, loadModels]);
 
   // Create provider count map
-  const configuredProviders = models.reduce((acc, model) => {
-    if (!acc[model.provider]) {
-      acc[model.provider] = { llm: 0, embedding: 0 };
-    }
-    acc[model.provider][modelType]+=1;
-    return acc;
-  }, {} as { [key: string]: { llm: number; embedding: number } });
+  const configuredProviders = models.reduce(
+    (acc, model) => {
+      if (!acc[model.provider]) {
+        acc[model.provider] = { llm: 0, embedding: 0 };
+      }
+      acc[model.provider][modelType] += 1;
+      return acc;
+    },
+    {} as { [key: string]: { llm: number; embedding: number } }
+  );
 
-  const activeModel = models.find(m => m.isActive);
+  const activeModel = models.find((m) => m.isActive);
 
   return (
     <>
@@ -200,17 +211,12 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                 />
               )}
               {activeModel && (
-                <Chip
-                  label="1 active"
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                />
+                <Chip label="1 active" size="small" color="success" variant="outlined" />
               )}
             </Box>
           </Box>
         </AccordionSummary>
-        
+
         <AccordionDetails sx={{ p: 0, pt: 0 }}>
           <Box sx={{ px: 2.5, pb: 2.5 }}>
             {/* Configured Models Section */}
@@ -219,14 +225,14 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                 <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                   Configured Models
                 </Typography>
-                
+
                 <Stack spacing={1.5}>
                   {models.map((model) => (
                     <Card
                       key={model.id}
                       variant="outlined"
                       sx={{
-                        borderColor: model.isActive 
+                        borderColor: model.isActive
                           ? alpha(theme.palette.success.main, 0.5)
                           : 'divider',
                         bgcolor: model.isActive
@@ -235,11 +241,13 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                       }}
                     >
                       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-                        <Box sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'space-between' 
-                        }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                          }}
+                        >
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                             <Box
                               sx={{
@@ -252,26 +260,32 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                                 bgcolor: alpha(theme.palette.primary.main, 0.1),
                               }}
                             >
-                              <Iconify 
+                              <Iconify
                                 icon={
-                                  AVAILABLE_MODEL_PROVIDERS.find(p => p.id === model.provider)?.src || 
-                                  robotIcon
-                                } 
-                                width={18} 
+                                  AVAILABLE_MODEL_PROVIDERS.find((p) => p.id === model.provider)
+                                    ?.src || robotIcon
+                                }
+                                width={18}
                                 height={18}
                                 sx={{ color: theme.palette.primary.main }}
                               />
                             </Box>
-                            
+
                             <Box>
                               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                                 {model.name}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                                Provider: {AVAILABLE_MODEL_PROVIDERS.find(p => p.id === model.provider)?.name || model.provider}
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ fontSize: '0.75rem' }}
+                              >
+                                Provider:{' '}
+                                {AVAILABLE_MODEL_PROVIDERS.find((p) => p.id === model.provider)
+                                  ?.name || model.provider}
                               </Typography>
                             </Box>
-                            
+
                             {model.isActive && (
                               <Chip
                                 label="Active"
@@ -282,7 +296,7 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                               />
                             )}
                           </Box>
-                          
+
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             {!model.isActive && (
                               <Button
@@ -294,7 +308,7 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                                 Activate
                               </Button>
                             )}
-                            
+
                             <Tooltip title="Edit model">
                               <IconButton
                                 size="small"
@@ -304,7 +318,7 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                                 <Iconify icon="eva:edit-outline" width={16} height={16} />
                               </IconButton>
                             </Tooltip>
-                            
+
                             <Tooltip title="Delete model">
                               <IconButton
                                 size="small"
@@ -320,7 +334,7 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
                     </Card>
                   ))}
                 </Stack>
-                
+
                 <Divider sx={{ my: 3 }} />
               </Box>
             )}
@@ -354,9 +368,11 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
         autoHideDuration={5000}
         onClose={() => setError(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        sx={{mt:6}}
+        sx={{ mt: 6 }}
       >
-        <Alert severity="error" variant="filled">{error}</Alert>
+        <Alert severity="error" variant="filled">
+          {error}
+        </Alert>
       </Snackbar>
 
       <Snackbar
@@ -364,9 +380,11 @@ const MultiModelAccordion: React.FC<MultiModelAccordionProps> = ({
         autoHideDuration={3000}
         onClose={() => setSuccess(null)}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        sx={{mt:6}}
+        sx={{ mt: 6 }}
       >
-        <Alert severity="success" variant="filled">{success}</Alert>
+        <Alert severity="success" variant="filled">
+          {success}
+        </Alert>
       </Snackbar>
     </>
   );

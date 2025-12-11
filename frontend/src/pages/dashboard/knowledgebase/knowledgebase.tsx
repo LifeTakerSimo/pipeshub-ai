@@ -16,8 +16,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
       <UserProvider>
-
-      <KnowledgeBase />
+        <KnowledgeBase />
       </UserProvider>
     </>
   );

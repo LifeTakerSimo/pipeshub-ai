@@ -12,4 +12,3 @@ export interface ChatMode {
   name: string;
   description: string;
 }
-

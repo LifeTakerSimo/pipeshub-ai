@@ -112,19 +112,19 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Typography 
-            variant="body1" 
+          <Typography
+            variant="body1"
             color="text.primary"
-            sx={{ 
+            sx={{
               lineHeight: 1.6,
               '& strong': {
                 fontWeight: 600,
                 color: theme.palette.text.primary,
-              }
+              },
             }}
-            dangerouslySetInnerHTML={{ __html: message }} 
+            dangerouslySetInnerHTML={{ __html: message }}
           />
-          
+
           <Box
             sx={{
               mt: 2,

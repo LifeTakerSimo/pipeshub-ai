@@ -1,29 +1,30 @@
+import { Icon } from '@iconify/react';
 import React, { useState, useEffect } from 'react';
+import checkIcon from '@iconify-icons/mdi/check-circle';
+import closeIcon from '@iconify-icons/eva/close-outline';
+import userIcon from '@iconify-icons/mdi/account-outline';
+import shieldIcon from '@iconify-icons/mdi/shield-check-outline';
+import groupIcon from '@iconify-icons/mdi/account-group-outline';
+
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
   Box,
+  Chip,
+  alpha,
+  Alert,
+  Dialog,
+  Button,
+  Switch,
+  Divider,
+  useTheme,
+  TextField,
   Typography,
   IconButton,
-  useTheme,
-  alpha,
-  Switch,
-  FormControlLabel,
-  Chip,
-  TextField,
+  DialogTitle,
   Autocomplete,
-  Divider,
-  Alert,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import closeIcon from '@iconify-icons/eva/close-outline';
-import shieldIcon from '@iconify-icons/mdi/shield-check-outline';
-import userIcon from '@iconify-icons/mdi/account-outline';
-import groupIcon from '@iconify-icons/mdi/account-group-outline';
-import checkIcon from '@iconify-icons/mdi/check-circle';
 
 interface User {
   _key: string;
@@ -88,10 +89,10 @@ export default function ApprovalsDialog({
     if (initialConfig) {
       setConfig(initialConfig);
       // Set selected users and groups based on initial config
-      const selectedUsersList = users.filter(user => 
+      const selectedUsersList = users.filter((user) =>
         initialConfig.approvers.users.includes(user._key)
       );
-      const selectedGroupsList = groups.filter(group => 
+      const selectedGroupsList = groups.filter((group) =>
         initialConfig.approvers.groups.includes(group._key)
       );
       setSelectedUsers(selectedUsersList);
@@ -100,21 +101,21 @@ export default function ApprovalsDialog({
   }, [initialConfig, users, groups]);
 
   const handleRequiresApprovalChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       requiresApproval: event.target.checked,
     }));
   };
 
   const handleAutoApproveChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       autoApprove: event.target.checked,
     }));
   };
 
   const handleThresholdChange = (threshold: 'single' | 'majority' | 'unanimous') => {
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       approvalThreshold: threshold,
     }));
@@ -122,22 +123,22 @@ export default function ApprovalsDialog({
 
   const handleUsersChange = (event: any, newValue: User[]) => {
     setSelectedUsers(newValue);
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       approvers: {
         ...prev.approvers,
-        users: newValue.map(user => user._key),
+        users: newValue.map((user) => user._key),
       },
     }));
   };
 
   const handleGroupsChange = (event: any, newValue: Group[]) => {
     setSelectedGroups(newValue);
-    setConfig(prev => ({
+    setConfig((prev) => ({
       ...prev,
       approvers: {
         ...prev.approvers,
-        groups: newValue.map(group => group._key),
+        groups: newValue.map((group) => group._key),
       },
     }));
   };
@@ -149,7 +150,11 @@ export default function ApprovalsDialog({
 
   const thresholdOptions = [
     { value: 'single', label: 'Single Approval', description: 'Any one approver can approve' },
-    { value: 'majority', label: 'Majority', description: 'More than 50% of approvers must approve' },
+    {
+      value: 'majority',
+      label: 'Majority',
+      description: 'More than 50% of approvers must approve',
+    },
     { value: 'unanimous', label: 'Unanimous', description: 'All approvers must approve' },
   ];
 
@@ -241,7 +246,8 @@ export default function ApprovalsDialog({
       <DialogContent sx={{ px: 3, py: 2.5 }}>
         <Box sx={{ mb: 3 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure approval requirements for this tool. When enabled, actions performed by this tool will require approval from selected users or groups.
+            Configure approval requirements for this tool. When enabled, actions performed by this
+            tool will require approval from selected users or groups.
           </Typography>
 
           {/* Main Approval Toggle */}
@@ -290,7 +296,11 @@ export default function ApprovalsDialog({
 
               {/* Approval Threshold */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1.5, fontWeight: 500 }}
+                >
                   Approval Threshold
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -307,9 +317,10 @@ export default function ApprovalsDialog({
                         }`,
                         borderRadius: 1,
                         cursor: 'pointer',
-                        bgcolor: config.approvalThreshold === option.value
-                          ? alpha(theme.palette.primary.main, 0.05)
-                          : 'transparent',
+                        bgcolor:
+                          config.approvalThreshold === option.value
+                            ? alpha(theme.palette.primary.main, 0.05)
+                            : 'transparent',
                         '&:hover': {
                           bgcolor: alpha(theme.palette.primary.main, 0.05),
                           borderColor: theme.palette.primary.main,
@@ -326,12 +337,14 @@ export default function ApprovalsDialog({
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            bgcolor: config.approvalThreshold === option.value
-                              ? theme.palette.primary.main
-                              : alpha(theme.palette.text.secondary, 0.2),
-                            color: config.approvalThreshold === option.value
-                              ? 'white'
-                              : theme.palette.text.secondary,
+                            bgcolor:
+                              config.approvalThreshold === option.value
+                                ? theme.palette.primary.main
+                                : alpha(theme.palette.text.secondary, 0.2),
+                            color:
+                              config.approvalThreshold === option.value
+                                ? 'white'
+                                : theme.palette.text.secondary,
                           }}
                         >
                           <Icon icon={checkIcon} width={12} height={12} />
@@ -362,7 +375,11 @@ export default function ApprovalsDialog({
 
               {/* User Approvers */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1.5, fontWeight: 500 }}
+                >
                   <Icon icon={userIcon} width={16} height={16} style={{ marginRight: 8 }} />
                   User Approvers
                 </Typography>
@@ -396,14 +413,20 @@ export default function ApprovalsDialog({
 
               {/* Group Approvers */}
               <Box sx={{ mb: 3 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontWeight: 500 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 1.5, fontWeight: 500 }}
+                >
                   <Icon icon={groupIcon} width={16} height={16} style={{ marginRight: 8 }} />
                   Group Approvers
                 </Typography>
                 <Autocomplete
                   multiple
                   options={groups}
-                  getOptionLabel={(option) => `${option.name}${option.memberCount ? ` (${option.memberCount} members)` : ''}`}
+                  getOptionLabel={(option) =>
+                    `${option.name}${option.memberCount ? ` (${option.memberCount} members)` : ''}`
+                  }
                   value={selectedGroups}
                   onChange={handleGroupsChange}
                   renderInput={(params) => (

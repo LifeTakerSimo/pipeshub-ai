@@ -267,7 +267,8 @@ const OnBoardingStepper: React.FC<OnBoardingStepperProps> = ({ open, onClose, on
       if (!stepData) return null;
       let isReasoning = false;
 
-      const { providerType, modelType, _provider, isMultimodal, contextLength, ...cleanConfig } = stepData;
+      const { providerType, modelType, _provider, isMultimodal, contextLength, ...cleanConfig } =
+        stepData;
       if (configType === 'llm') {
         const llmData = stepData as LlmFormValues;
         isReasoning = Boolean(llmData.isReasoning);

@@ -1,9 +1,13 @@
 // src/sections/qna/agents/hooks/useFlowBuilderState.ts
-import { useState } from 'react';
 import type { Agent } from 'src/types/agent';
+
+import { useState } from 'react';
+
 import type { UseAgentBuilderStateReturn } from '../../types/agent';
 
-export const useAgentBuilderState = (editingAgent?: Agent | { _key: string } | null): UseAgentBuilderStateReturn => {
+export const useAgentBuilderState = (
+  editingAgent?: Agent | { _key: string } | null
+): UseAgentBuilderStateReturn => {
   const [selectedNode, setSelectedNode] = useState<any>(null);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -12,7 +16,7 @@ export const useAgentBuilderState = (editingAgent?: Agent | { _key: string } | n
   const [edgeToDelete, setEdgeToDelete] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [agentName, setAgentName] = useState(
-    (editingAgent && 'name' in editingAgent) ? editingAgent.name : ''
+    editingAgent && 'name' in editingAgent ? editingAgent.name : ''
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);

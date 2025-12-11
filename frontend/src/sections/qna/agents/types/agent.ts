@@ -27,7 +27,7 @@ export interface NodeTemplate {
 
 // Component props interfaces
 export interface AgentBuilderProps {
-    editingAgent?: Agent  | null;
+  editingAgent?: Agent | null;
   onSuccess: (agent: Agent) => void;
   onClose: () => void;
 }
@@ -40,7 +40,7 @@ export interface AgentBuilderHeaderProps {
   saving: boolean;
   onSave: () => void;
   onClose: () => void;
-  editingAgent?: Agent  | null;
+  editingAgent?: Agent | null;
   originalAgentName?: string; // The original name from API
   templateDialogOpen: boolean;
   setTemplateDialogOpen: (open: boolean) => void;

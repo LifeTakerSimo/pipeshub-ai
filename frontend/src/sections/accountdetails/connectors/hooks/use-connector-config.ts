@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+
 import { useAccountType } from 'src/hooks/use-account-type';
-import { Connector, ConnectorConfig } from '../types/types';
-import { ConnectorApiService } from '../services/api';
-import { CrawlingManagerApi } from '../services/crawling-manager';
-import { buildCronFromSchedule } from '../utils/cron';
-import { evaluateConditionalDisplay } from '../utils/conditional-display';
+
 import { isNoneAuthType } from '../utils/auth';
+import { ConnectorApiService } from '../services/api';
+import { buildCronFromSchedule } from '../utils/cron';
+import { CrawlingManagerApi } from '../services/crawling-manager';
+import { evaluateConditionalDisplay } from '../utils/conditional-display';
+
+import type { Connector, ConnectorConfig } from '../types/types';
 
 interface FormData {
   auth: Record<string, any>;
@@ -131,10 +134,7 @@ export const useConnectorConfig = ({
 
   // Memoized helper to check if this is custom Google Business OAuth
   const isCustomGoogleBusinessOAuth = useMemo(
-    () =>
-      isBusiness &&
-      connector.appGroup === 'Google Workspace' &&
-      connector.authType === 'OAUTH',
+    () => isBusiness && connector.appGroup === 'Google Workspace' && connector.authType === 'OAUTH',
     [isBusiness, connector.appGroup, connector.authType]
   );
 
@@ -367,9 +367,7 @@ export const useConnectorConfig = ({
 
     // Check if encrypted (should not contain ENCRYPTED in headers)
     if (content.includes('ENCRYPTED')) {
-      setPrivateKeyError(
-        'Private key must not be encrypted. Use -nocrypt flag during generation.'
-      );
+      setPrivateKeyError('Private key must not be encrypted. Use -nocrypt flag during generation.');
       return false;
     }
 
@@ -377,11 +375,14 @@ export const useConnectorConfig = ({
     return true;
   }, []);
 
-  const parseCertificateInfo = useCallback((certContent: string): Record<string, any> => ({
-    status: 'Valid',
-    format: 'X.509',
-    loaded: new Date().toISOString(),
-  }), []);
+  const parseCertificateInfo = useCallback(
+    (certContent: string): Record<string, any> => ({
+      status: 'Valid',
+      format: 'X.509',
+      loaded: new Date().toISOString(),
+    }),
+    []
+  );
 
   // SharePoint Certificate handlers
   const handleCertificateUpload = useCallback(() => {
@@ -505,9 +506,10 @@ export const useConnectorConfig = ({
     // Check required fields
     const hasClientId = formData.auth.clientId && String(formData.auth.clientId).trim() !== '';
     const hasTenantId = formData.auth.tenantId && String(formData.auth.tenantId).trim() !== '';
-    const hasSharePointDomain = formData.auth.sharepointDomain && String(formData.auth.sharepointDomain).trim() !== '';
+    const hasSharePointDomain =
+      formData.auth.sharepointDomain && String(formData.auth.sharepointDomain).trim() !== '';
     const hasAdminConsent = formData.auth.hasAdminConsent === true;
-    
+
     // Check for certificate content - either from file upload or from existing config in formData
     const hasCertificate = !!(certificateContent || formData.auth.certificate);
     const hasPrivateKey = !!(privateKeyData || formData.auth.privateKey);
@@ -517,8 +519,15 @@ export const useConnectorConfig = ({
       (certificateError !== null && certificateError !== '') ||
       (privateKeyError !== null && privateKeyError !== '');
 
-    const isValid = hasClientId && hasTenantId && hasSharePointDomain && hasAdminConsent && hasCertificate && hasPrivateKey && !hasErrors;
-    
+    const isValid =
+      hasClientId &&
+      hasTenantId &&
+      hasSharePointDomain &&
+      hasAdminConsent &&
+      hasCertificate &&
+      hasPrivateKey &&
+      !hasErrors;
+
     // Debug logging (can be removed in production)
     if (!isValid) {
       console.log('SharePoint validation failed:', {
@@ -610,7 +619,10 @@ export const useConnectorConfig = ({
 
         // Check if it's a beta connector access denied error (403)
         if (error?.response?.status === 403) {
-          const errorMessage = error?.response?.data?.detail || error?.message || 'Beta connectors are not enabled. This connector is a beta connector and cannot be accessed. Please enable beta connectors in platform settings to use this connector.';
+          const errorMessage =
+            error?.response?.data?.detail ||
+            error?.message ||
+            'Beta connectors are not enabled. This connector is a beta connector and cannot be accessed. Please enable beta connectors in platform settings to use this connector.';
           setSaveError(errorMessage);
         } else {
           setSaveError('Failed to load connector configuration');
@@ -693,7 +705,7 @@ export const useConnectorConfig = ({
     return '';
   }, []);
 
-   const validateSection = useCallback(
+  const validateSection = useCallback(
     (section: string, fields: any[], values: Record<string, any>): Record<string, string> => {
       const errors: Record<string, string> = {};
 
@@ -705,7 +717,7 @@ export const useConnectorConfig = ({
       });
       return errors;
     },
-    
+
     [validateField]
   );
 
@@ -765,7 +777,9 @@ export const useConnectorConfig = ({
         } else if (isSharePointCertificateAuth) {
           // Validate SharePoint certificate authentication
           if (!isSharePointCertificateAuthValid()) {
-            setSaveError('Please complete all required SharePoint authentication fields and upload valid certificate and private key files.');
+            setSaveError(
+              'Please complete all required SharePoint authentication fields and upload valid certificate and private key files.'
+            );
             return;
           }
         } else {
@@ -829,7 +843,9 @@ export const useConnectorConfig = ({
       // For SharePoint certificate auth, validate certificate and key
       if (isSharePointCertificateAuth) {
         if (!isSharePointCertificateAuthValid()) {
-          setSaveError('Please provide valid certificate and private key files for SharePoint authentication');
+          setSaveError(
+            'Please provide valid certificate and private key files for SharePoint authentication'
+          );
           return;
         }
       }
@@ -897,7 +913,7 @@ export const useConnectorConfig = ({
       if (isSharePointCertificateAuth) {
         const certContent = certificateContent || formData.auth.certificate;
         const keyContent = privateKeyData || formData.auth.privateKey;
-        
+
         if (!certContent || !keyContent) {
           throw new Error('Certificate and private key are required for SharePoint authentication');
         }

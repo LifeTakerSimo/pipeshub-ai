@@ -1,23 +1,28 @@
+import type { GridColDef } from '@mui/x-data-grid';
+
+import { Icon } from '@iconify/react';
 import React, { memo, useMemo } from 'react';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
+
+import { DataGrid } from '@mui/x-data-grid';
+import { alpha } from '@mui/material/styles';
 import {
   Box,
-  Typography,
   Chip,
   Paper,
+  Divider,
   Skeleton,
   ListItem,
+  Typography,
   ListItemIcon,
   ListItemText,
-  ListItemSecondaryAction,
-  Divider,
   TablePagination,
+  ListItemSecondaryAction,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import { Icon } from '@iconify/react';
-import { getKBIcon } from '../utils/kb-icon';
+
 import { MenuButton } from './menu-button';
-import { KnowledgeBase } from '../types/kb';
+import { getKBIcon } from '../utils/kb-icon';
+
+import type { KnowledgeBase } from '../types/kb';
 
 const ListViewComponent = memo<{
   knowledgeBases: KnowledgeBase[];
@@ -45,7 +50,6 @@ const ListViewComponent = memo<{
     onRowsPerPageChange,
     loading,
   }) => {
-
     const columns = useMemo(() => {
       const baseColumns: GridColDef[] = [
         {
@@ -163,9 +167,7 @@ const ListViewComponent = memo<{
         },
       ];
 
-
       const shouldShowActions = knowledgeBases.some((kb) => kb.userRole !== 'READER');
-
 
       if (shouldShowActions) {
         baseColumns.push({
@@ -176,7 +178,6 @@ const ListViewComponent = memo<{
           align: 'center',
           headerAlign: 'center',
           renderCell: (params) => {
-
             if (params.row.userRole === 'READER') {
               return null;
             }

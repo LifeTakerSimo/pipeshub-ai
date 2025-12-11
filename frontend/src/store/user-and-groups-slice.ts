@@ -49,7 +49,7 @@ const countsSlice = createSlice({
     updateInvitesCount: (state, action: PayloadAction<number>) => {
       state.invitesCount += action.payload;
     },
-    setInviteCount:(state,action: PayloadAction<number>) =>{
+    setInviteCount: (state, action: PayloadAction<number>) => {
       state.invitesCount = action.payload;
     },
     decrementGroupCount: (state) => {

@@ -43,8 +43,8 @@ export function NavHorizontal({ data, layoutQuery, sx, ...other }: NavHorizontal
           justifyContent: 'flex-start', // Changed from default to left alignment
         }}
       >
-        <NavSectionHorizontal 
-          data={data} 
+        <NavSectionHorizontal
+          data={data}
           {...other}
           sx={{
             '--nav-item-gap': '16px', // Increase gap between items by setting CSS variable
@@ -56,7 +56,7 @@ export function NavHorizontal({ data, layoutQuery, sx, ...other }: NavHorizontal
               px: 2, // Add more horizontal padding to each item
             },
             width: '100%',
-          }} 
+          }}
         />
       </Box>
     </Box>

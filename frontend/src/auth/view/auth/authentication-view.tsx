@@ -347,7 +347,10 @@ export const AuthenticationView = () => {
   };
 
   // Handle OAuth login success
-  const handleOAuthLoginSuccess = async (credentials: { accessToken?: string; idToken?: string }) => {
+  const handleOAuthLoginSuccess = async (credentials: {
+    accessToken?: string;
+    idToken?: string;
+  }) => {
     try {
       if (!credentials.accessToken && !credentials.idToken) {
         throw new Error('No credentials received from OAuth provider');
@@ -768,7 +771,7 @@ export const AuthenticationView = () => {
 
                   if (method === 'oauth') {
                     const oauthConfig = currentStep?.authProviders?.oauth;
-                    
+
                     if (!oauthConfig) {
                       return null;
                     }

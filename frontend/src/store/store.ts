@@ -7,7 +7,7 @@ import countReducer from './user-and-groups-slice';
 const store = configureStore({
   reducer: {
     counts: countReducer,
-    auth : authReducer,
+    auth: authReducer,
     // notifications: notificationsReducer,
   },
 });

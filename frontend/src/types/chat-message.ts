@@ -6,7 +6,13 @@ export interface ChatMessageProps {
   onRegenerate: (messageId: string) => Promise<void>;
   onFeedbackSubmit: (messageId: string, feedback: any) => Promise<void>;
   conversationId: string | null;
-  onViewPdf: (url: string,citation : CustomCitation, citations: CustomCitation[], isExcelFile?: boolean,buffer?: ArrayBuffer) => void;
+  onViewPdf: (
+    url: string,
+    citation: CustomCitation,
+    citations: CustomCitation[],
+    isExcelFile?: boolean,
+    buffer?: ArrayBuffer
+  ) => void;
   showRegenerate: boolean;
 }
 
@@ -21,7 +27,13 @@ export interface MessageContentProps {
   citations: CustomCitation[];
   onRecordClick: (record: Record) => void;
   aggregatedCitations: { [key: string]: CustomCitation[] };
-  onViewPdf: (url: string,citation : CustomCitation, citations: CustomCitation[], isExcelFile?: boolean,buffer?: ArrayBuffer) => Promise<void>;
+  onViewPdf: (
+    url: string,
+    citation: CustomCitation,
+    citations: CustomCitation[],
+    isExcelFile?: boolean,
+    buffer?: ArrayBuffer
+  ) => Promise<void>;
 }
 
 export interface Record {

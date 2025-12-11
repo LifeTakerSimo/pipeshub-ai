@@ -8,13 +8,7 @@ export interface AuthResponse {
   authProviders: Record<string, any>;
 }
 
-export type AuthMethod = 
-  | 'password' 
-  | 'otp' 
-  | 'samlSso' 
-  | 'google' 
-  | 'microsoft' 
-  | 'azureAd';
+export type AuthMethod = 'password' | 'otp' | 'samlSso' | 'google' | 'microsoft' | 'azureAd';
 
 export interface TabPanelProps {
   children?: ReactNode;

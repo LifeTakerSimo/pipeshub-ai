@@ -4,7 +4,6 @@ import React, { useState, useEffect, useContext, createContext } from 'react';
 
 import axiosInstance from 'src/utils/axios';
 
-
 interface Group {
   _id: string;
   name: string;
@@ -48,11 +47,7 @@ export const GroupsProvider: React.FC<GroupsProviderProps> = ({ children }) => {
     return null;
   }
 
-  return (
-    <GroupsContext.Provider value={groups}>
-      {children}
-    </GroupsContext.Provider>
-  );
+  return <GroupsContext.Provider value={groups}>{children}</GroupsContext.Provider>;
 };
 
 export const useGroups = (): Group[] => {

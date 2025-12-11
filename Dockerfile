@@ -25,6 +25,19 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 FROM base AS python-deps
 COPY ./backend/python/pyproject.toml /app/python/
 WORKDIR /app/python
+# Increase HTTP timeout for the `uv` wrapper and pip to reduce failures when
+# downloading large binary wheels (CUDA toolkits etc). Also pre-install the
+# CPU-only PyTorch wheel so pip won't try to download CUDA-enabled wheels
+# which often fail in CI/container environments without GPUs.
+ENV UV_HTTP_TIMEOUT=300
+ENV PIP_DEFAULT_TIMEOUT=100
+
+# Pre-install CPU-only torch from the official PyTorch CPU wheel index. This
+# ensures that installing the project (which depends on `torch`) will pick the
+# CPU wheel instead of attempting to download CUDA variants like
+# `nvidia-cublas-cu12`.
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu/ "torch==2.9.1+cpu" || true
+
 RUN uv pip install --system -e .
 # Download NLTK and spaCy models
 RUN python -m spacy download en_core_web_sm && \

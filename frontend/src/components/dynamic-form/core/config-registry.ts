@@ -1,5 +1,13 @@
-import { DynamicConfigFactory, GeneratedProvider } from "./config-factory";
-import { EMBEDDING_PROVIDERS, LLM_PROVIDERS, SMTP_PROVIDERS, STORAGE_PROVIDERS, URL_PROVIDERS } from "./providers";
+import { DynamicConfigFactory } from './config-factory';
+import {
+  LLM_PROVIDERS,
+  URL_PROVIDERS,
+  SMTP_PROVIDERS,
+  STORAGE_PROVIDERS,
+  EMBEDDING_PROVIDERS,
+} from './providers';
+
+import type { GeneratedProvider } from './config-factory';
 
 // AUTO-GENERATED CONFIGS
 export const LLM_CONFIG = DynamicConfigFactory.generateConfigType(LLM_PROVIDERS);
@@ -32,7 +40,7 @@ export const getProvidersForType = (configType: ConfigType): GeneratedProvider[]
 
 export const getProviderById = (configType: ConfigType, id: string): GeneratedProvider | null => {
   const providers = getProvidersForType(configType);
-  return providers.find(p => p.id === id) || null;
+  return providers.find((p) => p.id === id) || null;
 };
 
 // LEGACY SUPPORT FUNCTIONS (for backward compatibility)

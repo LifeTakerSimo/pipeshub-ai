@@ -1,6 +1,14 @@
 export interface ConditionalDisplayRule {
   field: string;
-  operator: 'equals' | 'not_equals' | 'contains' | 'not_contains' | 'greater_than' | 'less_than' | 'is_empty' | 'is_not_empty';
+  operator:
+    | 'equals'
+    | 'not_equals'
+    | 'contains'
+    | 'not_contains'
+    | 'greater_than'
+    | 'less_than'
+    | 'is_empty'
+    | 'is_not_empty';
   value?: any;
 }
 
@@ -32,28 +40,28 @@ export const shouldShowElement = (
   switch (rule.operator) {
     case 'equals':
       return fieldValue === rule.value;
-    
+
     case 'not_equals':
       return fieldValue !== rule.value;
-    
+
     case 'contains':
       return fieldValue && typeof fieldValue === 'string' && fieldValue.includes(rule.value);
-    
+
     case 'not_contains':
       return !fieldValue || typeof fieldValue !== 'string' || !fieldValue.includes(rule.value);
-    
+
     case 'greater_than':
       return Number(fieldValue) > Number(rule.value);
-    
+
     case 'less_than':
       return Number(fieldValue) < Number(rule.value);
-    
+
     case 'is_empty':
       return !fieldValue || (typeof fieldValue === 'string' && fieldValue.trim() === '');
-    
+
     case 'is_not_empty':
       return fieldValue && (typeof fieldValue !== 'string' || fieldValue.trim() !== '');
-    
+
     default:
       return false;
   }
@@ -74,8 +82,8 @@ export const evaluateConditionalDisplay = (
   }
 
   const result: Record<string, boolean> = {};
-  
-  Object.keys(conditionalDisplay).forEach(elementKey => {
+
+  Object.keys(conditionalDisplay).forEach((elementKey) => {
     result[elementKey] = shouldShowElement(conditionalDisplay, elementKey, formValues);
   });
 

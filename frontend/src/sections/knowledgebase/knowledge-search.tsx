@@ -30,10 +30,10 @@ import {
 } from '@mui/material';
 
 import { ORIGIN } from './constants/knowledge-search';
+import { addTextFragmentToUrl, extractCleanTextFragment } from './utils/utils';
 import { createScrollableContainerStyle } from '../qna/chatbot/utils/styles/scrollbar';
 
 import type { SearchResult, KnowledgeSearchProps } from './types/search-response';
-import { extractCleanTextFragment, addTextFragmentToUrl } from './utils/utils';
 
 const VIEWABLE_EXTENSIONS = [
   'pdf',
@@ -149,7 +149,6 @@ export const highlightText = (text: string, query: string, theme: any) => {
     return text;
   }
 };
-
 
 function isDocViewable(extension: string): boolean {
   return VIEWABLE_EXTENSIONS.includes(extension?.toLowerCase());
@@ -302,7 +301,7 @@ const KnowledgeSearch = ({
       webUrl = baseUrl + webUrl;
     }
 
-    const content = record.content;
+    const { content } = record;
     if (content && typeof content === 'string' && content.trim().length > 0) {
       const textFragment = extractCleanTextFragment(content, 5);
       if (textFragment) {

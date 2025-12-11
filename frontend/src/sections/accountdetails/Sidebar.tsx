@@ -87,7 +87,6 @@ export default function Sidebar() {
     },
   ];
 
-
   return (
     <Drawer
       sx={{
@@ -97,9 +96,10 @@ export default function Sidebar() {
           width: drawerWidth,
           boxSizing: 'border-box',
           borderRight: `1px solid ${theme.palette.divider}`,
-          backgroundColor: theme.palette.mode === 'dark' 
-            ? alpha(theme.palette.background.paper, 0.1)
-            : theme.palette.background.paper,
+          backgroundColor:
+            theme.palette.mode === 'dark'
+              ? alpha(theme.palette.background.paper, 0.1)
+              : theme.palette.background.paper,
         },
       }}
       variant="permanent"
@@ -110,9 +110,9 @@ export default function Sidebar() {
         <>
           <List sx={{ mt: 8 }}>
             <ListItem>
-              <ListItemText 
-                primary="COMPANY" 
-                primaryTypographyProps={{ 
+              <ListItemText
+                primary="COMPANY"
+                primaryTypographyProps={{
                   fontSize: '0.8125rem',
                   fontWeight: 600,
                   letterSpacing: '0.05em',
@@ -129,29 +129,32 @@ export default function Sidebar() {
                   py: 1,
                   borderRadius: '0',
                   '&.Mui-selected': {
-                    bgcolor: theme.palette.mode === 'dark' 
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.primary.main, 0.08),
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.15)
+                        : alpha(theme.palette.primary.main, 0.08),
                     borderRight: `3px solid ${theme.palette.primary.main}`,
                     '&:hover': {
-                      bgcolor: theme.palette.mode === 'dark' 
-                        ? alpha(theme.palette.primary.main, 0.2)
-                        : alpha(theme.palette.primary.main, 0.12),
+                      bgcolor:
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.primary.main, 0.2)
+                          : alpha(theme.palette.primary.main, 0.12),
                     },
                   },
                   '&:hover': {
-                    bgcolor: theme.palette.mode === 'dark' 
-                      ? alpha(theme.palette.action.hover, 0.1)
-                      : alpha(theme.palette.action.hover, 0.05),
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.action.hover, 0.1)
+                        : alpha(theme.palette.action.hover, 0.05),
                   },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: theme.palette.text.secondary }}>
                   <Iconify icon={officeBuildingIcon} width={22} height={22} />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Profile" 
-                  primaryTypographyProps={{ 
+                <ListItemText
+                  primary="Profile"
+                  primaryTypographyProps={{
                     fontSize: '0.9375rem',
                     fontWeight: pathname === `${baseUrl}/profile` ? 600 : 400,
                   }}
@@ -168,29 +171,32 @@ export default function Sidebar() {
                       py: 1,
                       borderRadius: '0',
                       '&.Mui-selected': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.primary.main, 0.15)
-                          : alpha(theme.palette.primary.main, 0.08),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.primary.main, 0.15)
+                            : alpha(theme.palette.primary.main, 0.08),
                         borderRight: `3px solid ${theme.palette.primary.main}`,
                         '&:hover': {
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(theme.palette.primary.main, 0.2)
-                            : alpha(theme.palette.primary.main, 0.12),
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.primary.main, 0.2)
+                              : alpha(theme.palette.primary.main, 0.12),
                         },
                       },
                       '&:hover': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.action.hover, 0.1)
-                          : alpha(theme.palette.action.hover, 0.05),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.action.hover, 0.1)
+                            : alpha(theme.palette.action.hover, 0.05),
                       },
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 40, color: theme.palette.text.secondary }}>
                       <Iconify icon={accountGroupIcon} width={22} height={22} />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="Users & Groups" 
-                      primaryTypographyProps={{ 
+                    <ListItemText
+                      primary="Users & Groups"
+                      primaryTypographyProps={{
                         fontSize: '0.9375rem',
                         fontWeight: pathname === `${baseUrl}/users` ? 600 : 400,
                       }}
@@ -206,72 +212,79 @@ export default function Sidebar() {
                       py: 1,
                       borderRadius: '0',
                       '&.Mui-selected': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.primary.main, 0.15)
-                          : alpha(theme.palette.primary.main, 0.08),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.primary.main, 0.15)
+                            : alpha(theme.palette.primary.main, 0.08),
                         borderRight: `3px solid ${theme.palette.primary.main}`,
                         '&:hover': {
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(theme.palette.primary.main, 0.2)
-                            : alpha(theme.palette.primary.main, 0.12),
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.primary.main, 0.2)
+                              : alpha(theme.palette.primary.main, 0.12),
                         },
                       },
                       '&:hover': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.action.hover, 0.1)
-                          : alpha(theme.palette.action.hover, 0.05),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.action.hover, 0.1)
+                            : alpha(theme.palette.action.hover, 0.05),
                       },
                     }}
                   >
                     <ListItemIcon sx={{ minWidth: 40, color: theme.palette.text.secondary }}>
                       <Iconify icon={cogIcon} width={22} height={22} />
                     </ListItemIcon>
-                    <ListItemText 
-                      primary="Settings" 
-                      primaryTypographyProps={{ 
+                    <ListItemText
+                      primary="Settings"
+                      primaryTypographyProps={{
                         fontSize: '0.9375rem',
-                        fontWeight: (isSettingsPath || settingsOpen) ? 600 : 400,
+                        fontWeight: isSettingsPath || settingsOpen ? 600 : 400,
                       }}
                     />
-                    <Iconify 
-                      icon={settingsOpen ? upIcon : downIcon} 
-                      width={18} 
-                      height={18} 
+                    <Iconify
+                      icon={settingsOpen ? upIcon : downIcon}
+                      width={18}
+                      height={18}
                       sx={{ color: theme.palette.text.secondary }}
                     />
                   </ListItemButton>
                 </ListItem>
                 <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
-                  <List 
-                    component="div" 
+                  <List
+                    component="div"
                     disablePadding
                     sx={{
-                      bgcolor: theme.palette.mode === 'dark' 
-                        ? alpha(theme.palette.background.default, 0.3)
-                        : alpha(theme.palette.background.default, 0.5),
+                      bgcolor:
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.background.default, 0.3)
+                          : alpha(theme.palette.background.default, 0.5),
                     }}
                   >
                     {settingsOptions.map((option) => (
                       <ListItemButton
                         key={option.name}
-                        sx={{ 
+                        sx={{
                           pl: 5,
                           py: 0.75,
                           '&.Mui-selected': {
-                            bgcolor: theme.palette.mode === 'dark' 
-                              ? alpha(theme.palette.primary.main, 0.15)
-                              : alpha(theme.palette.primary.main, 0.08),
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? alpha(theme.palette.primary.main, 0.15)
+                                : alpha(theme.palette.primary.main, 0.08),
                             borderRight: `3px solid ${theme.palette.primary.main}`,
                             '&:hover': {
-                              bgcolor: theme.palette.mode === 'dark' 
-                                ? alpha(theme.palette.primary.main, 0.2)
-                                : alpha(theme.palette.primary.main, 0.12),
+                              bgcolor:
+                                theme.palette.mode === 'dark'
+                                  ? alpha(theme.palette.primary.main, 0.2)
+                                  : alpha(theme.palette.primary.main, 0.12),
                             },
                           },
                           '&:hover': {
-                            bgcolor: theme.palette.mode === 'dark' 
-                              ? alpha(theme.palette.action.hover, 0.1)
-                              : alpha(theme.palette.action.hover, 0.05),
+                            bgcolor:
+                              theme.palette.mode === 'dark'
+                                ? alpha(theme.palette.action.hover, 0.1)
+                                : alpha(theme.palette.action.hover, 0.05),
                           },
                         }}
                         onClick={() => navigate(option.path)}
@@ -282,7 +295,7 @@ export default function Sidebar() {
                         </ListItemIcon>
                         <ListItemText
                           primary={option.name}
-                          primaryTypographyProps={{ 
+                          primaryTypographyProps={{
                             fontSize: '0.875rem',
                             fontWeight: pathname === option.path ? 600 : 400,
                           }}
@@ -301,9 +314,9 @@ export default function Sidebar() {
       {/* Personal section - for both account types */}
       <List sx={{ mt: isBusiness ? 1 : 8 }}>
         <ListItem>
-          <ListItemText 
-            primary="PERSONAL" 
-            primaryTypographyProps={{ 
+          <ListItemText
+            primary="PERSONAL"
+            primaryTypographyProps={{
               fontSize: '0.8125rem',
               fontWeight: 600,
               letterSpacing: '0.05em',
@@ -324,31 +337,37 @@ export default function Sidebar() {
               py: 1,
               borderRadius: '0',
               '&.Mui-selected': {
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.primary.main, 0.15)
-                  : alpha(theme.palette.primary.main, 0.08),
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.primary.main, 0.15)
+                    : alpha(theme.palette.primary.main, 0.08),
                 borderRight: `3px solid ${theme.palette.primary.main}`,
                 '&:hover': {
-                  bgcolor: theme.palette.mode === 'dark' 
-                    ? alpha(theme.palette.primary.main, 0.2)
-                    : alpha(theme.palette.primary.main, 0.12),
+                  bgcolor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.primary.main, 0.2)
+                      : alpha(theme.palette.primary.main, 0.12),
                 },
               },
               '&:hover': {
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.action.hover, 0.1)
-                  : alpha(theme.palette.action.hover, 0.05),
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.action.hover, 0.1)
+                    : alpha(theme.palette.action.hover, 0.05),
               },
             }}
           >
             <ListItemIcon sx={{ minWidth: 40, color: theme.palette.text.secondary }}>
               <Iconify icon={accountIcon} width={22} height={22} />
             </ListItemIcon>
-            <ListItemText 
-              primary="Profile" 
-              primaryTypographyProps={{ 
+            <ListItemText
+              primary="Profile"
+              primaryTypographyProps={{
                 fontSize: '0.9375rem',
-                fontWeight: pathname === (isBusiness ? `${baseUrl}/personal-profile` : `${baseUrl}/profile`) ? 600 : 400,
+                fontWeight:
+                  pathname === (isBusiness ? `${baseUrl}/personal-profile` : `${baseUrl}/profile`)
+                    ? 600
+                    : 400,
               }}
             />
           </ListItemButton>
@@ -365,72 +384,79 @@ export default function Sidebar() {
                   py: 1,
                   borderRadius: '0',
                   '&.Mui-selected': {
-                    bgcolor: theme.palette.mode === 'dark' 
-                      ? alpha(theme.palette.primary.main, 0.15)
-                      : alpha(theme.palette.primary.main, 0.08),
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.primary.main, 0.15)
+                        : alpha(theme.palette.primary.main, 0.08),
                     borderRight: `3px solid ${theme.palette.primary.main}`,
                     '&:hover': {
-                      bgcolor: theme.palette.mode === 'dark' 
-                        ? alpha(theme.palette.primary.main, 0.2)
-                        : alpha(theme.palette.primary.main, 0.12),
+                      bgcolor:
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.primary.main, 0.2)
+                          : alpha(theme.palette.primary.main, 0.12),
                     },
                   },
                   '&:hover': {
-                    bgcolor: theme.palette.mode === 'dark' 
-                      ? alpha(theme.palette.action.hover, 0.1)
-                      : alpha(theme.palette.action.hover, 0.05),
+                    bgcolor:
+                      theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.action.hover, 0.1)
+                        : alpha(theme.palette.action.hover, 0.05),
                   },
                 }}
               >
                 <ListItemIcon sx={{ minWidth: 40, color: theme.palette.text.secondary }}>
                   <Iconify icon={cogIcon} width={22} height={22} />
                 </ListItemIcon>
-                <ListItemText 
-                  primary="Settings" 
-                  primaryTypographyProps={{ 
+                <ListItemText
+                  primary="Settings"
+                  primaryTypographyProps={{
                     fontSize: '0.9375rem',
-                    fontWeight: (isSettingsPath || settingsOpen) ? 600 : 400,
+                    fontWeight: isSettingsPath || settingsOpen ? 600 : 400,
                   }}
                 />
-                <Iconify 
-                  icon={settingsOpen ? upIcon : downIcon} 
-                  width={18} 
-                  height={18} 
+                <Iconify
+                  icon={settingsOpen ? upIcon : downIcon}
+                  width={18}
+                  height={18}
                   sx={{ color: theme.palette.text.secondary }}
                 />
               </ListItemButton>
             </ListItem>
             <Collapse in={settingsOpen} timeout="auto" unmountOnExit>
-              <List 
-                component="div" 
+              <List
+                component="div"
                 disablePadding
                 sx={{
-                  bgcolor: theme.palette.mode === 'dark' 
-                    ? alpha(theme.palette.background.default, 0.3)
-                    : alpha(theme.palette.background.default, 0.5),
+                  bgcolor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.background.default, 0.3)
+                      : alpha(theme.palette.background.default, 0.5),
                 }}
               >
                 {settingsOptions.map((option) => (
                   <ListItemButton
                     key={option.name}
-                    sx={{ 
+                    sx={{
                       pl: 5,
                       py: 0.75,
                       '&.Mui-selected': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.primary.main, 0.15)
-                          : alpha(theme.palette.primary.main, 0.08),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.primary.main, 0.15)
+                            : alpha(theme.palette.primary.main, 0.08),
                         borderRight: `3px solid ${theme.palette.primary.main}`,
                         '&:hover': {
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(theme.palette.primary.main, 0.2)
-                            : alpha(theme.palette.primary.main, 0.12),
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.primary.main, 0.2)
+                              : alpha(theme.palette.primary.main, 0.12),
                         },
                       },
                       '&:hover': {
-                        bgcolor: theme.palette.mode === 'dark' 
-                          ? alpha(theme.palette.action.hover, 0.1)
-                          : alpha(theme.palette.action.hover, 0.05),
+                        bgcolor:
+                          theme.palette.mode === 'dark'
+                            ? alpha(theme.palette.action.hover, 0.1)
+                            : alpha(theme.palette.action.hover, 0.05),
                       },
                     }}
                     onClick={() => navigate(option.path)}
@@ -441,7 +467,7 @@ export default function Sidebar() {
                     </ListItemIcon>
                     <ListItemText
                       primary={option.name}
-                      primaryTypographyProps={{ 
+                      primaryTypographyProps={{
                         fontSize: '0.875rem',
                         fontWeight: pathname === option.path ? 600 : 400,
                       }}

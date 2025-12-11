@@ -2,21 +2,20 @@ import closeIcon from '@iconify-icons/mdi/close';
 import pencilIcon from '@iconify-icons/mdi/pencil';
 import serverIcon from '@iconify-icons/mdi/server';
 import infoIcon from '@iconify-icons/mdi/information-outline';
-import checkCircleIcon from '@iconify-icons/mdi/check-circle';
-import React, { useState, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
+import React, { useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
   Grid,
+  Fade,
+  Alert,
   Button,
+  Collapse,
   TextField,
   Typography,
   InputAdornment,
   CircularProgress,
-  Fade,
-  Collapse,
-  Alert,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -27,7 +26,8 @@ import {
 } from '../utils/services-configuration-service';
 
 // Constants
-const URL_REGEX = /^(?:https?:\/\/)?(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?::\d{2,5})?(?:\/\S*)?$/;
+const URL_REGEX =
+  /^(?:https?:\/\/)?(?:localhost|(?:\d{1,3}\.){3}\d{1,3}|(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,})(?::\d{2,5})?(?:\/\S*)?$/;
 const HELPER_TEXT = 'The URL of your connector server';
 const ERROR_MESSAGES = {
   REQUIRED: 'Connector URL is required',
@@ -36,8 +36,7 @@ const ERROR_MESSAGES = {
 } as const;
 
 // Utility functions
-const removeTrailingSlash = (url: string): string => 
-  url.endsWith('/') ? url.slice(0, -1) : url;
+const removeTrailingSlash = (url: string): string => (url.endsWith('/') ? url.slice(0, -1) : url);
 
 const isValidURL = (url: string): boolean => URL_REGEX.test(url);
 
@@ -153,20 +152,23 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
     }, []);
 
     // Handle input change
-    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      const { name, value } = e.target;
-      
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
 
-      const error = validateField(name as keyof FormErrors, value);
-      setErrors((prev) => ({
-        ...prev,
-        [name]: error,
-      }));
-    }, [validateField]);
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+
+        const error = validateField(name as keyof FormErrors, value);
+        setErrors((prev) => ({
+          ...prev,
+          [name]: error,
+        }));
+      },
+      [validateField]
+    );
 
     // Toggle edit mode
     const handleToggleEdit = useCallback(() => {
@@ -213,7 +215,7 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
       } catch (error: any) {
         const errorMessage = error.message || ERROR_MESSAGES.SAVE_FAILED;
         console.error('Error saving Connector Public DNS', error);
-        
+
         setFeedbackMessage({
           type: 'error',
           message: errorMessage,
@@ -235,11 +237,11 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
     // Loading state
     if (isLoading) {
       return (
-        <Box 
-          sx={{ 
-            display: 'flex', 
+        <Box
+          sx={{
+            display: 'flex',
             flexDirection: 'column',
-            justifyContent: 'center', 
+            justifyContent: 'center',
             alignItems: 'center',
             minHeight: 280,
             gap: 2,
@@ -254,11 +256,11 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
     }
 
     return (
-      <Box sx={{ my:2 }}>
+      <Box sx={{ my: 2 }}>
         {/* Feedback Messages */}
         <Collapse in={Boolean(feedbackMessage)}>
           {feedbackMessage && (
-            <Alert 
+            <Alert
               severity={feedbackMessage.type}
               onClose={() => setFeedbackMessage(null)}
               sx={{ mb: 2 }}
@@ -299,15 +301,14 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
         </Box>
 
         {/* Action Bar */}
-        <Box 
-          sx={{ 
-            display: 'flex', 
+        <Box
+          sx={{
+            display: 'flex',
             justifyContent: 'flex-end',
             alignItems: 'center',
             mb: 2.5,
           }}
         >
-
           {/* Edit/Cancel Button */}
           <Button
             onClick={handleToggleEdit}
@@ -343,14 +344,12 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Iconify 
-                      icon={serverIcon} 
-                      width={18} 
+                    <Iconify
+                      icon={serverIcon}
+                      width={18}
                       height={18}
                       sx={{
-                        color: errors.url 
-                          ? theme.palette.error.main 
-                          : theme.palette.text.secondary,
+                        color: errors.url ? theme.palette.error.main : theme.palette.text.secondary,
                         transition: 'color 0.2s ease-in-out',
                       }}
                     />
@@ -400,11 +399,7 @@ const ConnectorUrlConfigForm = forwardRef<ConnectorUrlConfigFormRef, ConnectorUr
               gap: 1,
             }}
           >
-            <Typography 
-              variant="body2" 
-              color="text.secondary"
-              sx={{ fontWeight: 500 }}
-            >
+            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
               Saving configuration...
             </Typography>
           </Box>

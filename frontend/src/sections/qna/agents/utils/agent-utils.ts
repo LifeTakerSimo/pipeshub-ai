@@ -2,8 +2,8 @@
 import type {
   Agent,
   AgentFormData,
-  AgentTemplateFormData,
   AgentFilterOptions,
+  AgentTemplateFormData,
 } from 'src/types/agent';
 
 // Validation functions
@@ -286,7 +286,7 @@ export const getTagColor = (tag: string): string => {
   let hash = 0;
   for (let i = 0; i < tag.length; i += 1) {
     // Using mathematical equivalent instead of bitwise operator
-    hash = tag.charCodeAt(i) + ((hash * 32) - hash);
+    hash = tag.charCodeAt(i) + (hash * 32 - hash);
   }
 
   const colors = ['primary', 'secondary', 'info', 'success', 'warning', 'error'];

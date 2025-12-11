@@ -36,9 +36,7 @@ export function AuthSplitLayout({ sx, section, children }: AuthSplitLayoutProps)
         />
 
         {/* Content area (form) */}
-        <Content layoutQuery={layoutQuery}>
-          {children}
-        </Content>
+        <Content layoutQuery={layoutQuery}>{children}</Content>
       </Main>
     </LayoutSection>
   );

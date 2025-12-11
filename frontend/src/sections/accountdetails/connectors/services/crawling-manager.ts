@@ -23,5 +23,3 @@ export class CrawlingManagerApi {
     await axios.delete(`${BASE_URL}/${connector}/schedule`);
   }
 }
-
-

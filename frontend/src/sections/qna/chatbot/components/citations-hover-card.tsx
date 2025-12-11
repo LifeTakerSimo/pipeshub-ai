@@ -12,6 +12,7 @@ import {
   Fade,
   Card,
   Chip,
+  Link,
   Stack,
   alpha,
   Button,
@@ -19,10 +20,13 @@ import {
   Tooltip,
   useTheme,
   Typography,
-  Link,
 } from '@mui/material';
 
-import { extractCleanTextFragment, addTextFragmentToUrl } from 'src/sections/knowledgebase/utils/utils';
+import {
+  addTextFragmentToUrl,
+  extractCleanTextFragment,
+} from 'src/sections/knowledgebase/utils/utils';
+
 import { createScrollableContainerStyle } from '../utils/styles/scrollbar';
 
 // Styled components for consistent design

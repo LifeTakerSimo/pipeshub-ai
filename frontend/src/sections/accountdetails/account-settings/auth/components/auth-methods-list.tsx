@@ -203,7 +203,6 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
           !!results[4].value.clientId &&
           !!results[4].value.providerName;
 
-
         const newConfigStatus = {
           google: googleConfigured,
           microsoft: microsoftConfigured,
@@ -265,7 +264,6 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
   const handleToggleWithValidation = (type: string) => {
     // Find the current method
     const currentMethod = authMethods.find((m) => m.type === type);
-
 
     // If we're trying to disable the only enabled method, show error
     if (currentMethod?.enabled) {
@@ -426,11 +424,12 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
           onClose={handleCloseError}
           severity={errorMessage?.includes('successfully') ? 'success' : 'warning'}
           variant="filled"
-          sx={{ 
+          sx={{
             width: '100%',
-            boxShadow: theme.palette.mode === 'dark'
-              ? '0px 3px 8px rgba(0, 0, 0, 0.3)'
-              : '0px 3px 8px rgba(0, 0, 0, 0.12)',
+            boxShadow:
+              theme.palette.mode === 'dark'
+                ? '0px 3px 8px rgba(0, 0, 0, 0.3)'
+                : '0px 3px 8px rgba(0, 0, 0, 0.12)',
             '& .MuiAlert-icon': {
               opacity: 0.8,
             },
@@ -443,22 +442,22 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
 
       {/* Section header for Authentication Methods */}
       <Box sx={{ mb: 2, mt: 3 }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontWeight: 600, 
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
             mb: 0.5,
             fontSize: '1rem',
           }}
         >
           Authentication Methods
         </Typography>
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           color="text.secondary"
-          sx={{ 
+          sx={{
             fontSize: '0.8125rem',
-            lineHeight: 1.5 
+            lineHeight: 1.5,
           }}
         >
           Select the authentication method users will use to sign in
@@ -515,19 +514,28 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                     minHeight: 68,
                     borderRadius: 1,
                     border: '1px solid',
-                    borderColor: isEnabled 
-                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.2) 
+                    borderColor: isEnabled
+                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.3 : 0.2)
                       : theme.palette.divider,
-                    bgcolor: isEnabled 
-                      ? alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.05 : 0.02)
+                    bgcolor: isEnabled
+                      ? alpha(
+                          theme.palette.primary.main,
+                          theme.palette.mode === 'dark' ? 0.05 : 0.02
+                        )
                       : 'transparent',
                     transition: 'all 0.15s ease',
                     opacity: isDisabled && !isEnabled ? 0.7 : 1,
                     ...(isEditing &&
                       !isDisabled && {
                         '&:hover': {
-                          borderColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.4 : 0.3),
-                          bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.04),
+                          borderColor: alpha(
+                            theme.palette.primary.main,
+                            theme.palette.mode === 'dark' ? 0.4 : 0.3
+                          ),
+                          bgcolor: alpha(
+                            theme.palette.primary.main,
+                            theme.palette.mode === 'dark' ? 0.08 : 0.04
+                          ),
                           transform: 'translateY(-1px)',
                         },
                       }),
@@ -542,12 +550,11 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                       alignItems: 'center',
                       justifyContent: 'center',
                       mr: 2,
-                      bgcolor: theme.palette.mode === 'dark' 
-                        ? alpha(theme.palette.background.paper, 0.3)
-                        : alpha(theme.palette.grey[100], 0.8),
-                      color: isEnabled
-                        ? theme.palette.primary.main
-                        : theme.palette.text.secondary,
+                      bgcolor:
+                        theme.palette.mode === 'dark'
+                          ? alpha(theme.palette.background.paper, 0.3)
+                          : alpha(theme.palette.grey[100], 0.8),
+                      color: isEnabled ? theme.palette.primary.main : theme.palette.text.secondary,
                       borderRadius: 1,
                       flexShrink: 0,
                       border: '1px solid',
@@ -570,9 +577,7 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                       sx={{
                         fontWeight: 600,
                         fontSize: '0.875rem',
-                        color: isEnabled
-                          ? theme.palette.primary.main
-                          : theme.palette.text.primary,
+                        color: isEnabled ? theme.palette.primary.main : theme.palette.text.primary,
                       }}
                     >
                       {methodConfig.title}
@@ -605,9 +610,10 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           borderRadius: 0.75,
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(theme.palette.success.main, 0.15)
-                            : alpha(theme.palette.success.main, 0.08),
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.success.main, 0.15)
+                              : alpha(theme.palette.success.main, 0.08),
                           color: theme.palette.success.main,
                           fontWeight: 600,
                         }}
@@ -635,12 +641,25 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           borderRadius: 0.75,
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(isConfigured ? theme.palette.info.main : theme.palette.warning.main, 0.15)
-                            : alpha(isConfigured ? theme.palette.info.main : theme.palette.warning.main, 0.08),
-                          color: isConfigured ? theme.palette.info.main : theme.palette.warning.main,
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(
+                                  isConfigured
+                                    ? theme.palette.info.main
+                                    : theme.palette.warning.main,
+                                  0.15
+                                )
+                              : alpha(
+                                  isConfigured
+                                    ? theme.palette.info.main
+                                    : theme.palette.warning.main,
+                                  0.08
+                                ),
+                          color: isConfigured
+                            ? theme.palette.info.main
+                            : theme.palette.warning.main,
                           fontWeight: 650,
-                          minWidth:'98px'
+                          minWidth: '98px',
                         }}
                       >
                         {isConfigured ? 'Configured' : 'Not Configured'}
@@ -672,13 +691,17 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                         sx={{
                           p: 0.75,
                           color: theme.palette.text.secondary,
-                          bgcolor: theme.palette.mode === 'dark' 
-                            ? alpha(theme.palette.background.paper, 0.3)
-                            : alpha(theme.palette.background.default, 0.8),
+                          bgcolor:
+                            theme.palette.mode === 'dark'
+                              ? alpha(theme.palette.background.paper, 0.3)
+                              : alpha(theme.palette.background.default, 0.8),
                           border: '1px solid',
                           borderColor: theme.palette.divider,
                           '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.15 : 0.08),
+                            bgcolor: alpha(
+                              theme.palette.primary.main,
+                              theme.palette.mode === 'dark' ? 0.15 : 0.08
+                            ),
                             color: theme.palette.primary.main,
                           },
                         }}
@@ -689,9 +712,7 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
 
                     <Switch
                       checked={isEnabled}
-                      onChange={() =>
-                        !isDisabled && handleToggleWithValidation(methodConfig.type)
-                      }
+                      onChange={() => !isDisabled && handleToggleWithValidation(methodConfig.type)}
                       disabled={isDisabled}
                       size="small"
                       sx={{
@@ -717,22 +738,22 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
 
       {/* Section header for Configuration */}
       <Box sx={{ mb: 2, mt: 3 }}>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            fontWeight: 600, 
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 600,
             mb: 0.5,
             fontSize: '1rem',
           }}
         >
           Server Configuration
         </Typography>
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           color="text.secondary"
-          sx={{ 
+          sx={{
             fontSize: '0.8125rem',
-            lineHeight: 1.5 
+            lineHeight: 1.5,
           }}
         >
           Configure email and other server settings for authentication
@@ -751,15 +772,15 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
               minHeight: 68,
               borderRadius: 1,
               border: '1px solid',
-              borderColor: smtpConfigured 
-                ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.2) 
+              borderColor: smtpConfigured
+                ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.3 : 0.2)
                 : alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.3 : 0.2),
-              bgcolor: smtpConfigured 
+              bgcolor: smtpConfigured
                 ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.05 : 0.02)
                 : alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.05 : 0.02),
               transition: 'all 0.15s ease',
               '&:hover': {
-                borderColor: smtpConfigured 
+                borderColor: smtpConfigured
                   ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.4 : 0.3)
                   : alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.4 : 0.3),
                 transform: 'translateY(-1px)',
@@ -775,9 +796,10 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
                 mr: 2,
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.background.paper, 0.3)
-                  : alpha(theme.palette.grey[100], 0.8),
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.background.paper, 0.3)
+                    : alpha(theme.palette.grey[100], 0.8),
                 color: smtpConfigured ? theme.palette.success.main : theme.palette.warning.main,
                 borderRadius: 1,
                 flexShrink: 0,
@@ -833,9 +855,16 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
                 alignItems: 'center',
                 borderRadius: 0.75,
                 mr: 1.5,
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(smtpConfigured ? theme.palette.success.main : theme.palette.warning.main, 0.15)
-                  : alpha(smtpConfigured ? theme.palette.success.main : theme.palette.warning.main, 0.08),
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(
+                        smtpConfigured ? theme.palette.success.main : theme.palette.warning.main,
+                        0.15
+                      )
+                    : alpha(
+                        smtpConfigured ? theme.palette.success.main : theme.palette.warning.main,
+                        0.08
+                      ),
                 color: smtpConfigured ? theme.palette.success.main : theme.palette.warning.main,
                 fontWeight: 600,
               }}
@@ -859,9 +888,10 @@ const AuthMethodsList: React.FC<AuthMethodsListProps> = ({
               sx={{
                 p: 0.75,
                 color: theme.palette.text.secondary,
-                bgcolor: theme.palette.mode === 'dark' 
-                  ? alpha(theme.palette.background.paper, 0.3)
-                  : alpha(theme.palette.background.default, 0.8),
+                bgcolor:
+                  theme.palette.mode === 'dark'
+                    ? alpha(theme.palette.background.paper, 0.3)
+                    : alpha(theme.palette.background.default, 0.8),
                 border: '1px solid',
                 borderColor: theme.palette.divider,
                 '&:hover': {

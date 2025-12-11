@@ -1,40 +1,36 @@
 import type {
   Message,
   Citation,
-  Metadata,
   Conversation,
   CustomCitation,
+  CompletionData,
   FormattedMessage,
   ExpandedCitationsState,
-  CompletionData,
 } from 'src/types/chat-bot';
 
 import { Icon } from '@iconify/react';
 import menuIcon from '@iconify-icons/mdi/menu';
 import { useParams, useNavigate } from 'react-router';
-import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
   Alert,
-  Button,
   styled,
   Tooltip,
   Snackbar,
   useTheme,
   IconButton,
   CircularProgress,
-  alpha,
-  Typography,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
 
+import { KnowledgeBaseAPI } from 'src/sections/knowledgebase/services/api';
 import { ORIGIN } from 'src/sections/knowledgebase/constants/knowledge-search';
 import { useConnectors } from 'src/sections/accountdetails/connectors/context';
-import { KnowledgeBaseAPI } from 'src/sections/knowledgebase/services/api';
 import { getConnectorPublicUrl } from 'src/sections/accountdetails/account-settings/services/utils/services-configuration-service';
 
 import ChatInput from './components/chat-input';
@@ -42,15 +38,16 @@ import ChatSidebar from './components/chat-sidebar';
 import HtmlViewer from './components/html-highlighter';
 import TextViewer from './components/text-highlighter';
 import ExcelViewer from './components/excel-highlighter';
-import ChatMessagesArea from './components/chat-message-area';
-import PdfHighlighterComp from './components/pdf-highlighter';
-import MarkdownViewer from './components/markdown-highlighter';
-import DocxHighlighterComp from './components/docx-highlighter';
 import WelcomeMessage from './components/welcome-message';
 import { StreamingContext } from './components/chat-message';
-import { processStreamingContentLegacy } from './utils/styles/content-processing';
+import ChatMessagesArea from './components/chat-message-area';
+import PdfHighlighterComp from './components/pdf-highlighter';
 import ImageHighlighter from './components/image-highlighter';
-import { Model, ChatMode } from './types';
+import MarkdownViewer from './components/markdown-highlighter';
+import DocxHighlighterComp from './components/docx-highlighter';
+import { processStreamingContentLegacy } from './utils/styles/content-processing';
+
+import type { Model, ChatMode } from './types';
 
 const DRAWER_WIDTH = 300;
 
@@ -672,7 +669,7 @@ const ChatInterface = () => {
       name: c.name || '',
       iconPath: c.iconPath || '/assets/icons/connectors/default.svg',
     }));
-    
+
     setAllApps(apps);
   }, [activeConnectors]);
 
@@ -761,15 +758,11 @@ const ChatInterface = () => {
     // Set model from conversation if available
     if (conversationModelInfo.modelName) {
       // Try to find matching model by modelName first
-      let matchingModel = models.find(
-        (m) => m.modelName === conversationModelInfo.modelName
-      );
+      let matchingModel = models.find((m) => m.modelName === conversationModelInfo.modelName);
 
       // If not found by name, try by modelKey
       if (!matchingModel && conversationModelInfo.modelKey) {
-        matchingModel = models.find(
-          (m) => m.modelKey === conversationModelInfo.modelKey
-        );
+        matchingModel = models.find((m) => m.modelKey === conversationModelInfo.modelKey);
       }
 
       if (matchingModel) {
@@ -986,11 +979,14 @@ const ChatInterface = () => {
                 context.conversationIdRef.current = completedConversation._id;
               }
               streamingManager.finalizeStreaming(finalKey, context.streamingBotMessageId, data);
-              
+
               // Update selectedChat with fresh conversation data to reflect updated modelInfo
               // This ensures the model selection is updated when switching back to this conversation
               const finalConvId = finalKey === 'new' ? context.conversationIdRef.current : finalKey;
-              if (finalConvId === currentConvId || finalConvId === context.conversationIdRef.current) {
+              if (
+                finalConvId === currentConvId ||
+                finalConvId === context.conversationIdRef.current
+              ) {
                 // Use setTimeout to ensure this runs after state updates
                 setTimeout(() => {
                   setSelectedChat(completedConversation);
@@ -1274,11 +1270,11 @@ const ChatInterface = () => {
           try {
             const response = await axios.get(`/api/v1/conversations/${chat._id}`);
             const { conversation } = response.data;
-            
+
             if (conversation) {
               // Update selectedChat with fresh data
               setSelectedChat(conversation);
-              
+
               // Update messages if we don't have them or if conversation was updated
               if (!existingMessages.length || conversation.messages) {
                 const formattedMessages = (conversation.messages || [])
@@ -1295,13 +1291,16 @@ const ChatInterface = () => {
                     return formatted;
                   })
                   .filter(Boolean) as FormattedMessage[];
-                
+
                 // Only update messages if we got new data or didn't have messages
-                if (!existingMessages.length || formattedMessages.length > existingMessages.length) {
+                if (
+                  !existingMessages.length ||
+                  formattedMessages.length > existingMessages.length
+                ) {
                   streamingManager.setConversationMessages(chatKey, formattedMessages);
                 }
               }
-              
+
               // Always set model from fresh conversation data
               setModelFromConversation((conversation as any).modelInfo);
             }
@@ -1369,7 +1368,7 @@ const ChatInterface = () => {
         // We have existing messages or it's streaming, but still fetch fresh data for modelInfo
         setCurrentConversationId(urlConversationId);
         setShowWelcome(false);
-        
+
         // Always fetch fresh conversation data to get latest modelInfo
         // This ensures model changes made during the conversation are reflected
         if (!isCurrentlyStreaming) {

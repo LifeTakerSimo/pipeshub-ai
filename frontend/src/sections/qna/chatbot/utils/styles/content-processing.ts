@@ -17,11 +17,13 @@ export interface ProcessedContent {
 export const processMarkdownContent = (content: string): string => {
   if (!content) return '';
 
-  return content
-    // Fix escaped newlines
-    .replace(/\\n/g, '\n')
-    // Clean up trailing whitespace but preserve structure
-    .trim();
+  return (
+    content
+      // Fix escaped newlines
+      .replace(/\\n/g, '\n')
+      // Clean up trailing whitespace but preserve structure
+      .trim()
+  );
 };
 
 /**
@@ -59,7 +61,7 @@ export const buildCitationMap = (
     mentionedNumbers.forEach((num) => {
       if (!citationMap[num] && citations[num - 1]) {
         citationMap[num] = citations[num - 1];
-        if (!processedCitations.some(c => c === citations[num - 1])) {
+        if (!processedCitations.some((c) => c === citations[num - 1])) {
           processedCitations.push({
             ...citations[num - 1],
             chunkIndex: num,

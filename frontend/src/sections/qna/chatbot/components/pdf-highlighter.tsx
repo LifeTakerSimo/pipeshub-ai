@@ -15,18 +15,18 @@ import type {
 
 import { Icon } from '@iconify/react';
 import * as pdfjsLib from 'pdfjs-dist';
+import plusIcon from '@iconify-icons/mdi/plus';
+import minusIcon from '@iconify-icons/mdi/minus';
+import resizeIcon from '@iconify-icons/mdi/resize';
+import refreshIcon from '@iconify-icons/mdi/refresh';
+import magnifyIcon from '@iconify-icons/mdi/magnify';
+import magnifyPlusIcon from '@iconify-icons/mdi/magnify-plus';
+import magnifyMinusIcon from '@iconify-icons/mdi/magnify-minus';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Tip, Popup, Highlight, AreaHighlight, PdfHighlighter } from 'react-pdf-highlighter';
 
 import { Box, Slider, CircularProgress } from '@mui/material';
 
-import minusIcon from '@iconify-icons/mdi/minus';
-import plusIcon from '@iconify-icons/mdi/plus';
-import magnifyMinusIcon from '@iconify-icons/mdi/magnify-minus';
-import magnifyPlusIcon from '@iconify-icons/mdi/magnify-plus';
-import refreshIcon from '@iconify-icons/mdi/refresh';
-import resizeIcon from '@iconify-icons/mdi/resize';
-import magnifyIcon from '@iconify-icons/mdi/magnify';
 import CitationSidebar from './highlighter-sidebar';
 
 // Initialize PDF worker
@@ -41,7 +41,10 @@ const HIGHLIGHT_POLLING_MAX_ATTEMPTS = 50; // 5 seconds max
 
 // Helper function to extract citation ID from various citation object types
 const getCitationId = (
-  citation: DocumentContent | { citationId?: string; metadata?: { _id?: string }; id?: string } | null
+  citation:
+    | DocumentContent
+    | { citationId?: string; metadata?: { _id?: string }; id?: string }
+    | null
 ): string | null => {
   if (!citation) return null;
   return citation.citationId || citation.metadata?._id || citation.id || null;
@@ -945,7 +948,8 @@ const PdfHighlighterComp = ({
                     // Only show brackets on the citation that matches selectedCitationId
                     // Use selectedCitationId (which is updated when clicking sidebar or when highlightCitation changes)
                     // This ensures only ONE highlight shows brackets at a time
-                    const isHighlighted = selectedCitationId !== null && selectedCitationId === highlight.id;
+                    const isHighlighted =
+                      selectedCitationId !== null && selectedCitationId === highlight.id;
 
                     const isTextHighlight = !highlight.content?.image;
                     const component = isTextHighlight ? (

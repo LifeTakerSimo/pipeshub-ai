@@ -1,31 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Typography,
-  Box,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Chip,
-  OutlinedInput,
-  Checkbox,
-  ListItemText,
-  Stack,
-  Divider,
-  useTheme,
-  alpha,
-} from '@mui/material';
-import { Iconify } from 'src/components/iconify';
-import filterIcon from '@iconify-icons/mdi/filter';
 import checkIcon from '@iconify-icons/mdi/check';
 import closeIcon from '@iconify-icons/mdi/close';
-import { Connector } from '../types/types';
+import React, { useState, useEffect } from 'react';
+import filterIcon from '@iconify-icons/mdi/filter';
+
+import {
+  Box,
+  Chip,
+  Stack,
+  alpha,
+  Dialog,
+  Button,
+  Select,
+  Divider,
+  MenuItem,
+  Checkbox,
+  useTheme,
+  Typography,
+  InputLabel,
+  DialogTitle,
+  FormControl,
+  ListItemText,
+  DialogContent,
+  DialogActions,
+  OutlinedInput,
+} from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
+
 import { ConnectorApiService } from '../services/api';
+
+import type { Connector } from '../types/types';
 
 interface FilterSelectionDialogProps {
   connector: Connector;
@@ -50,7 +54,7 @@ const FilterSelectionDialog: React.FC<FilterSelectionDialogProps> = ({
   useEffect(() => {
     // Initialize with empty selections
     const initialFilters: any = {};
-    
+
     if (filterOptions.folders) {
       initialFilters.folders = [];
     }
@@ -63,7 +67,7 @@ const FilterSelectionDialog: React.FC<FilterSelectionDialogProps> = ({
     if (filterOptions.channels) {
       initialFilters.channels = [];
     }
-    
+
     setSelectedFilters(initialFilters);
   }, [filterOptions]);
 
@@ -78,13 +82,13 @@ const FilterSelectionDialog: React.FC<FilterSelectionDialogProps> = ({
     try {
       setSaving(true);
       setError(null);
-      
+
       // Save the selected filters to the backend
       await ConnectorApiService.saveConnectorFilters(connector.name, selectedFilters);
-      
+
       // Call the onSave callback
       onSave(selectedFilters);
-      
+
       onClose();
     } catch (saveError) {
       console.error('Error saving filters:', saveError);
@@ -318,7 +322,13 @@ const FilterSelectionDialog: React.FC<FilterSelectionDialogProps> = ({
           startIcon={<Iconify icon={checkIcon} width={16} height={16} />}
           sx={{ textTransform: 'none' }}
         >
-          {saving ? (isEnabling ? 'Enabling...' : 'Saving...') : (isEnabling ? 'Enable & Save Filters' : 'Save Filters')}
+          {saving
+            ? isEnabling
+              ? 'Enabling...'
+              : 'Saving...'
+            : isEnabling
+              ? 'Enable & Save Filters'
+              : 'Save Filters'}
         </Button>
       </DialogActions>
     </Dialog>

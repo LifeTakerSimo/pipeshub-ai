@@ -2,9 +2,10 @@ import { Helmet } from 'react-helmet-async';
 import { useParams, useLocation } from 'react-router-dom';
 
 import { UserProvider } from 'src/context/UserContext';
-import { AuthProvider } from 'src/auth/context/jwt';
 
-import { AgentsManagement, AgentChat } from 'src/sections/qna/agents';
+import { AgentChat, AgentsManagement } from 'src/sections/qna/agents';
+
+import { AuthProvider } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
 
@@ -30,9 +31,7 @@ export default function Page() {
         <title> {metadata.title}</title>
       </Helmet>
       <AuthProvider>
-        <UserProvider>
-          {renderComponent()}
-        </UserProvider>
+        <UserProvider>{renderComponent()}</UserProvider>
       </AuthProvider>
     </>
   );

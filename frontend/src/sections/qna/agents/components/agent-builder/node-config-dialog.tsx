@@ -1,37 +1,39 @@
 // src/sections/agents/components/node-config-dialog.tsx
-import React, { useState, useEffect, useCallback, memo } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
-  Grid,
-  Box,
-  Typography,
-  IconButton,
-  useTheme,
-  alpha,
-  Autocomplete,
-  Chip,
-  Avatar,
-  Stack,
-} from '@mui/material';
 import { Icon } from '@iconify/react';
-import closeIcon from '@iconify-icons/eva/close-outline';
 import cogIcon from '@iconify-icons/mdi/cog';
+import closeIcon from '@iconify-icons/eva/close-outline';
 import personIcon from '@iconify-icons/eva/person-add-fill';
 import accountGroupIcon from '@iconify-icons/mdi/account-group';
 import shieldIcon from '@iconify-icons/mdi/shield-check-outline';
+import React, { memo, useState, useEffect, useCallback } from 'react';
+
+import {
+  Box,
+  Grid,
+  Chip,
+  alpha,
+  Stack,
+  Dialog,
+  Button,
+  Select,
+  Switch,
+  Avatar,
+  MenuItem,
+  useTheme,
+  TextField,
+  Typography,
+  IconButton,
+  DialogTitle,
+  FormControl,
+  Autocomplete,
+  DialogContent,
+  DialogActions,
+  FormControlLabel,
+} from '@mui/material';
+
 import { useUsers } from 'src/context/UserContext';
 import { useGroups } from 'src/context/GroupsContext';
+
 import { userChipStyle, groupChipStyle } from '../../utils/agent';
 
 interface NodeConfigDialogProps {
@@ -89,18 +91,21 @@ const NodeConfigDialog: React.FC<NodeConfigDialogProps> = memo(
     }, [node, onDelete, onClose]);
 
     // Get avatar color based on name
-    const getAvatarColor = useCallback((name: string) => {
-      const colors = [
-        theme.palette.primary.main,
-        theme.palette.info.main,
-        theme.palette.success.main,
-        theme.palette.warning.main,
-        theme.palette.error.main,
-      ];
+    const getAvatarColor = useCallback(
+      (name: string) => {
+        const colors = [
+          theme.palette.primary.main,
+          theme.palette.info.main,
+          theme.palette.success.main,
+          theme.palette.warning.main,
+          theme.palette.error.main,
+        ];
 
-      const hash = name.split('').reduce((acc, char) => char.charCodeAt(0) + (acc * 32 - acc), 0);
-      return colors[Math.abs(hash) % colors.length];
-    }, [theme]);
+        const hash = name.split('').reduce((acc, char) => char.charCodeAt(0) + (acc * 32 - acc), 0);
+        return colors[Math.abs(hash) % colors.length];
+      },
+      [theme]
+    );
 
     const renderConfigField = useCallback(
       (key: string, value: any) => {
@@ -1016,7 +1021,7 @@ const NodeConfigDialog: React.FC<NodeConfigDialogProps> = memo(
         isDark,
         node?.data.config?.tools,
         node?.data.config?.knowledgeBases,
-        theme
+        theme,
       ]
     );
 

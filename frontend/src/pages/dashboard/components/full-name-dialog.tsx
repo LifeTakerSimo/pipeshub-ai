@@ -17,7 +17,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  CircularProgress
+  CircularProgress,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';

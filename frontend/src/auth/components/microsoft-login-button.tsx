@@ -1,6 +1,6 @@
 import type { Icon as IconifyIcon } from '@iconify/react';
 
-import { Icon  } from '@iconify/react';
+import { Icon } from '@iconify/react';
 import React, { useRef, useState, useEffect } from 'react';
 import { PublicClientApplication } from '@azure/msal-browser';
 

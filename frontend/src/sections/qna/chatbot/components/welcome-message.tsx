@@ -3,17 +3,11 @@ import { Icon } from '@iconify/react';
 import githubIcon from '@iconify-icons/mdi/github';
 import React, { memo, useRef, useCallback } from 'react';
 
-import {
-  Box,
-  Link,
-  alpha,
-  useTheme,
-  Container,
-  Typography,
-} from '@mui/material';
+import { Box, Link, alpha, useTheme, Container, Typography } from '@mui/material';
 
 import ChatInput from './chat-input';
-import { Model, ChatMode } from '../types';
+
+import type { Model, ChatMode } from '../types';
 
 // Simple Footer component
 const Footer = memo(({ isDark }: { isDark: boolean }) => {
@@ -90,12 +84,12 @@ interface WelcomeMessageProps {
 }
 
 // Main WelcomeMessage component
-const WelcomeMessageComponent = ({ 
-  onSubmit, 
-  isLoading = false, 
-  selectedModel, 
-  selectedChatMode, 
-  onModelChange, 
+const WelcomeMessageComponent = ({
+  onSubmit,
+  isLoading = false,
+  selectedModel,
+  selectedChatMode,
+  onModelChange,
   onChatModeChange,
   apps,
   knowledgeBases,
@@ -193,23 +187,23 @@ const WelcomeMessageComponent = ({
       </Box>
 
       {/* ChatInput Component */}
-      
-        <ChatInput
-          onSubmit={handleDirectSubmit}
-          isLoading={isLoading || isSubmittingRef.current}
-          disabled={isLoading || isSubmittingRef.current}
-          placeholder="Ask anything..."
-          selectedModel={selectedModel}
-          selectedChatMode={selectedChatMode}
-          onModelChange={onModelChange}
-          onChatModeChange={onChatModeChange}
-          apps={apps}
-          knowledgeBases={knowledgeBases}
-          initialSelectedApps={initialSelectedApps}
-          initialSelectedKbIds={initialSelectedKbIds}
-          onFiltersChange={onFiltersChange}
-          models={models}
-        />
+
+      <ChatInput
+        onSubmit={handleDirectSubmit}
+        isLoading={isLoading || isSubmittingRef.current}
+        disabled={isLoading || isSubmittingRef.current}
+        placeholder="Ask anything..."
+        selectedModel={selectedModel}
+        selectedChatMode={selectedChatMode}
+        onModelChange={onModelChange}
+        onChatModeChange={onChatModeChange}
+        apps={apps}
+        knowledgeBases={knowledgeBases}
+        initialSelectedApps={initialSelectedApps}
+        initialSelectedKbIds={initialSelectedKbIds}
+        onFiltersChange={onFiltersChange}
+        models={models}
+      />
 
       {/* Footer */}
       <Footer isDark={isDark} />

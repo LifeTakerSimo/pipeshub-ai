@@ -1,6 +1,18 @@
-import React, { createContext, useContext, useReducer, ReactNode, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Connector } from '../types/types';
+import type { ReactNode } from 'react';
+
+import React, {
+  useRef,
+  useMemo,
+  useEffect,
+  useContext,
+  useReducer,
+  useCallback,
+  createContext,
+} from 'react';
+
 import { ConnectorApiService } from '../services/api';
+
+import type { Connector } from '../types/types';
 
 // State interface
 interface ConnectorState {
@@ -35,28 +47,28 @@ function connectorReducer(state: ConnectorState, action: ConnectorAction): Conne
   switch (action.type) {
     case 'SET_LOADING':
       return { ...state, loading: action.payload };
-    
+
     case 'SET_ERROR':
       return { ...state, error: action.payload, loading: false };
-    
+
     case 'SET_ACTIVE_CONNECTORS':
-      return { 
-        ...state, 
-        activeConnectors: action.payload, 
-        loading: false, 
+      return {
+        ...state,
+        activeConnectors: action.payload,
+        loading: false,
         error: null,
-        lastFetched: Date.now()
+        lastFetched: Date.now(),
       };
-    
+
     case 'SET_INACTIVE_CONNECTORS':
-      return { 
-        ...state, 
-        inactiveConnectors: action.payload, 
-        loading: false, 
+      return {
+        ...state,
+        inactiveConnectors: action.payload,
+        loading: false,
         error: null,
-        lastFetched: Date.now()
+        lastFetched: Date.now(),
       };
-    
+
     case 'SET_CONNECTORS':
       return {
         ...state,
@@ -64,25 +76,25 @@ function connectorReducer(state: ConnectorState, action: ConnectorAction): Conne
         inactiveConnectors: action.payload.inactive,
         loading: false,
         error: null,
-        lastFetched: Date.now()
+        lastFetched: Date.now(),
       };
-    
+
     case 'UPDATE_CONNECTOR': {
       const { name, updates } = action.payload;
       return {
         ...state,
-        activeConnectors: state.activeConnectors.map(connector =>
+        activeConnectors: state.activeConnectors.map((connector) =>
           connector.name === name ? { ...connector, ...updates } : connector
         ),
-        inactiveConnectors: state.inactiveConnectors.map(connector =>
+        inactiveConnectors: state.inactiveConnectors.map((connector) =>
           connector.name === name ? { ...connector, ...updates } : connector
         ),
       };
     }
-    
+
     case 'RESET':
       return initialState;
-    
+
     default:
       return state;
   }
@@ -126,7 +138,10 @@ export const ConnectorProvider: React.FC<ConnectorProviderProps> = ({ children }
       ]);
       dispatch({ type: 'SET_CONNECTORS', payload: { active, inactive } });
     } catch (error) {
-      dispatch({ type: 'SET_ERROR', payload: error instanceof Error ? error.message : 'Failed to fetch connectors' });
+      dispatch({
+        type: 'SET_ERROR',
+        payload: error instanceof Error ? error.message : 'Failed to fetch connectors',
+      });
     } finally {
       isFetchingRef.current = false;
     }
@@ -147,19 +162,18 @@ export const ConnectorProvider: React.FC<ConnectorProviderProps> = ({ children }
     dispatch({ type: 'SET_ERROR', payload: null });
   }, []);
 
-  const value: ConnectorContextType = useMemo(() => ({
-    state,
-    dispatch,
-    refreshConnectors,
-    updateConnector,
-    clearError,
-  }), [state, refreshConnectors, updateConnector, clearError]);
-
-  return (
-    <ConnectorContext.Provider value={value}>
-      {children}
-    </ConnectorContext.Provider>
+  const value: ConnectorContextType = useMemo(
+    () => ({
+      state,
+      dispatch,
+      refreshConnectors,
+      updateConnector,
+      clearError,
+    }),
+    [state, refreshConnectors, updateConnector, clearError]
   );
+
+  return <ConnectorContext.Provider value={value}>{children}</ConnectorContext.Provider>;
 };
 
 // Hook to use the context

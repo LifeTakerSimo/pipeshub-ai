@@ -8,7 +8,7 @@ import type {
 } from 'src/sections/knowledgebase/types/search-response';
 
 import remarkGfm from 'remark-gfm';
-import rehypeRaw from 'rehype-raw'; 
+import rehypeRaw from 'rehype-raw';
 import { Icon } from '@iconify/react';
 import ReactMarkdown from 'react-markdown';
 import alertCircleIcon from '@iconify-icons/mdi/alert-circle-outline';
@@ -28,7 +28,7 @@ type MarkdownViewerProps = {
   buffer?: ArrayBuffer | null;
   sx?: Record<string, unknown>;
   highlightCitation?: SearchResult | CustomCitation | null;
-  onClosePdf :() => void;
+  onClosePdf: () => void;
 };
 
 const SIMILARITY_THRESHOLD = 0.6;
@@ -264,7 +264,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   sx = {},
   citations = [],
   highlightCitation = null,
-  onClosePdf
+  onClosePdf,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -280,7 +280,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const highlightingInProgressRef = useRef<boolean>(false);
   const cleanupStylesRef = useRef<(() => void) | null>(null);
   const prevCitationsJsonRef = useRef<string>('[]');
-  const highlightCleanupsRef = useRef<Map<string, () => void>>(new Map()); 
+  const highlightCleanupsRef = useRef<Map<string, () => void>>(new Map());
   const theme = useTheme();
   const scrollableStyles = createScrollableContainerStyle(theme);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
@@ -500,7 +500,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const highlightTextInElement = useCallback(
     (
       element: Element,
-      normalizedTextToHighlight: string, 
+      normalizedTextToHighlight: string,
       highlightId: string,
       matchType: 'exact' | 'fuzzy' = 'exact'
     ): { success: boolean; cleanup?: () => void } => {
@@ -550,7 +550,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
               nodesToWrap.push({
                 node: textNode,
                 startIndex: simpleStartIndex,
-                endIndex: simpleStartIndex + normalizedTextToHighlight.length, 
+                endIndex: simpleStartIndex + normalizedTextToHighlight.length,
               });
               found = true;
               break;
@@ -902,7 +902,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     } finally {
       processingCitationsRef.current = false;
     }
-  }, [citations, documentReady, applyTextHighlights]); 
+  }, [citations, documentReady, applyTextHighlights]);
 
   useEffect(() => {
     if (!highlightCitation) {
@@ -1139,7 +1139,7 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
                 inline: 'nearest',
               });
             } else if (attempts < maxAttempts) {
-              setTimeout(attemptHighlightAndScroll, baseDelay * attempts); 
+              setTimeout(attemptHighlightAndScroll, baseDelay * attempts);
             }
           }, 100);
         });
@@ -1199,7 +1199,6 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     },
     [processedCitations, applyTextHighlights]
   );
-
 
   // STEP 1: Load markdown content
   useEffect(() => {
@@ -1334,26 +1333,26 @@ const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
     [clearHighlights]
   );
 
-   const handleFullscreenChange = useCallback((): void => {
-      setIsFullscreen(!!document.fullscreenElement);
-    }, []);
-  
-    useEffect(() => {
-      document.addEventListener('fullscreenchange', handleFullscreenChange);
-      return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, [handleFullscreenChange]);
-  
-    const toggleFullScreen = useCallback(async (): Promise<void> => {
-      try {
-        if (!document.fullscreenElement && fullScreenContainerRef.current) {
-          await fullScreenContainerRef.current.requestFullscreen();
-        } else {
-          await document.exitFullscreen();
-        }
-      } catch (err) {
-        console.error('Error toggling fullscreen:', err);
+  const handleFullscreenChange = useCallback((): void => {
+    setIsFullscreen(!!document.fullscreenElement);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, [handleFullscreenChange]);
+
+  const toggleFullScreen = useCallback(async (): Promise<void> => {
+    try {
+      if (!document.fullscreenElement && fullScreenContainerRef.current) {
+        await fullScreenContainerRef.current.requestFullscreen();
+      } else {
+        await document.exitFullscreen();
       }
-    }, []);
+    } catch (err) {
+      console.error('Error toggling fullscreen:', err);
+    }
+  }, []);
 
   return (
     <ViewerContainer ref={fullScreenContainerRef} component={Paper} sx={sx}>

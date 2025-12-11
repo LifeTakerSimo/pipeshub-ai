@@ -1,28 +1,30 @@
-import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { Icon } from '@iconify/react';
+import filterIcon from '@iconify-icons/mdi/filter';
 import arrowUpIcon from '@iconify-icons/mdi/arrow-up';
 import chevronDownIcon from '@iconify-icons/mdi/chevron-down';
 import sparklesIcon from '@iconify-icons/mdi/star-four-points';
-import filterIcon from '@iconify-icons/mdi/filter';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   Box,
-  Paper,
-  IconButton,
-  useTheme,
-  alpha,
   Menu,
-  MenuItem,
-  Typography,
   Chip,
-  Tooltip,
+  Paper,
+  alpha,
   Badge,
+  Tooltip,
   Divider,
+  useTheme,
+  MenuItem,
+  IconButton,
+  Typography,
 } from '@mui/material';
-import { createScrollableContainerStyle } from '../utils/styles/scrollbar';
+
 import ChatBotFilters from './chat-bot-filters';
-import { Model, ChatMode } from '../types';
 import { CHAT_MODES, formattedProvider } from '../utils/utils';
+import { createScrollableContainerStyle } from '../utils/styles/scrollbar';
+
+import type { Model, ChatMode } from '../types';
 
 export type ChatInputProps = {
   onSubmit: (
@@ -47,7 +49,6 @@ export type ChatInputProps = {
   onFiltersChange?: (filters: { apps: string[]; kb: string[] }) => void;
   models: Model[];
 };
-
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSubmit,
@@ -165,7 +166,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onModelChange(defaultModel); // Set first model as default
     }
   }, [selectedChatMode, onChatModeChange, models, onModelChange, selectedModel]);
-  
+
   const openResourcesMenu = (event: React.MouseEvent<HTMLElement>) =>
     setResourcesAnchor(event.currentTarget);
   const closeResourcesMenu = () => setResourcesAnchor(null);
@@ -213,12 +214,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
       // Only disable input if explicitly disabled (navigation blocked) or currently submitting
       // IMPORTANT: isStreaming should NOT affect disabled state
       const shouldBeDisabled = disabled || isSubmitting;
-      
+
       // Force update if there's a mismatch
       if (inputRef.current.disabled !== shouldBeDisabled) {
         inputRef.current.disabled = shouldBeDisabled;
       }
-      
+
       // Safety check: if streaming is active, ensure input is NOT disabled
       // (unless navigation is explicitly blocked)
       if (isStreaming && inputRef.current.disabled && !disabled) {
@@ -239,7 +240,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const value = e.target.value;
+      const { value } = e.target;
       setLocalValue(value);
       setHasText(!!value.trim());
 
@@ -388,9 +389,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     };
   }, [isDark]);
 
-
-  const canSubmit = hasText  && !isStreaming;
-
+  const canSubmit = hasText && !isStreaming;
 
   return (
     <>
@@ -469,7 +468,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   opacity: 1,
                   pointerEvents: 'auto',
                 }}
-                title={isStreaming ? 'You can type while the response is streaming, but cannot send until it completes' : ''}
+                title={
+                  isStreaming
+                    ? 'You can type while the response is streaming, but cannot send until it completes'
+                    : ''
+                }
               />
             </Box>
 
@@ -522,7 +525,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 ))}
               </Box>
               <Box
-                sx={{ display: 'flex', gap: 1, flexDirection: 'row', mr: 2, alignItems: 'center', }}
+                sx={{ display: 'flex', gap: 1, flexDirection: 'row', mr: 2, alignItems: 'center' }}
               >
                 {/* Unified Resources selector with badge */}
                 <Tooltip title="Select apps and knowledge bases">
@@ -613,7 +616,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                         borderRadius: '8px',
                         flexShrink: 0,
                         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                        color: canSubmit ? '#fff' : isDark ? alpha('#fff', 0.4) : alpha('#000', 0.3),
+                        color: canSubmit
+                          ? '#fff'
+                          : isDark
+                            ? alpha('#fff', 0.4)
+                            : alpha('#000', 0.3),
                         opacity: canSubmit ? 1 : 0.5,
                         border: canSubmit
                           ? 'none'

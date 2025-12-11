@@ -1,6 +1,5 @@
 import type { AlertColor } from '@mui/material';
 
-
 export interface AppUserGroup {
   _id: string;
   name: string;
@@ -41,7 +40,6 @@ export interface GroupUser {
     name: string;
     type: string;
   }[];
-
 }
 
 export interface SnackbarState {

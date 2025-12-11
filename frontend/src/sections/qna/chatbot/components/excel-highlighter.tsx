@@ -13,7 +13,7 @@ import fullScreenIcon from '@iconify-icons/mdi/fullscreen';
 import citationIcon from '@iconify-icons/mdi/format-quote-close';
 import fileExcelIcon from '@iconify-icons/mdi/file-excel-outline';
 import fullScreenExitIcon from '@iconify-icons/mdi/fullscreen-exit';
-import React, { useRef, useMemo, useState, useEffect, useCallback, useReducer, memo } from 'react';
+import React, { memo, useRef, useMemo, useEffect, useReducer, useCallback } from 'react';
 
 import {
   Box,
@@ -58,27 +58,31 @@ type ExcelViewerProps = {
  */
 function getCitationId(citation: CitationUnion | null | undefined): string | undefined {
   if (!citation) return undefined;
-  
+
   // CustomCitation has both id and _id directly
   if ('_id' in citation && typeof citation._id === 'string') {
     return citation._id;
   }
-  
+
   // Both types may have id
   if ('id' in citation && typeof citation.id === 'string') {
     return citation.id;
   }
-  
+
   // SearchResult may have citationId
   if ('citationId' in citation && typeof citation.citationId === 'string') {
     return citation.citationId;
   }
-  
+
   // Both types have metadata._id
-  if (citation.metadata && '_id' in citation.metadata && typeof citation.metadata._id === 'string') {
+  if (
+    citation.metadata &&
+    '_id' in citation.metadata &&
+    typeof citation.metadata._id === 'string'
+  ) {
     return citation.metadata._id;
   }
-  
+
   return undefined;
 }
 
@@ -1123,9 +1127,10 @@ const ExcelViewer = ({
     }
 
     const { blockNum, extension, sheetName } = sourceCitation;
-    const _id = '_id' in sourceCitation && typeof sourceCitation._id === 'string' 
-      ? sourceCitation._id 
-      : undefined;
+    const _id =
+      '_id' in sourceCitation && typeof sourceCitation._id === 'string'
+        ? sourceCitation._id
+        : undefined;
     if (!blockNum || !blockNum.length) {
       lastHighlightCitationRef.current = highlightCitation;
       return;

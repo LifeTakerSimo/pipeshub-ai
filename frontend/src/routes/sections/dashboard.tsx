@@ -4,10 +4,12 @@ import { lazy, Suspense } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 
 import { CONFIG } from 'src/config-global';
+import { SimpleLayout } from 'src/layouts/simple';
 import { useAdmin } from 'src/context/AdminContext';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { LoadingScreen } from 'src/components/loading-screen';
+
 import { ConnectorProvider } from 'src/sections/accountdetails/connectors/context';
 
 import { AuthGuard } from 'src/auth/guard';
@@ -19,6 +21,8 @@ const ChatBotPage = lazy(() => import('src/pages/dashboard/qna/chatbot'));
 const AgentPage = lazy(() => import('src/pages/dashboard/qna/agent'));
 const AgentBuilderPage = lazy(() => import('src/pages/dashboard/qna/agent-builder'));
 const AgentChatPage = lazy(() => import('src/sections/qna/agents/agent-chat'));
+// Landing page
+const LandingPage = lazy(() => import('src/pages/dashboard/landing'));
 // Accountdetails
 const CompanyProfile = lazy(() => import('src/pages/dashboard/account/company-profile'));
 const UsersAndGroups = lazy(() => import('src/pages/dashboard/account/user-and-groups'));
@@ -40,10 +44,10 @@ const ConnectorManagementPage = lazy(
   () => import('src/pages/dashboard/account/connectors/[connectorName]')
 );
 
-  // OAuth callback page for connectors
-  const ConnectorOAuthCallback = lazy(
-    () => import('src/pages/dashboard/account/connectors/oauth-callback')
-  );
+// OAuth callback page for connectors
+const ConnectorOAuthCallback = lazy(
+  () => import('src/pages/dashboard/account/connectors/oauth-callback')
+);
 
 const SamlSsoConfigPage = lazy(() => import('src/pages/dashboard/account/saml-sso-config'));
 
@@ -170,33 +174,70 @@ const ProtectedRoute = ({ component: Component }: { component: React.ComponentTy
   </AuthGuard>
 );
 
-// Layout with outlet for nested routes
-const layoutContent = (
-  <ConnectorProvider>
-    <DashboardLayout>
-      <Suspense fallback={<LoadingScreen />}>
-        <Outlet />
-      </Suspense>
-    </DashboardLayout>
-  </ConnectorProvider>
-);
+// HomeIndex: show Landing for unauthenticated users, otherwise ChatBotPage
+function HomeIndex() {
+  const { authenticated } = useAuthContext();
+
+  if (!authenticated) {
+    return <LandingPage />;
+  }
+
+  return <ChatBotPage key="home" />;
+}
+
+// RootLayout: choose DashboardLayout for authenticated users, otherwise show public landing inside SimpleLayout
+function RootLayout() {
+  const { authenticated } = useAuthContext();
+
+  if (!authenticated) {
+    // For guests show a simple public landing without dashboard chrome
+    return (
+      <SimpleLayout>
+        <Suspense fallback={<LoadingScreen />}>
+          <LandingPage />
+        </Suspense>
+      </SimpleLayout>
+    );
+  }
+
+  return (
+    <ConnectorProvider>
+      <DashboardLayout>
+        <Suspense fallback={<LoadingScreen />}>
+          <Outlet />
+        </Suspense>
+      </DashboardLayout>
+    </ConnectorProvider>
+  );
+}
 
 export const dashboardRoutes = [
   {
     path: '/',
-    element: CONFIG.auth.skip ? <>{layoutContent}</> : <AuthGuard>{layoutContent}</AuthGuard>,
+    element: <RootLayout />,
     children: [
-      { element: <ChatBotPage key="home" />, index: true },
+      // index element chooses landing vs chat depending on auth
+      {
+        index: true,
+        element: <HomeIndex />,
+      },
+      { path: 'landing', element: <LandingPage key="landing" /> },
       { path: ':conversationId', element: <ChatBotPage key="conversation" /> },
       { path: 'agents', element: <AgentPage key="agent" /> },
       { path: 'agents/new', element: <AgentBuilderPage key="agent-builder" /> },
       { path: 'agents/:agentKey', element: <AgentChatPage key="agent-chat" /> },
       { path: 'agents/:agentKey/edit', element: <AgentBuilderPage key="agent-edit" /> },
       { path: 'agents/:agentKey/flow', element: <AgentBuilderPage key="flow-agent-edit" /> },
-      { path: 'agents/:agentKey/conversations/:conversationId', element: <AgentChatPage key="agent-conversation" /> },
+      {
+        path: 'agents/:agentKey/conversations/:conversationId',
+        element: <AgentChatPage key="agent-conversation" />,
+      },
       { path: 'record/:recordId', element: <RecordDetails /> },
-      { path: 'connectors', element: <Navigate to="/account/individual/settings/connector" replace /> },
-      
+      {
+        path: 'connectors',
+        element: <Navigate to="/account/individual/settings/connector" replace />,
+      },
+
       // OAuth callback route for connectors
       {
         path: 'connectors/oauth/callback/:connectorName',
@@ -347,7 +388,7 @@ export const dashboardRoutes = [
                         ) : (
                           <BusinessAdminOnlyRoute component={ConnectorManagementPage} />
                         ),
-                      }
+                      },
                     ],
                   },
                   {
@@ -462,7 +503,7 @@ export const dashboardRoutes = [
                       {
                         path: ':connectorName',
                         element: <IndividualOnlyRoute component={ConnectorManagementPage} />,
-                      }
+                      },
                     ],
                   },
                   {

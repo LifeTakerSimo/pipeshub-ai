@@ -131,7 +131,7 @@ const ConfigureMethodDialog: React.FC<ConfigureMethodDialogProps> = ({
       }
       navigate('/');
     }
-    
+
     if (open && methodType === 'oauth') {
       setShowOAuthForm(true);
     } else {
@@ -206,7 +206,7 @@ const ConfigureMethodDialog: React.FC<ConfigureMethodDialogProps> = ({
         onClose={handleOAuthClose}
         onSuccess={handleOAuthSuccess}
       />
-      
+
       <Dialog
         open={open && methodType !== 'oauth'}
         onClose={onClose}
@@ -226,137 +226,138 @@ const ConfigureMethodDialog: React.FC<ConfigureMethodDialogProps> = ({
           },
         }}
       >
-      {methodConfig && (
-        <>
-          <DialogTitle
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              p: 2.5,
-              pl: 3,
-              color: theme.palette.text.primary,
-              borderBottom: '1px solid',
-              borderColor: theme.palette.divider,
-              fontWeight: 500,
-              fontSize: '1rem',
-              m: 0,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Box
+        {methodConfig && (
+          <>
+            <DialogTitle
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                p: 2.5,
+                pl: 3,
+                color: theme.palette.text.primary,
+                borderBottom: '1px solid',
+                borderColor: theme.palette.divider,
+                fontWeight: 500,
+                fontSize: '1rem',
+                m: 0,
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 32,
+                    height: 32,
+                    borderRadius: '6px',
+                    bgcolor: alpha(methodConfig.color, 0.1),
+                    color: methodConfig.color,
+                  }}
+                >
+                  <Iconify icon={methodConfig.icon} width={18} height={18} />
+                </Box>
+                Configure {methodConfig.title}{' '}
+                {methodType !== 'smtp' ? 'Authentication' : 'Settings'}
+              </Box>
+
+              <IconButton
+                onClick={onClose}
+                size="small"
+                sx={{ color: theme.palette.text.secondary }}
+                aria-label="close"
+              >
+                <Iconify icon={closeIcon} width={20} height={20} />
+              </IconButton>
+            </DialogTitle>
+
+            <DialogContent
+              sx={{
+                p: 0,
+                '&.MuiDialogContent-root': {
+                  pt: 3,
+                  px: 3,
+                  pb: 0,
+                },
+              }}
+            >
+              <Box>
+                {methodType === 'google' && (
+                  <GoogleAuthForm
+                    onValidationChange={handleValidationChange}
+                    onSaveSuccess={handleFormSaveSuccess}
+                    ref={googleFormRef}
+                  />
+                )}
+
+                {methodType === 'microsoft' && (
+                  <MicrosoftAuthForm
+                    onValidationChange={handleValidationChange}
+                    onSaveSuccess={handleFormSaveSuccess}
+                    ref={microsoftFormRef}
+                  />
+                )}
+
+                {methodType === 'azureAd' && (
+                  <AzureAdAuthForm
+                    onValidationChange={handleValidationChange}
+                    onSaveSuccess={handleFormSaveSuccess}
+                    ref={azureAdFormRef}
+                  />
+                )}
+
+                {methodType === 'smtp' && (
+                  <SmtpConfigForm
+                    onValidationChange={handleValidationChange}
+                    onSaveSuccess={handleFormSaveSuccess}
+                    ref={smtpFormRef}
+                  />
+                )}
+              </Box>
+            </DialogContent>
+
+            <DialogActions
+              sx={{
+                p: 2.5,
+                borderTop: '1px solid',
+                borderColor: theme.palette.divider,
+                bgcolor: alpha(theme.palette.background.default, 0.5),
+              }}
+            >
+              <Button
+                variant="text"
+                onClick={onClose}
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 32,
-                  height: 32,
-                  borderRadius: '6px',
-                  bgcolor: alpha(methodConfig.color, 0.1),
-                  color: methodConfig.color,
+                  color: theme.palette.text.secondary,
+                  fontWeight: 500,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.divider, 0.8),
+                  },
                 }}
               >
-                <Iconify icon={methodConfig.icon} width={18} height={18} />
-              </Box>
-              Configure {methodConfig.title} {methodType !== 'smtp' ? 'Authentication' : 'Settings'}
-            </Box>
-
-            <IconButton
-              onClick={onClose}
-              size="small"
-              sx={{ color: theme.palette.text.secondary }}
-              aria-label="close"
-            >
-              <Iconify icon={closeIcon} width={20} height={20} />
-            </IconButton>
-          </DialogTitle>
-
-          <DialogContent
-            sx={{
-              p: 0,
-              '&.MuiDialogContent-root': {
-                pt: 3,
-                px: 3,
-                pb: 0,
-              },
-            }}
-          >
-            <Box>
-              {methodType === 'google' && (
-                <GoogleAuthForm
-                  onValidationChange={handleValidationChange}
-                  onSaveSuccess={handleFormSaveSuccess}
-                  ref={googleFormRef}
-                />
-              )}
-
-              {methodType === 'microsoft' && (
-                <MicrosoftAuthForm
-                  onValidationChange={handleValidationChange}
-                  onSaveSuccess={handleFormSaveSuccess}
-                  ref={microsoftFormRef}
-                />
-              )}
-
-              {methodType === 'azureAd' && (
-                <AzureAdAuthForm
-                  onValidationChange={handleValidationChange}
-                  onSaveSuccess={handleFormSaveSuccess}
-                  ref={azureAdFormRef}
-                />
-              )}
-
-              {methodType === 'smtp' && (
-                <SmtpConfigForm
-                  onValidationChange={handleValidationChange}
-                  onSaveSuccess={handleFormSaveSuccess}
-                  ref={smtpFormRef}
-                />
-              )}
-            </Box>
-          </DialogContent>
-
-          <DialogActions
-            sx={{
-              p: 2.5,
-              borderTop: '1px solid',
-              borderColor: theme.palette.divider,
-              bgcolor: alpha(theme.palette.background.default, 0.5),
-            }}
-          >
-            <Button
-              variant="text"
-              onClick={onClose}
-              sx={{
-                color: theme.palette.text.secondary,
-                fontWeight: 500,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.divider, 0.8),
-                },
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleSaveClick}
-              disabled={!isValid}
-              sx={{
-                bgcolor: theme.palette.primary.main,
-                boxShadow: 'none',
-                fontWeight: 500,
-                '&:hover': {
-                  bgcolor: theme.palette.primary.dark,
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSaveClick}
+                disabled={!isValid}
+                sx={{
+                  bgcolor: theme.palette.primary.main,
                   boxShadow: 'none',
-                },
-                px: 3,
-              }}
-            >
-              Save
-            </Button>
-          </DialogActions>
-        </>
-      )}
+                  fontWeight: 500,
+                  '&:hover': {
+                    bgcolor: theme.palette.primary.dark,
+                    boxShadow: 'none',
+                  },
+                  px: 3,
+                }}
+              >
+                Save
+              </Button>
+            </DialogActions>
+          </>
+        )}
       </Dialog>
     </>
   );
