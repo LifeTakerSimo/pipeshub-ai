@@ -12,26 +12,6 @@ const AgentBuilderNotificationPanel: React.FC<AgentBuilderNotificationPanelProps
   onSuccessClose,
 }) => (
   <>
-    {/* Error Notification */}
-    {error && (
-      <Fade in>
-        <Alert
-          severity="error"
-          onClose={onErrorClose}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            zIndex: 2000,
-            borderRadius: 1.5,
-            maxWidth: 400,
-          }}
-        >
-          {error}
-        </Alert>
-      </Fade>
-    )}
-
     {/* Success Notification */}
     {success && (
       <Fade in>
@@ -40,7 +20,7 @@ const AgentBuilderNotificationPanel: React.FC<AgentBuilderNotificationPanelProps
           onClose={onSuccessClose}
           sx={{
             position: 'fixed',
-            bottom: 24,
+            top: 24,
             right: 24,
             zIndex: 2000,
             borderRadius: 1.5,

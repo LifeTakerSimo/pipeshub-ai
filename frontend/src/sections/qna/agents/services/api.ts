@@ -1,15 +1,15 @@
 // src/sections/agents/services/agent-api-service.ts
-import type { KBPermission } from 'src/sections/knowledgebase/types/kb';
+import axios from 'src/utils/axios';
 import type {
   Agent,
-  AgentStats,
   AgentTemplate,
   AgentFormData,
-  AgentConversation,
   AgentTemplateFormData,
+  AgentConversation,
+  AgentFilterOptions,
+  AgentStats,
 } from 'src/types/agent';
-
-import axios from 'src/utils/axios';
+import { KBPermission } from 'src/sections/knowledgebase/types/kb';
 
 export interface PaginationParams {
   page?: number;
@@ -375,7 +375,7 @@ class AgentApiService {
       Array.isArray(transformed.models) &&
       transformed.models.length === 0
     ) {
-      transformed.models = [] as { provider: string; modelName: string; isReasoning: boolean }[];
+      transformed.models = [] as { provider: string; modelName: string; isReasoning: boolean; modelKey: string }[];
     }
 
     if (transformed.apps && Array.isArray(transformed.apps) && transformed.apps.length === 0) {
@@ -469,6 +469,7 @@ class AgentApiService {
     const response = await axios.get(`/api/v1/agents/${agentId}/permissions`);
     return response.data.permissions;
   }
+  
 }
 
 export default AgentApiService;

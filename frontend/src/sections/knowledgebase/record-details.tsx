@@ -2,35 +2,32 @@
 import type { User } from 'src/context/UserContext';
 
 import { Icon } from '@iconify/react';
-import ReactMarkdown from 'react-markdown';
-import { useState, useEffect } from 'react';
 import robotIcon from '@iconify-icons/mdi/robot';
 import closeIcon from '@iconify-icons/mdi/close';
+import { useState, useEffect } from 'react';
 import updateIcon from '@iconify-icons/mdi/update';
 import accountIcon from '@iconify-icons/mdi/account';
-import databaseIcon from '@iconify-icons/mdi/database';
 import clockIcon from '@iconify-icons/mdi/clock-outline';
 import emailIcon from '@iconify-icons/mdi/email-outline';
 import { useParams, useNavigate } from 'react-router-dom';
 import arrowLeftIcon from '@iconify-icons/mdi/arrow-left';
-import infoIcon from '@iconify-icons/mdi/information-outline';
 import fileAlertIcon from '@iconify-icons/mdi/file-alert-outline';
 import connectorIcon from '@iconify-icons/mdi/cloud-sync-outline';
 import fileDocumentBoxIcon from '@iconify-icons/mdi/file-document-box';
 import descriptionIcon from '@iconify-icons/mdi/file-document-outline';
+import databaseIcon from '@iconify-icons/mdi/database';
+import infoIcon from '@iconify-icons/mdi/information-outline';
 
 import {
   Box,
   Chip,
   Grid,
   Card,
-  Menu,
   Stack,
   alpha,
   Alert,
   Drawer,
   Button,
-  Dialog,
   Divider,
   Tooltip,
   useTheme,
@@ -41,35 +38,37 @@ import {
   CardHeader,
   CardContent,
   useMediaQuery,
-  DialogContent,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  Menu,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';
-
+import ReactMarkdown from 'react-markdown';
 import { CONFIG } from 'src/config-global';
 import { useUsers } from 'src/context/UserContext';
 
-import RecordSalesAgent from './ask-me-anything';
 import { KnowledgeBaseAPI } from './services/api';
+import RecordSalesAgent from './ask-me-anything';
 import RecordDocumentViewer from './show-documents';
 import EditRecordDialog from './edit-record-dialog';
 import DeleteRecordDialog from './delete-record-dialog';
+import type { MetadataItem, Permissions, RecordDetailsResponse } from './types/record-details';
 import {
-  getFileIcon,
-  formatFileSize,
-  getFileIconColor,
-  getIndexingStatusColor,
-} from './utils/utils';
-import {
+  DeleteButton,
   EditButton,
   OpenButton,
-  DeleteButton,
   ReindexButton,
   SummaryButton,
 } from './components/buttons';
-
-import type { Permissions, MetadataItem, RecordDetailsResponse } from './types/record-details';
+import {
+  formatFileSize,
+  getExtensionFromMimeType,
+  getFileIcon,
+  getFileIconColor,
+  getIndexingStatusColor,
+} from './utils/utils';
 
 export default function RecordDetails() {
   const { recordId } = useParams<{ recordId: string }>();
@@ -250,12 +249,15 @@ export default function RecordDetails() {
   let fileType = 'N/A';
   let fileIcon: any = fileDocumentBoxIcon;
   let fileIconColor = '#1976d2';
-
+  let extension = '';
   if (isFileRecord && record.fileRecord) {
     fileSize = formatFileSize(record.fileRecord.sizeInBytes);
-    fileType = record.fileRecord.extension ? record.fileRecord.extension.toUpperCase() : 'N/A';
-    fileIcon = getFileIcon(record.fileRecord.extension || '');
-    fileIconColor = getFileIconColor(record.fileRecord.extension || '');
+    extension = record.fileRecord.extension
+      ? record.fileRecord.extension.toUpperCase()
+      : getExtensionFromMimeType(record.fileRecord.mimeType || record.mimeType || '');
+    fileType = extension.toUpperCase() || 'N/A';
+    fileIcon = getFileIcon(extension || '');
+    fileIconColor = getFileIconColor(extension || '');
   } else if (isMailRecord) {
     fileIcon = emailIcon;
     fileIconColor = '#2196f3';
@@ -675,7 +677,7 @@ export default function RecordDetails() {
                     <Icon icon={updateIcon} style={{ fontSize: '16px' }} />
                     <Box component="span">Indexing Status:</Box>
                     <Chip
-                      label={record.indexingStatus.replace('_', ' ')}
+                      label={record.indexingStatus.replaceAll('_', ' ')}
                       size="small"
                       color={getIndexingStatusColor(record.indexingStatus)}
                       sx={{

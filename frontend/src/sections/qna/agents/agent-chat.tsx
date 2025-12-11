@@ -258,6 +258,31 @@ class StreamingManager {
     return null;
   }
 
+  resetStreamingContent(messageId: string) {
+    const conversationKey = this.getConversationForMessage(messageId);
+    if (!conversationKey) return;
+
+    // Reset accumulated content and citations to start fresh
+    this.updateConversationState(conversationKey, {
+      accumulatedContent: '',
+      content: '',
+      citations: [],
+    });
+
+    // Clear the message content in the UI
+    this.updateConversationMessages(conversationKey, (prev) => {
+      const messageIndex = prev.findIndex((msg) => msg.id === messageId);
+      if (messageIndex === -1) return prev;
+      const updated = [...prev];
+      updated[messageIndex] = {
+        ...updated[messageIndex],
+        content: '',
+        citations: [],
+      };
+      return updated;
+    });
+  }
+
   updateStreamingContent(messageId: string, newChunk: string, citations: CustomCitation[] = []) {
     const conversationKey = this.getConversationForMessage(messageId);
     if (!conversationKey) return;
@@ -900,6 +925,18 @@ const AgentChat = () => {
         }
 
         switch (event) {
+          case 'restreaming':
+            // When restreaming event is received, clear previous accumulated content
+            // and wait for new chunks to start streaming
+            if (context.hasCreatedMessage.current) {
+              streamingManager.resetStreamingContent(context.streamingBotMessageId);
+            }
+            streamingManager.updateStatus(
+              context.conversationKey,
+              '🔄 Refining response...'
+            );
+            break;
+
           case 'answer_chunk':
             if (data.chunk) {
               if (!context.hasCreatedMessage.current) {
@@ -1607,7 +1644,7 @@ const AgentChat = () => {
           let params = {};
           if (['pptx', 'ppt'].includes(citationMeta?.extension)) {
             params = {
-              convertTo: 'pdf',
+              convertTo: 'application/pdf',
             };
             handleLargePPTFile(record);
           }
@@ -2162,6 +2199,7 @@ const AgentChat = () => {
                     citations={aggregatedCitations}
                     highlightCitation={highlightedCitation}
                     onClosePdf={onClosePdf}
+                    fileExtension={highlightedCitation?.metadata?.extension}
                   />
                 ) : (
                   <PdfHighlighterComp

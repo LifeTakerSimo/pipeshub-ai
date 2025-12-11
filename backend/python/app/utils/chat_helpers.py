@@ -444,6 +444,8 @@ async def create_record_from_vector_metadata(metadata: Dict[str, Any], org_id: s
             "departments": departments,
         }
 
+        extension = get_extension_from_mimetype(metadata.get("mimeType",""))
+
         record = {
             "id": metadata.get("recordId", ""),
             "org_id": org_id,
@@ -453,7 +455,7 @@ async def create_record_from_vector_metadata(metadata: Dict[str, Any], org_id: s
             "external_revision_id": metadata.get("externalRevisionId", virtual_record_id),
             "version": metadata.get("version",""),
             "origin": metadata.get("origin",""),
-            "connector_name": metadata.get("connectorName",""),
+            "connector_name": metadata.get("connector") or metadata.get("connectorName",""),
             "virtual_record_id": virtual_record_id,
             "mime_type": metadata.get("mimeType",""),
             "created_at": metadata.get("createdAtTimestamp", ""),
@@ -462,6 +464,7 @@ async def create_record_from_vector_metadata(metadata: Dict[str, Any], org_id: s
             "source_updated_at": metadata.get("sourceLastModifiedTimestamp", ""),
             "weburl": metadata.get("webUrl", ""),
             "semantic_metadata": semantic_metadata,
+            "extension": extension,
         }
         blocks = []
         container_utils = ContainerUtils()
@@ -523,10 +526,9 @@ async def create_record_from_vector_metadata(metadata: Dict[str, Any], org_id: s
 def create_block_from_metadata(metadata: Dict[str, Any],page_content: str) -> Dict[str, Any]:
     try:
         page_num = metadata.get("pageNum")
-        if page_num:
-            page_num = page_num[0]
-        else:
-            page_num = None
+        if isinstance(page_num, (list,tuple)):
+            page_num = page_num[0] if page_num else None
+
         citation_metadata = {
             "page_number": page_num,
             "bounding_boxes": metadata.get("bounding_box")
@@ -1303,16 +1305,14 @@ def count_tokens(messages: List[Any], message_contents: List[str]) -> Tuple[int,
     try:
         import tiktoken  # type: ignore
         try:
-            enc = tiktoken.get_encoding("cl200k_base")
+            enc = tiktoken.get_encoding("cl100k_base")
         except Exception:
+            logger.warning("tiktoken encoding failed, falling back to heuristic.")
             enc = None
     except Exception:
+        logger.warning("tiktoken import failed, falling back to heuristic.")
         enc = None
 
-    logger.debug(
-        "Using %s for tokenization",
-        "tiktoken(cl200k_base)" if enc is not None else "heuristic (~4 chars/token)",
-    )
 
     current_message_tokens = count_tokens_in_messages(messages,enc)
     new_tokens = 0
@@ -1322,6 +1322,5 @@ def count_tokens(messages: List[Any], message_contents: List[str]) -> Tuple[int,
 
 
     return current_message_tokens, new_tokens
-
 
 

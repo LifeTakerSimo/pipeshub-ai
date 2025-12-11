@@ -309,8 +309,6 @@ export const useAgentBuilderReconstruction = (): UseAgentBuilderReconstructionRe
               type: `llm-${matchingModel?.modelKey || modelConfig.modelName?.replace(/[^a-zA-Z0-9]/g, '-') || 'default'}`,
               label:
                 modelConfig.modelName
-                  ?.replace(/[^a-zA-Z0-9]/g, ' ')
-                  .replace(/\s+/g, ' ')
                   .trim() || 'AI Model',
               description: `${formattedProvider(modelConfig.provider || 'AI')} language model`,
               icon: brainIcon,
@@ -343,8 +341,6 @@ export const useAgentBuilderReconstruction = (): UseAgentBuilderReconstructionRe
             type: `llm-${defaultModel.modelKey || 'default'}`,
             label:
               defaultModel.modelName
-                ?.replace(/[^a-zA-Z0-9]/g, ' ')
-                .replace(/\s+/g, ' ')
                 .trim() || 'AI Model',
             description: `${formattedProvider(defaultModel.provider || 'AI')} language model`,
             icon: brainIcon,
@@ -357,7 +353,7 @@ export const useAgentBuilderReconstruction = (): UseAgentBuilderReconstructionRe
               isDefault: defaultModel.isDefault,
               isReasoning: defaultModel.isReasoning,
             },
-            inputs: ['prompt', 'context'],
+            inputs: [],
             outputs: ['response'],
             isConfigured: true,
           },

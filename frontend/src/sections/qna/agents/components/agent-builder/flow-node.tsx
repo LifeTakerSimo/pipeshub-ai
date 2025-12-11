@@ -1,35 +1,34 @@
-import { Icon } from '@iconify/react';
-import cogIcon from '@iconify-icons/mdi/cog';
-import tuneIcon from '@iconify-icons/mdi/tune';
-import toolIcon from '@iconify-icons/mdi/tools';
-import brainIcon from '@iconify-icons/mdi/brain';
-import pencilIcon from '@iconify-icons/mdi/pencil';
-import databaseIcon from '@iconify-icons/mdi/database';
-import scriptIcon from '@iconify-icons/mdi/script-text';
-import closeIcon from '@iconify-icons/eva/close-outline';
-import cloudIcon from '@iconify-icons/mdi/cloud-outline';
-import informationIcon from '@iconify-icons/mdi/information';
-import packageIcon from '@iconify-icons/mdi/package-variant';
-import messageTextIcon from '@iconify-icons/mdi/message-text';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Handle, Position, useStore, useReactFlow } from '@xyflow/react';
-
 import {
   Box,
   Card,
-  Chip,
-  alpha,
-  Dialog,
-  Button,
-  useTheme,
-  TextField,
   Typography,
+  useTheme,
+  alpha,
+  Chip,
   IconButton,
+  TextField,
+  Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
+  Button,
 } from '@mui/material';
-
+import { Icon } from '@iconify/react';
+import brainIcon from '@iconify-icons/mdi/brain';
+import toolIcon from '@iconify-icons/mdi/tools';
+import databaseIcon from '@iconify-icons/mdi/database';
+import closeIcon from '@iconify-icons/eva/close-outline';
+import scriptIcon from '@iconify-icons/mdi/script-text';
+import pencilIcon from '@iconify-icons/mdi/pencil';
+import messageTextIcon from '@iconify-icons/mdi/message-text';
+import informationIcon from '@iconify-icons/mdi/information';
+import packageIcon from '@iconify-icons/mdi/package-variant';
+import cogIcon from '@iconify-icons/mdi/cog';
+import cloudIcon from '@iconify-icons/mdi/cloud-outline';
+import tuneIcon from '@iconify-icons/mdi/tune';
+import deleteIcon from '@iconify-icons/mdi/delete-outline';
 import { formattedProvider, normalizeDisplayName } from '../../utils/agent';
 
 interface FlowNodeData extends Record<string, unknown> {
@@ -47,9 +46,10 @@ interface FlowNodeData extends Record<string, unknown> {
 interface FlowNodeProps {
   data: FlowNodeData;
   selected: boolean;
+  onDelete?: (nodeId: string) => void;
 }
 
-const FlowNode: React.FC<FlowNodeProps> = ({ data, selected }) => {
+const FlowNode: React.FC<FlowNodeProps> = ({ data, selected, onDelete }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const storeNodes = useStore((s) => s.nodes);
@@ -192,6 +192,16 @@ const FlowNode: React.FC<FlowNodeProps> = ({ data, selected }) => {
           },
         }}
         onClick={(e) => {
+          // Ignore clicks on delete button or other interactive elements
+          const target = e.target as HTMLElement;
+          if (
+            target.closest('button') ||
+            target.closest('[role="button"]') ||
+            target.tagName === 'BUTTON' ||
+            target.closest('svg')
+          ) {
+            return;
+          }
           // Prevent rapid clicks
           const now = Date.now();
           if (now - lastClickTime < 300) return;
@@ -1349,6 +1359,31 @@ const FlowNode: React.FC<FlowNodeProps> = ({ data, selected }) => {
               {normalizeDisplayName(data.label)}
             </Typography>
           </Box>
+          {onDelete && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+                onDelete(data.id);
+              }}
+              sx={{
+                width: 30,
+                height: 30,
+                backgroundColor: alpha(theme.palette.error.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`,
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.error.main, 0.2),
+                  transform: 'scale(1.05)',
+                  color: theme.palette.error.main,
+                },
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <Icon icon={deleteIcon} width={20} height={20} />
+            </IconButton>
+          )}
         </Box>
         {data.description && (
           <Typography

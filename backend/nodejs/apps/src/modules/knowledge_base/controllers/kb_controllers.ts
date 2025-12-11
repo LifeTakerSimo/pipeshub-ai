@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
 import { AuthenticatedUserRequest } from './../../../libs/middlewares/types';
 import { NextFunction, Response } from 'express';
 import { Logger } from '../../../libs/services/logger.service';
@@ -903,7 +904,7 @@ export const updateRecord =
 
       // Check if there's a file in the request
       const hasFileBuffer = req.body.fileBuffer && req.body.fileBuffer.buffer;
-      let originalname, mimetype, size, extension, lastModified;
+      let originalname, mimetype, size, extension, lastModified, sha256Hash;
 
       if (hasFileBuffer) {
         ({ originalname, mimetype, size, lastModified } = req.body.fileBuffer);
@@ -914,6 +915,9 @@ export const updateRecord =
               .substring(originalname.lastIndexOf('.') + 1)
               .toLowerCase()
           : null;
+        // Calculate SHA-256 checksum for security
+        const buffer = req.body.fileBuffer.buffer;
+        sha256Hash = crypto.createHash('sha256').update(buffer).digest('hex');
       }
 
       if (!recordName) {
@@ -935,6 +939,7 @@ export const updateRecord =
           size,
           extension,
           lastModified,
+          sha256Hash,
         };
 
         // Get filename without extension to use as record name
@@ -1766,26 +1771,30 @@ export const createKBPermission =
         throw new BadRequestError('User IDs or team IDs are required');
       }
 
-      if (!role) {
-        throw new BadRequestError('Role is required');
+      // Role is required only if users are provided (teams don't need roles)
+      if (userIds.length > 0 && !role) {
+        throw new BadRequestError('Role is required when adding users');
       }
 
-      const validRoles = [
-        'OWNER',
-        'ORGANIZER',
-        'FILEORGANIZER',
-        'WRITER',
-        'COMMENTER',
-        'READER',
-      ];
-      if (!validRoles.includes(role)) {
-        throw new BadRequestError(
-          `Invalid role. Must be one of: ${validRoles.join(', ')}`,
-        );
+      // Validate role only if it's provided (for users)
+      if (role) {
+        const validRoles = [
+          'OWNER',
+          'ORGANIZER',
+          'FILEORGANIZER',
+          'WRITER',
+          'COMMENTER',
+          'READER',
+        ];
+        if (!validRoles.includes(role)) {
+          throw new BadRequestError(
+            `Invalid role. Must be one of: ${validRoles.join(', ')}`,
+          );
+        }
       }
 
       logger.info(
-        `Creating ${role} permissions for ${userIds.length} users and ${teamIds.length} teams on KB ${kbId}`,
+        `Creating ${role || 'team'} permissions for ${userIds.length} users and ${teamIds.length} teams on KB ${kbId}`,
         {
           userIds:
             userIds.length > 5
@@ -1795,20 +1804,25 @@ export const createKBPermission =
             teamIds.length > 5
               ? `${teamIds.slice(0, 5).join(', ')} and ${teamIds.length - 5} more`
               : teamIds.join(', '),
-          role,
+          role: role || 'N/A (team access)',
         },
       );
 
       try {
+        const payload: { userIds: string[]; teamIds: string[]; role?: string } = {
+          userIds: userIds,
+          teamIds: teamIds,
+        };
+        // Only include role if it's provided (for users)
+        if (role) {
+          payload.role = role;
+        }
+
         const response = await executeConnectorCommand(
           `${appConfig.connectorBackend}/api/v1/kb/${kbId}/permissions`,
           HttpMethod.POST,
           req.headers as Record<string, string>,
-          {
-            userIds: userIds,
-            teamIds: teamIds,
-            role: role,
-          },
+          payload,
         );
 
         if (response.statusCode !== 200) {
@@ -1821,7 +1835,7 @@ export const createKBPermission =
           kbId,
           grantedCount: permissionResult.grantedCount,
           updatedCount: permissionResult.updatedCount,
-          role,
+          role: role || 'N/A (team access)',
         });
 
         res.status(201).json({
@@ -2162,7 +2176,7 @@ export const getConnectorStats =
       try {
         // Call the Python service to get record
 
-        let queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
 
         queryParams.append('org_id', orgId);
         queryParams.append('connector', req.params.connector);
@@ -2236,14 +2250,20 @@ export const getRecordBuffer =
     try {
       const { recordId } = req.params as { recordId: string };
       const { userId, orgId } = req.user || {};
-
+      const { convertTo } = req.query as { convertTo: string };
       if (!userId || !orgId) {
         throw new BadRequestError('User authentication is required');
       }
 
+      const queryParams = new URLSearchParams();
+      if (convertTo) {
+        logger.info('Converting file to ', { convertTo });
+        queryParams.append('convertTo', convertTo);
+      }
+
       // Make request to FastAPI backend
       const response = await axios.get(
-        `${connectorUrl}/api/v1/stream/record/${recordId}`,
+        `${connectorUrl}/api/v1/stream/record/${recordId}?${queryParams.toString()}`,
         {
           responseType: 'stream',
           headers: {

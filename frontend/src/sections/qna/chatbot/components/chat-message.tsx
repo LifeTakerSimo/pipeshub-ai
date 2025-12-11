@@ -656,7 +656,6 @@ const StreamingContent = React.memo(
               );
             },
           }}
-          className="markdown-body"
         >
           {processedContent}
         </ReactMarkdown>

@@ -1,3 +1,4 @@
+
 import { Icon } from '@iconify/react';
 import addIcon from '@iconify-icons/mdi/plus';
 import clearIcon from '@iconify-icons/mdi/close';
@@ -5,6 +6,7 @@ import searchIcon from '@iconify-icons/mdi/magnify';
 import databaseIcon from '@iconify-icons/mdi/database';
 import gridViewIcon from '@iconify-icons/mdi/view-grid-outline';
 import listViewIcon from '@iconify-icons/mdi/format-list-bulleted';
+import teamIcon from '@iconify-icons/mdi/account-group';
 import React, { memo, useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
@@ -12,9 +14,7 @@ import {
   Fade,
   Stack,
   alpha,
-  Alert,
   Button,
-  Snackbar,
   Container,
   TextField,
   Typography,
@@ -23,17 +23,20 @@ import {
   LinearProgress,
   CircularProgress,
   ToggleButtonGroup,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 
-import { GridView } from './dashboard-grid-view';
-import { ListView } from './dashboard-list-view';
 import { KnowledgeBaseAPI } from '../services/api';
-import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
-import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
-import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
 
 import type { KnowledgeBase } from '../types/kb';
 import type { RouteParams } from '../hooks/use-router';
+import { CreateKnowledgeBaseDialog } from './dialogs/create-kb-dialog';
+import { EditKnowledgeBaseDialog } from './dialogs/edit-dialogs';
+import { DeleteConfirmDialog } from './dialogs/delete-confim-dialog';
+import { GridView } from './dashboard-grid-view';
+import { ListView } from './dashboard-list-view';
+import TeamManagementSlider from './team-management-slider';
 
 interface DashboardProps {
   theme: any;
@@ -43,6 +46,7 @@ interface DashboardProps {
   navigate: (route: RouteParams) => void;
 }
 type ViewMode = 'grid' | 'list';
+
 
 const useDebounce = (value: string, delay: number) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -88,10 +92,11 @@ const useIntersectionObserver = (callback: () => void, options: IntersectionObse
     observer.observe(target);
 
     return () => observer.disconnect();
-  }, [options]);
+  }, [options]); 
 
   return targetRef;
 };
+
 
 const DashboardComponent: React.FC<DashboardProps> = ({
   theme,
@@ -117,6 +122,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   const [itemToDelete, setItemToDelete] = useState<KnowledgeBase | null>(null);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);
+  const [teamManagementOpen, setTeamManagementOpen] = useState(false);
 
   // Debounced search value
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -320,6 +326,7 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   // Memoized filtered knowledge bases
   const filteredKnowledgeBases = useMemo(() => knowledgeBases, [knowledgeBases]);
 
+
   // Calculate display counts
   const { displayCount, actualTotalCount } = useMemo(
     () => ({
@@ -345,13 +352,14 @@ const DashboardComponent: React.FC<DashboardProps> = ({
   }
 
   return (
-    <Box sx={{ height: '90vh', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: 'calc(100vh - 64px)', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <Box
         sx={{
           borderBottom: (themeVal) => `1px solid ${themeVal.palette.divider}`,
           backgroundColor: 'background.paper',
           px: { xs: 2, sm: 3 },
           py: 2,
+          flexShrink: 0,
         }}
       >
         {(loading || loadingMore) && (
@@ -545,6 +553,29 @@ const DashboardComponent: React.FC<DashboardProps> = ({
 
             <Button
               variant="outlined"
+              startIcon={<Icon icon={teamIcon} fontSize={14} />}
+              onClick={() => setTeamManagementOpen(true)}
+              sx={{
+                height: 32,
+                px: 1.5,
+                borderRadius: 1,
+                fontSize: '0.8125rem',
+                fontWeight: 500,
+                textTransform: 'none',
+                borderColor: 'divider',
+                color: 'text.secondary',
+                '&:hover': {
+                  borderColor: 'action.active',
+                  backgroundColor: 'action.hover',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              <Box sx={{ display: { xs: 'none', sm: 'inline' } }}>Teams</Box>
+            </Button>
+
+            <Button
+              variant="outlined"
               startIcon={<Icon icon={addIcon} fontSize={14} />}
               onClick={() => setCreateKBDialog(true)}
               sx={{
@@ -592,48 +623,47 @@ const DashboardComponent: React.FC<DashboardProps> = ({
         <Container
           maxWidth="xl"
           sx={{
-            py: { xs: 2, sm: 3 },
-            px: { xs: 2, sm: 3 },
+            py: { xs: 1.5, sm: 2 },
+            px: { xs: 1.5, sm: 2 },
             flex: 1,
+            minHeight: 0,
             display: 'flex',
             flexDirection: 'column',
           }}
         >
           <Fade in timeout={300}>
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {viewMode === 'grid' ? (
-                <GridView
-                  loading={loading}
-                  knowledgeBases={knowledgeBases}
-                  filteredKnowledgeBases={filteredKnowledgeBases}
-                  debouncedSearchQuery={debouncedSearchQuery}
-                  hasMore={hasMore}
-                  navigateToKB={navigateToKB}
-                  onEditKB={onEditKB}
-                  onDeleteKB={onDeleteKB}
-                  theme={theme}
-                  CompactCard={CompactCard}
-                  handleLoadMore={handleLoadMore}
-                  handleClearSearch={handleClearSearch}
-                  loadMoreRef={loadMoreRef}
-                  setCreateKBDialog={setCreateKBDialog}
-                  loadingMore={loadingMore}
-                />
-              ) : (
-                <ListView
-                  loading={loading}
-                  filteredKnowledgeBases={filteredKnowledgeBases}
-                  navigateToKB={navigateToKB}
-                  onEditKB={onEditKB}
-                  onDeleteKB={onDeleteKB}
-                  theme={theme}
-                  totalCount={totalCount}
-                  page={page}
-                  rowsPerPage={rowsPerPage}
-                  handlePageChange={handlePageChange}
-                  handleRowsPerPageChange={handleRowsPerPageChange}
-                />
-              )}
+              {viewMode === 'grid' ?
+               <GridView 
+                loading={loading}
+                knowledgeBases={knowledgeBases}
+                filteredKnowledgeBases={filteredKnowledgeBases}
+                debouncedSearchQuery={debouncedSearchQuery}
+                hasMore={hasMore}
+                navigateToKB={navigateToKB}
+                onEditKB={onEditKB}
+                onDeleteKB={onDeleteKB}
+                theme={theme}
+                CompactCard={CompactCard}
+                handleLoadMore={handleLoadMore}
+                handleClearSearch={handleClearSearch}
+                loadMoreRef={loadMoreRef}
+                setCreateKBDialog={setCreateKBDialog}
+                loadingMore={loadingMore}
+               /> :
+                <ListView 
+                loading={loading}
+                filteredKnowledgeBases={filteredKnowledgeBases}
+                navigateToKB={navigateToKB}
+                onEditKB={onEditKB}
+                onDeleteKB={onDeleteKB}
+                theme={theme}
+                totalCount={totalCount}
+                page={page}
+                rowsPerPage={rowsPerPage}
+                handlePageChange={handlePageChange}
+                handleRowsPerPageChange={handleRowsPerPageChange}
+                />}
             </Box>
           </Fade>
         </Container>
@@ -722,6 +752,11 @@ const DashboardComponent: React.FC<DashboardProps> = ({
           {success}
         </Alert>
       </Snackbar>
+
+      <TeamManagementSlider
+        open={teamManagementOpen}
+        onClose={() => setTeamManagementOpen(false)}
+      />
     </Box>
   );
 };

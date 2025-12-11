@@ -88,7 +88,8 @@ export interface Record {
   createdBy?: string;
   summaryDocumentId?: string;
   webUrl?: string;
-  reason: string;
+  reason:string
+  mimeType?: string;
 }
 
 export interface FileRecord {
@@ -99,7 +100,7 @@ export interface FileRecord {
   name: string;
   isFile: boolean;
   extension: string;
-  mimeType: string;
+  mimeType?: string;
   sizeInBytes: number;
   webUrl: string;
   path: string;

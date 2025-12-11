@@ -1,22 +1,21 @@
 // src/sections/qna/agents/hooks/useNodeTemplates.ts
 import { useMemo } from 'react';
-import apiIcon from '@iconify-icons/mdi/api';
-import chatIcon from '@iconify-icons/mdi/chat';
 import brainIcon from '@iconify-icons/mdi/brain';
-import replyIcon from '@iconify-icons/mdi/reply';
+import chatIcon from '@iconify-icons/mdi/chat';
 import databaseIcon from '@iconify-icons/mdi/database';
+import emailIcon from '@iconify-icons/mdi/email';
+import apiIcon from '@iconify-icons/mdi/api';
 import sparklesIcon from '@iconify-icons/mdi/auto-awesome';
-
+import replyIcon from '@iconify-icons/mdi/reply';
 import { useConnectors } from '../../../../accountdetails/connectors/context';
 import {
-  getAppIcon,
-  truncateText,
   groupToolsByApp,
   getAppDisplayName,
+  getAppIcon,
+  truncateText,
   normalizeDisplayName,
 } from '../../utils/agent';
-
-import type { NodeTemplate, UseAgentBuilderNodeTemplatesReturn } from '../../types/agent';
+import type { UseAgentBuilderNodeTemplatesReturn, NodeTemplate } from '../../types/agent';
 
 export const useAgentBuilderNodeTemplates = (
   availableTools: any[],
@@ -77,10 +76,7 @@ export const useAgentBuilderNodeTemplates = (
       // LLM Nodes - Generated from available models
       ...availableModels.map((model: any) => {
         const modelName = model.modelName || 'Unknown Model';
-        const normalizedName = modelName
-          .replace(/[^a-zA-Z0-9]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim();
+        const normalizedName = modelName.trim();
 
         // Create unique type identifier using provider and modelName to avoid conflicts
         const uniqueTypeId = `${model.provider}-${modelName}`
@@ -89,7 +85,7 @@ export const useAgentBuilderNodeTemplates = (
 
         return {
           type: `llm-${uniqueTypeId}`,
-          label: normalizeDisplayName(normalizedName),
+          label: normalizedName,
           description: `${model.provider} AI model for text generation`,
           icon: brainIcon,
           defaultConfig: {
@@ -103,7 +99,7 @@ export const useAgentBuilderNodeTemplates = (
             isDefault: model.isDefault || false,
             isReasoning: model.isReasoning || false,
           },
-          inputs: ['prompt', 'context'],
+          inputs: [],
           outputs: ['response'],
           category: 'llm' as const,
         };

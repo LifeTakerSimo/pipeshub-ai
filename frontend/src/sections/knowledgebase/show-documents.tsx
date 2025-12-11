@@ -1,55 +1,55 @@
 // RecordDocumentViewer.tsx - Fixed for Mail Records
 import dayjs from 'dayjs';
 import { Icon } from '@iconify/react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import downloadIcon from '@iconify-icons/mdi/download';
-import emailIcon from '@iconify-icons/mdi/email-outline';
 import zipIcon from '@iconify-icons/vscode-icons/file-type-zip';
 import pdfIcon from '@iconify-icons/vscode-icons/file-type-pdf2';
 import imageIcon from '@iconify-icons/vscode-icons/file-type-image';
 import defaultFileIcon from '@iconify-icons/mdi/file-document-outline';
-import React, { useRef, useState, useEffect, useCallback } from 'react'; // Add email icon
+import emailIcon from '@iconify-icons/mdi/email-outline'; // Add email icon
 import eyeIcon from '@iconify-icons/mdi/eye';
 import closeIcon from '@iconify-icons/mdi/close';
-import databaseIcon from '@iconify-icons/mdi/database';
 import fullscreenIcon from '@iconify-icons/mdi/fullscreen';
-import docIcon from '@iconify-icons/vscode-icons/file-type-word';
-import txtIcon from '@iconify-icons/vscode-icons/file-type-text';
-import htmlIcon from '@iconify-icons/vscode-icons/file-type-html';
-import jsonIcon from '@iconify-icons/vscode-icons/file-type-json';
-import xlsIcon from '@iconify-icons/vscode-icons/file-type-excel';
 import fullscreenExitIcon from '@iconify-icons/mdi/fullscreen-exit';
 import mdIcon from '@iconify-icons/vscode-icons/file-type-markdown';
+import htmlIcon from '@iconify-icons/vscode-icons/file-type-html';
+import jsonIcon from '@iconify-icons/vscode-icons/file-type-json';
+import databaseIcon from '@iconify-icons/mdi/database';
+import xlsIcon from '@iconify-icons/vscode-icons/file-type-excel';
+import docIcon from '@iconify-icons/vscode-icons/file-type-word';
 import pptIcon from '@iconify-icons/vscode-icons/file-type-powerpoint';
+import txtIcon from '@iconify-icons/vscode-icons/file-type-text';
 
 import {
   Box,
-  Fade,
   Stack,
-  Alert,
-  Tooltip,
-  Snackbar,
-  useTheme,
   Typography,
   IconButton,
   CircularProgress,
+  Fade,
+  Alert,
+  Snackbar,
+  useTheme,
+  Tooltip,
 } from '@mui/material';
 
 import axios from 'src/utils/axios';
-
 import { CONFIG } from 'src/config-global';
-
-import { KnowledgeBaseAPI } from './services/api';
+import type { Record } from './types/record-details';
+import { getConnectorPublicUrl } from '../accountdetails/account-settings/services/utils/services-configuration-service';
 import { ORIGIN } from './constants/knowledge-search';
+import PdfHighlighterComp from '../qna/chatbot/components/pdf-highlighter';
 import DocxViewer from '../qna/chatbot/components/docx-highlighter';
+import ExcelViewer from '../qna/chatbot/components/excel-highlighter';
 import HtmlViewer from '../qna/chatbot/components/html-highlighter';
 import TextViewer from '../qna/chatbot/components/text-highlighter';
-import ExcelViewer from '../qna/chatbot/components/excel-highlighter';
-import PdfHighlighterComp from '../qna/chatbot/components/pdf-highlighter';
-import ImageHighlighter from '../qna/chatbot/components/image-highlighter';
 import MarkdownViewer from '../qna/chatbot/components/markdown-highlighter';
-import { getConnectorPublicUrl } from '../accountdetails/account-settings/services/utils/services-configuration-service';
+import { KnowledgeBaseAPI } from './services/api';
+import ImageHighlighter from '../qna/chatbot/components/image-highlighter';
+import { getExtensionFromMimeType } from './utils/utils';
 
-import type { Record } from './types/record-details';
+const MAX_FILE_SIZE_MB = 10; // 10MB
 
 // Simplified state management for viewport mode
 interface DocumentViewerState {
@@ -155,8 +155,8 @@ function getDocumentType(extension: string, recordType?: string) {
   if (extension === 'txt') return 'text';
   if (extension === 'md') return 'md';
   if (extension === 'mdx') return 'mdx';
-  if (['ppt', 'pptx'].includes(extension)) return 'ppt';
-  if (['jpg', 'jpeg', 'png', 'webp', 'svg'].includes(extension)) return 'image';
+  if (['ppt', 'pptx'].includes(extension)) return 'pdf'; // have to convert to pdf
+  if (['jpg', 'jpeg', 'png', 'webp', 'svg', 'gif'].includes(extension)) return 'image';
   return 'other';
 }
 
@@ -486,11 +486,13 @@ const RecordDocumentViewer = ({ record }: RecordDocumentViewerProps) => {
     mailRecord,
     origin,
     recordType,
+    mimeType,
   } = record;
 
   // Get the appropriate record data and extension
-  const currentRecord = fileRecord || mailRecord;
-  const extension = fileRecord?.extension || 'eml'; // Use 'eml' for email records
+  const extension = fileRecord?.extension
+    ? fileRecord.extension
+    : getExtensionFromMimeType(mimeType || '');
   const recordTypeForDisplay = recordType || 'FILE';
 
   const handleDownload = async () => {
@@ -589,8 +591,8 @@ const RecordDocumentViewer = ({ record }: RecordDocumentViewerProps) => {
 
           // Handle PowerPoint files
           if (record?.fileRecord && ['pptx', 'ppt'].includes(record?.fileRecord?.extension)) {
-            params = { convertTo: 'pdf' };
-            if (record.fileRecord.sizeInBytes / 1048576 > 5) {
+            params = { convertTo: 'application/pdf' };
+            if (record.fileRecord.sizeInBytes / 1048576 > MAX_FILE_SIZE_MB) {
               throw new Error('Large file size, redirecting to web page');
             }
           }
@@ -774,6 +776,7 @@ const RecordDocumentViewer = ({ record }: RecordDocumentViewerProps) => {
             url={fileUrl}
             buffer={fileBuffer}
             citations={recordCitations?.documents || []}
+            fileExtension={extension}
           />
         );
       default:
@@ -826,44 +829,48 @@ const RecordDocumentViewer = ({ record }: RecordDocumentViewerProps) => {
             ) : (
               <>
                 {recordTypeForDisplay !== 'MAIL' && (
-                  <IconButton
-                    onClick={handleDownload}
-                    sx={{
-                      color: 'primary.main',
-                      '&:hover': {
-                        backgroundColor: 'primary.light',
-                        color: 'white',
-                      },
-                    }}
-                    disabled={viewerState.phase === 'loading'}
-                  >
-                    <Icon icon={downloadIcon} width={24} />
-                  </IconButton>
+                  <>
+                    <IconButton
+                      onClick={handleDownload}
+                      sx={{
+                        color: 'primary.main',
+                        '&:hover': {
+                          backgroundColor: 'primary.light',
+                          color: 'white',
+                        },
+                      }}
+                      disabled={viewerState.phase === 'loading'}
+                    >
+                      <Icon icon={downloadIcon} width={24} />
+                    </IconButton>
+                  </>
                 )}
               </>
             )}
           </Tooltip>
 
           {/* View Document Button */}
-          <Tooltip
-            title={recordTypeForDisplay === 'MAIL' ? 'Preview email' : 'Preview document'}
-            arrow
-            placement="top"
-          >
-            <IconButton
-              onClick={viewDocument}
-              sx={{
-                color: 'primary.main',
-                '&:hover': {
-                  backgroundColor: 'primary.light',
-                  color: 'white',
-                },
-              }}
-              disabled={viewerState.phase === 'loading'}
+          {extension && (
+            <Tooltip
+              title={recordTypeForDisplay === 'MAIL' ? 'Preview email' : 'Preview document'}
+              arrow
+              placement="top"
             >
-              <Icon icon={eyeIcon} width={24} />
-            </IconButton>
-          </Tooltip>
+              <IconButton
+                onClick={viewDocument}
+                sx={{
+                  color: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'primary.light',
+                    color: 'white',
+                  },
+                }}
+                disabled={viewerState.phase === 'loading'}
+              >
+                <Icon icon={eyeIcon} width={24} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       </Box>
 

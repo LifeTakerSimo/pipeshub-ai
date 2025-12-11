@@ -95,7 +95,181 @@ COPY --from=frontend-build /app/frontend/dist ./backend/dist/public
 COPY backend/python/app/ /app/python/app/
 
 # Copy the process monitor script
-COPY process_monitor.sh /app/process_monitor.sh
+COPY <<'EOF' /app/process_monitor.sh
+#!/bin/bash
+
+# Process monitor script with parent-child process management
+set -e
+
+LOG_FILE="/app/process_monitor.log"
+CHECK_INTERVAL=${CHECK_INTERVAL:-20}
+
+# PIDs of child processes
+NODEJS_PID=""
+DOCLING_PID=""
+INDEXING_PID=""
+CONNECTOR_PID=""
+QUERY_PID=""
+
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+start_nodejs() {
+    log "Starting Node.js service..."
+    cd /app/backend
+    node dist/index.js &
+    NODEJS_PID=$!
+    log "Node.js started with PID: $NODEJS_PID"
+    
+    # Wait for Node.js health check to pass
+    log "Waiting for Node.js health check..."
+    local MAX_RETRIES=30
+    local RETRY_COUNT=0
+    local HEALTH_CHECK_URL="http://localhost:3000/api/v1/health"
+    
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        if curl -s -f "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
+            log "Node.js health check passed!"
+            break
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        log "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed, retrying in 2 seconds..."
+        sleep 2
+    done
+    
+    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+        log "ERROR: Node.js health check failed after $MAX_RETRIES attempts"
+        return 1
+    fi
+}
+
+start_docling() {
+    log "Starting Docling service..."
+    cd /app/python
+    python -m app.docling_main &
+    DOCLING_PID=$!
+    log "Docling started with PID: $DOCLING_PID"
+}
+
+start_indexing() {
+    log "Starting Indexing service..."
+    cd /app/python
+    python -m app.indexing_main &
+    INDEXING_PID=$!
+    log "Indexing started with PID: $INDEXING_PID"
+}
+
+start_connector() {
+    log "Starting Connector service..."
+    cd /app/python
+    python -m app.connectors_main &
+    CONNECTOR_PID=$!
+    log "Connector started with PID: $CONNECTOR_PID"
+    
+    # Wait for Connector health check to pass
+    log "Waiting for Connector health check..."
+    local MAX_RETRIES=30
+    local RETRY_COUNT=0
+    local HEALTH_CHECK_URL="http://localhost:8088/health"
+    
+    while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        if curl -s -f "$HEALTH_CHECK_URL" > /dev/null 2>&1; then
+            log "Connector health check passed!"
+            break
+        fi
+        RETRY_COUNT=$((RETRY_COUNT + 1))
+        log "Health check attempt $RETRY_COUNT/$MAX_RETRIES failed, retrying in 2 seconds..."
+        sleep 2
+    done
+    
+    if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+        log "ERROR: Connector health check failed after $MAX_RETRIES attempts"
+        return 1
+    fi
+}
+
+start_query() {
+    log "Starting Query service..."
+    cd /app/python
+    python -m app.query_main &
+    QUERY_PID=$!
+    log "Query started with PID: $QUERY_PID"
+}
+
+check_process() {
+    local pid=$1
+    local name=$2
+    
+    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        log "WARNING: $name (PID: $pid) is not running!"
+        return 1
+    fi
+    return 0
+}
+
+cleanup() {
+    log "Shutting down all services..."
+    
+    [ -n "$NODEJS_PID" ] && kill "$NODEJS_PID" 2>/dev/null || true
+    [ -n "$DOCLING_PID" ] && kill "$DOCLING_PID" 2>/dev/null || true
+    [ -n "$INDEXING_PID" ] && kill "$INDEXING_PID" 2>/dev/null || true
+    [ -n "$CONNECTOR_PID" ] && kill "$CONNECTOR_PID" 2>/dev/null || true
+    [ -n "$QUERY_PID" ] && kill "$QUERY_PID" 2>/dev/null || true
+    
+    wait
+    log "All services stopped."
+    exit 0
+}
+
+# Trap signals for graceful shutdown
+trap cleanup SIGTERM SIGINT SIGQUIT
+
+# Start all services in dependency order
+log "=== Process Monitor Starting ==="
+# 1. Start Node.js first and wait for health check
+start_nodejs
+# 2. Start Connector after Node.js is healthy, wait for health check
+start_connector
+# 3. Start Indexing and Query after Connector is healthy (order doesn't matter)
+start_indexing
+start_query
+# 4. Start Docling (can run independently)
+start_docling
+
+log "All services started. Beginning monitoring cycle (checking every ${CHECK_INTERVAL}s)..."
+
+# Monitor loop
+while true; do
+    sleep "$CHECK_INTERVAL"
+    
+    # Check and restart Node.js
+    if ! check_process "$NODEJS_PID" "Node.js"; then
+        start_nodejs
+    fi
+    
+    # Check and restart Docling
+    if ! check_process "$DOCLING_PID" "Docling"; then
+        start_docling
+    fi
+    
+    # Check and restart Indexing
+    if ! check_process "$INDEXING_PID" "Indexing"; then
+        start_indexing
+    fi
+    
+    # Check and restart Connector
+    if ! check_process "$CONNECTOR_PID" "Connector"; then
+        start_connector
+    fi
+    
+    # Check and restart Query
+    if ! check_process "$QUERY_PID" "Query"; then
+        start_query
+    fi
+done
+EOF
+
 RUN chmod +x /app/process_monitor.sh
 
 # Expose necessary ports

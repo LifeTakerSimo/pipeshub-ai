@@ -57,6 +57,7 @@ class OAuthToken:
     token_type: str = "Bearer"
     expires_in: Optional[int] = None
     refresh_token: Optional[str] = None
+    refresh_token_expires_in: Optional[int] = None  # used by Microsoft/OneDrive
     scope: Optional[str] = None
     id_token: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
@@ -86,19 +87,24 @@ class OAuthToken:
             "token_type": self.token_type,
             "expires_in": self.expires_in,
             "refresh_token": self.refresh_token,
+            "refresh_token_expires_in": self.refresh_token_expires_in,
             "scope": self.scope,
             "id_token": self.id_token,
             "created_at": self.created_at.isoformat(),
             "uid": self.uid,
-            "account_id": self.account_id
+            "account_id": self.account_id,
+            "team_id": self.team_id
         }
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'OAuthToken':
-        """Create token from dictionary"""
+        """Create token from dictionary, filtering out unknown fields"""
         if 'created_at' in data and isinstance(data['created_at'], str):
             data['created_at'] = datetime.fromisoformat(data['created_at'])
-        return cls(**data)
+        # Filter to only known fields to handle varying OAuth provider responses
+        known_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        filtered_data = {k: v for k, v in data.items() if k in known_fields}
+        return cls(**filtered_data)
 
 
 class OAuthProvider:
@@ -167,10 +173,23 @@ class OAuthProvider:
 
         session = await self.session
         async with session.post(self.config.token_url, data=data) as response:
-            response.raise_for_status()
+            if response.status != HttpStatusCode.SUCCESS.value:
+                # Get detailed error info for debugging
+                error_text = await response.text()
+                # Log detailed error but mask sensitive data
+                FIRST_8_CHARS = 8
+                masked_client_id = self.config.client_id[:FIRST_8_CHARS] + "..." if len(self.config.client_id) > FIRST_8_CHARS else "***"
+                error_msg = (
+                    f"OAuth token exchange failed with status {response.status}. "
+                    f"Token URL: {self.config.token_url}, "
+                    f"Redirect URI: {self.config.redirect_uri}, "
+                    f"Client ID (masked): {masked_client_id}, "
+                    f"Response: {error_text}"
+                )
+                raise Exception(error_msg)
             token_data = await response.json()
 
-        token = OAuthToken(**token_data)
+        token = OAuthToken.from_dict(token_data)
         return token
 
     async def refresh_access_token(self, refresh_token: str) -> OAuthToken:
@@ -192,7 +211,7 @@ class OAuthProvider:
             token_data = await response.json()
 
         # Create new token with current timestamp
-        token = OAuthToken(**token_data)
+        token = OAuthToken.from_dict(token_data)
 
         # Handle different OAuth providers:
         # - Google: doesn't return refresh_token on refresh, so preserve the old one

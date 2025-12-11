@@ -58,6 +58,7 @@ const MainContainer = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  height: '100%',
 }));
 
 const ContentArea = styled(Box)({
@@ -65,6 +66,7 @@ const ContentArea = styled(Box)({
   display: 'flex',
   flexDirection: 'column',
   overflow: 'hidden',
+  height: '100%',
 });
 
 const CompactCard = styled(Card)(({ theme }) => ({
@@ -744,6 +746,10 @@ export default function KnowledgeBaseComponent() {
   const renderContextMenu = () => {
     const canModify =
       currentUserPermission?.role === 'OWNER' || currentUserPermission?.role === 'WRITER';
+    const canReindex =
+      currentUserPermission?.role === 'OWNER' ||
+      currentUserPermission?.role === 'WRITER' ||
+      currentUserPermission?.role === 'READER';
 
     const folderMenuItems = [
       {
@@ -797,7 +803,7 @@ export default function KnowledgeBaseComponent() {
           handleMenuClose();
         },
       },
-      ...(canModify
+      ...(canReindex
         ? [
             {
               key: 'reindex',
@@ -808,6 +814,10 @@ export default function KnowledgeBaseComponent() {
                 handleMenuClose();
               },
             },
+          ]
+        : []),
+      ...(canModify
+        ? [
             {
               key: 'delete',
               label: 'Delete',
