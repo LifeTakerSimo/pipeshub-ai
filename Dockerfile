@@ -257,10 +257,11 @@ while true; do
 done
 EOF
 
-RUN chmod +x /app/process_monitor.sh
+RUN chmod +x /app/process_monitor.sh && \
+    sed -i 's/\r$//' /app/process_monitor.sh
 
 # Expose necessary ports
 EXPOSE 3000 8000 8088 8091 8081
 
 # Use the process monitor as the main process
-CMD ["/app/process_monitor.sh"]
+CMD ["/bin/bash", "/app/process_monitor.sh"]
